@@ -49,6 +49,7 @@ class FromSimDevice : public Element {
 
   String _ifname;
   int _packetbuf_size;
+  int _headroom;
   int _fd;
   unsigned char *_packetbuf;
   bool _promisc;

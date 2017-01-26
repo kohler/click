@@ -223,7 +223,6 @@ class FromDAGDump : public Element { public:
 
     Packet *_packet;
 
-    bool _swapped : 1;
     bool _timing : 1;
     bool _force_ip : 1;
     bool _have_first_time : 1;

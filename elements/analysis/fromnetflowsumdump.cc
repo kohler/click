@@ -380,6 +380,10 @@ FromNetFlowSummaryDump::run_task(Task *)
 	return false;
     } else if (_timing && !check_timing(p))
 	return false;
+<<<<<<< HEAD
+=======
+    _packet = 0;
+>>>>>>> kohler/master
     output(0).push(p);
     _task.fast_reschedule();
     return true;
@@ -400,6 +404,7 @@ FromNetFlowSummaryDump::pull(int)
     else if (p && _timing && !check_timing(p))
 	return 0;
     _notifier.set_active(p != 0, true);
+    _packet = 0;
     return p;
 }
 
@@ -447,7 +452,7 @@ FromNetFlowSummaryDump::write_handler(const String &s_in, Element *e, void *thun
 void
 FromNetFlowSummaryDump::add_handlers()
 {
-    add_read_handler("active", read_handler, H_ACTIVE, Handler::CHECKBOX);
+    add_read_handler("active", read_handler, H_ACTIVE, Handler::f_checkbox);
     add_write_handler("active", write_handler, H_ACTIVE);
     add_read_handler("encap", read_handler, H_ENCAP);
     _ff.add_handlers(this);

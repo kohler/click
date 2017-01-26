@@ -55,9 +55,9 @@
  * copied and put under another distribution licence
  * [including the GNU Public Licence.]
  */
+#include <click/config.h>
 #include "sha1_impl.hh"
-
-
+CLICK_DECLS
 
 
 #define ULONG	unsigned long
@@ -654,3 +654,4 @@ SHA1_final (unsigned char *md, SHA1_ctx *c)
 }
 
 
+CLICK_ENDDECLS

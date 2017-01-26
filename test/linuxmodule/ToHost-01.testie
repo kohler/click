@@ -7,21 +7,25 @@ appropriately; and that ToHost(SNIFFERS true) sends packets to sniffers.
 XXX It doesn't test whether SNIFFERS true sends packets to the kernel.
 
 %require
-[ `whoami` = root ]
+click-buildtool provides linuxmodule
+[ `whoami` = root ] || sudo -n true
 
 %script
+SUDO=; if ! [ `whoami` = root ]; then SUDO="sudo -n"; fi
+test -n "`which click-install`"
 usleep () { click -e "DriverManager(wait ${1}us)"; }
-click-install KERNELCONFIG
-tcpdump -n -i fake0 >FAKE0 2>&1 &
+
+$SUDO "`which click-install`" KERNELCONFIG
+$SUDO tcpdump -n -i fake0 >FAKE0 2>&1 &
 usleep 500000
 dump1=$!
 ping -n -i 1 -c 1 1.0.0.2 | grep transmitted | sed 's/^\([0-9]*\).*/\1/' >PING1
-echo 1 > /click/sw/switch
+$SUDO sh -c "echo 1 > /click/sw/switch"
 ping -n -i 1 -c 1 1.0.0.3 | grep transmitted | sed 's/^\([0-9]*\).*/\1/' >>PING1
-kill $dump1
+$SUDO kill $dump1 || true
 cat /click/th0/drops /click/th1/drops >DROPS
 cat /click/c/count >COUNT
-click-uninstall
+$SUDO "`which click-uninstall`"
 
 %file KERNELCONFIG
 fh1 :: FromHost(fake0, 1.0.0.1/24);

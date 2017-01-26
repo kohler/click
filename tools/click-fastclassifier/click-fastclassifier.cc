@@ -566,6 +566,7 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
       String step = program.substring(program.begin(), find(program, '\n'));
       program = program.substring(step.end() + 1, program.end());
       // check for many things
+      char ch;
       if (isdigit((unsigned char) step[0]) || isspace((unsigned char) step[0])) {
 	// real step
 	Classifier_Insn e;
@@ -606,6 +607,8 @@ analyze_classifiers(RouterT *nr, const Vector<ElementT *> &classifiers,
 	prog.program.push_back(e);
       } else if (sscanf(step.c_str(), "all->[%d]", &prog.output_everything))
 	/* nada */;
+      else if (sscanf(step.c_str(), "all->[%c]", &ch) && ch == 'X')
+        prog.output_everything = 2147483647;
       else if (sscanf(step.c_str(), "safe length %d", &prog.safe_length))
 	/* nada */;
       else if (sscanf(step.c_str(), "alignment offset %d", &prog.align_offset)) {

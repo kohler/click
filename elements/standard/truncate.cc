@@ -31,6 +31,7 @@ Truncate::Truncate()
 int
 Truncate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+    _extra_anno = true;
     return Args(conf, this, errh)
 	.read_mp("LENGTH", _nbytes)
 	.read("EXTRA_LENGTH", _extra_anno)

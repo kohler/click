@@ -391,7 +391,7 @@ void ip_prepare(PacketDesc &d, const FieldWriter *)
 
     // check UDP header
     if (!d.iph || !d.udph
-	|| d.network_length() - d.tailpad <= (uint32_t)(d.iph->ip_hl << 2)
+	|| d.network_length() <= (uint32_t)(d.iph->ip_hl << 2)
 	|| d.iph->ip_p != IP_PROTO_UDP
 	|| !IP_FIRSTFRAG(d.iph))
 	d.udph = 0;

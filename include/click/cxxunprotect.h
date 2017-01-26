@@ -5,7 +5,6 @@
 # undef class
 # undef virtual
 # undef typename
-# undef private
 # undef protected
 # undef public
 # undef namespace

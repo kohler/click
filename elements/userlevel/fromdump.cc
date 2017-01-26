@@ -226,17 +226,21 @@ FromDump::initialize(ErrorHandler *errh)
     if (!fh)
 	return _ff.error(errh, "not a tcpdump file (too short)");
 
-    if (fh->magic == FAKE_PCAP_MAGIC || fh->magic == FAKE_MODIFIED_PCAP_MAGIC)
+    if (fh->magic == FAKE_PCAP_MAGIC || fh->magic == FAKE_PCAP_MAGIC_NANO || fh->magic == FAKE_MODIFIED_PCAP_MAGIC)
 	_swapped = false;
     else {
 	swap_file_header(fh, &swapped_fh);
 	_swapped = true;
 	fh = &swapped_fh;
     }
-    if (fh->magic != FAKE_PCAP_MAGIC && fh->magic != FAKE_MODIFIED_PCAP_MAGIC)
+    if (fh->magic != FAKE_PCAP_MAGIC && fh->magic != FAKE_PCAP_MAGIC_NANO && fh->magic != FAKE_MODIFIED_PCAP_MAGIC)
 	return _ff.error(errh, "not a tcpdump file (bad magic number)");
     // compensate for extra crap appended to packet headers
-    _extra_pkthdr_crap = (fh->magic == FAKE_PCAP_MAGIC ? 0 : sizeof(fake_modified_pcap_pkthdr) - sizeof(fake_pcap_pkthdr));
+    if (fh->magic == FAKE_PCAP_MAGIC || fh->magic == FAKE_PCAP_MAGIC_NANO)
+	_extra_pkthdr_crap = 0;
+    else
+	_extra_pkthdr_crap = sizeof(fake_modified_pcap_pkthdr) - sizeof(fake_pcap_pkthdr);
+    _have_nanosecond_timestamps = fh->magic == FAKE_PCAP_MAGIC_NANO;
 
     if (fh->version_major != FAKE_PCAP_VERSION_MAJOR)
 	return _ff.error(errh, "unknown major version %d", fh->version_major);
@@ -368,7 +372,7 @@ FromDump::read_packet(ErrorHandler *errh)
 
     // check times
   check_times:
-    ts = fake_bpf_timeval_union::make_timestamp(&ph->ts);
+    ts = fake_bpf_timeval_union::make_timestamp(&ph->ts, _have_nanosecond_timestamps);
     if (!_have_any_times)
 	prepare_times(ts);
     if (_have_first_time) {

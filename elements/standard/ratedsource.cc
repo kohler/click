@@ -241,20 +241,20 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
 void
 RatedSource::add_handlers()
 {
-  add_read_handler("data", read_param, 0, Handler::CALM);
-  add_write_handler("data", change_param, 0, Handler::RAW);
+  add_read_handler("data", read_param, 0, Handler::f_calm);
+  add_write_handler("data", change_param, 0, Handler::f_raw);
   add_read_handler("rate", read_param, 1);
   add_write_handler("rate", change_param, 1);
-  add_read_handler("limit", read_param, 2, Handler::CALM);
+  add_read_handler("limit", read_param, 2, Handler::f_calm);
   add_write_handler("limit", change_param, 2);
-  add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
+  add_data_handlers("active", Handler::f_read | Handler::f_checkbox, &_active);
   add_write_handler("active", change_param, 3);
-  add_data_handlers("count", Handler::OP_READ, &_count);
-  add_write_handler("reset", change_param, 5, Handler::BUTTON);
-  add_data_handlers("length", Handler::OP_READ, &_datasize);
+  add_data_handlers("count", Handler::f_read, &_count);
+  add_write_handler("reset", change_param, 5, Handler::f_button);
+  add_data_handlers("length", Handler::f_read, &_datasize);
   add_write_handler("length", change_param, 6);
   // deprecated
-  add_data_handlers("datasize", Handler::OP_READ | Handler::DEPRECATED, &_datasize);
+  add_data_handlers("datasize", Handler::f_read | Handler::f_deprecated, &_datasize);
   add_write_handler("datasize", change_param, 6);
 
   if (output_is_push(0))

@@ -227,6 +227,7 @@ class FromDump : public Element { public:
     bool _first_time_relative : 1;
     bool _last_time_relative : 1;
     bool _last_time_interval : 1;
+    bool _have_nanosecond_timestamps : 1;
     bool _active;
     unsigned _extra_pkthdr_crap;
     unsigned _sampling_prob;

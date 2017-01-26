@@ -73,10 +73,10 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     bool stop = false, active = true, zero = true, checksum = false, multipacket = false, timing = false, allow_nonexistent = false;
     uint8_t default_proto = IP_PROTO_TCP;
     _sampling_prob = (1 << SAMPLING_SHIFT);
-    String default_contents, default_flowid;
+    String default_contents, default_flowid, data;
 
     if (Args(conf, this, errh)
-	.read_mp("FILENAME", FilenameArg(), _ff.filename())
+	.read_p("FILENAME", FilenameArg(), _ff.filename())
 	.read("STOP", stop)
 	.read("ACTIVE", active)
 	.read("ZERO", zero)
@@ -86,10 +86,13 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	.read("PROTO", default_proto)
 	.read("MULTIPACKET", multipacket)
 	.read("DEFAULT_CONTENTS", AnyArg(), default_contents)
+	.read("DEFAULT_FIELDS", AnyArg(), default_contents)
 	.read("DEFAULT_FLOWID", AnyArg(), default_flowid)
 	.read("CONTENTS", AnyArg(), default_contents)
+	.read("FIELDS", AnyArg(), default_contents)
 	.read("FLOWID", AnyArg(), default_flowid)
 	.read("ALLOW_NONEXISTENT", allow_nonexistent)
+        .read("DATA", data)
 	.complete() < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
@@ -112,6 +115,12 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	bang_data(default_contents, errh);
     if (default_flowid)
 	bang_flowid(default_flowid, errh);
+    if (data && _ff.filename())
+        return errh->error("FILENAME and DATA conflict");
+    else if (data && _ff.set_data(data, errh) < 0)
+        return -1;
+    else if (!_ff.filename())
+        return errh->error("FILENAME: required argument missing");
     return 0;
 }
 
@@ -555,7 +564,6 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    if (!xlen || (d.p = d.p->put(xlen))) {
 		if (xlen && _zero)
 		    memset(d.p->end_data() - xlen, 0, xlen);
-		SET_EXTRA_LENGTH_ANNO(d.p, EXTRA_LENGTH_ANNO(d.p) - xlen);
 		set_checksums(d.p, d.p->ip_header());
 	    }
 	}
@@ -790,10 +798,10 @@ void
 FromIPSummaryDump::add_handlers()
 {
     add_read_handler("sampling_prob", read_handler, H_SAMPLING_PROB);
-    add_read_handler("active", read_handler, H_ACTIVE, Handler::CHECKBOX);
+    add_read_handler("active", read_handler, H_ACTIVE, Handler::f_checkbox);
     add_write_handler("active", write_handler, H_ACTIVE);
     add_read_handler("encap", read_handler, H_ENCAP);
-    add_write_handler("stop", write_handler, H_STOP, Handler::BUTTON);
+    add_write_handler("stop", write_handler, H_STOP, Handler::f_button);
     _ff.add_handlers(this);
     if (output_is_push(0))
 	add_task_handlers(&_task);

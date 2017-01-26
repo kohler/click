@@ -20,6 +20,6 @@ RatedSource(DATA "ABCD", LIMIT 1, STOP true)
 %expect stderr
    4 | 41424344
    2 | 4344
-   4 | 00004142
-   4 | 00004142
+   4 | {{....}}4142
+   4 | {{....}}4142
    0

@@ -43,8 +43,8 @@ UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     IPAddress saddr;
     uint16_t sport, dport;
-    bool cksum;
     String daddr_str;
+    bool cksum;
 
     if (Args(conf, this, errh)
 	.read_mp("SRC", saddr)
@@ -66,6 +66,7 @@ UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     _saddr = saddr;
     _sport = htons(sport);
     _dport = htons(dport);
+    _cksum = cksum;
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
     if (!_checked_aligned) {

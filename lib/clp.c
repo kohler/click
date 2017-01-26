@@ -31,14 +31,15 @@
 #if HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
+#if HAVE_INTTYPES_H || !defined(HAVE_CONFIG_H)
+# include <inttypes.h>
+#endif
 
 /* By default, assume we have inttypes.h, strtoul, and uintptr_t. */
-#if !defined(HAVE_STRTOUL) && !defined(HAVE_CONFIG_H)
+#if !HAVE_STRTOUL && !defined(HAVE_CONFIG_H)
 # define HAVE_STRTOUL 1
 #endif
-#if defined(HAVE_INTTYPES_H) || !defined(HAVE_CONFIG_H)
-# include <inttypes.h>
-#elif !defined(HAVE_UINTPTR_T)
+#if !HAVE_UINTPTR_T && !HAVE_INTTYPES_H && defined(HAVE_CONFIG_H)
 typedef unsigned long uintptr_t;
 #endif
 
@@ -1962,7 +1963,7 @@ Clp_Next(Clp_Parser *clp)
 	if (atr->func(clp, clp->vstr, complain, atr->user_data) <= 0) {
 	    /* parser failed */
 	    clp->have_val = 0;
-	    if (cli->iopt[optno].imandatory) {
+	    if (complain) {
 		clp->option = &clp_option_sentinel[-Clp_BadOption];
 		return Clp_BadOption;
 	    } else {

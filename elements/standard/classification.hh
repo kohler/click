@@ -56,10 +56,11 @@ struct Insn {
 	j[1] = success_;
     }
 
-    int32_t yes() const			{ return j[1]; }
-    int32_t &yes()			{ return j[1]; }
-    int32_t no() const			{ return j[0]; }
-    int32_t &no()			{ return j[0]; }
+    int32_t yes() const         { return j[1]; }
+    int32_t no() const          { return j[0]; }
+
+    void set_yes(int dst)       { j[1] = dst; }
+    void set_no(int dst)        { j[0] = dst; }
 
     unsigned required_length() const {
 	if (mask.u == 0)
@@ -117,6 +118,16 @@ struct Insn {
     /** @brief Flip this instruction.
      * @pre flippable() */
     void flip();
+
+    /** @brief Return copy of this instruction with jump destinations
+     *  offset by `off`.*/
+    Insn offset_by(int offset) const {
+        Insn i = *this;
+        for (int k = 0; k < 2; ++k)
+            if (i.j[k] > 0)
+                i.j[k] += offset;
+        return i;
+    }
 
     String unparse() const;
 
@@ -185,8 +196,13 @@ class Program { public:
      * @param flip_short If true, then also flip whether short packets
      *   match. */
     void negate_subtree(Vector<int> &tree, bool flip_short = false);
-    void finish_subtree(Vector<int> &tree, Combiner op = c_and,
-			int success = j_success, int failure = j_failure);
+    inline void finish_subtree(Vector<int>& tree, Combiner op) {
+        finish_subtree(tree, op, j_success, j_failure);
+    }
+    void finish_subtree(Vector<int>& tree, Combiner op, int success, int failure);
+
+    void set_failure(int failure);
+    void add_or_program(const Program& next_program);
 
     void combine_compatible_states();
     void remove_unused_states();

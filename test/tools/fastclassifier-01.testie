@@ -3,6 +3,9 @@
 Test that click-fastclassifier does not optimize away necessary length
 comparisons.
 
+%require -q
+test -z "$CLICKTEST_PREINSTALL"
+
 %script
 click SCRIPT
 click-fastclassifier -qu SCRIPT | click
@@ -36,3 +39,4 @@ B: 4{{.*}}
 %ignore
 expensive{{.*}}
 make{{.*jobserver.*}}
+g++{{.*}}: warning{{.*}}

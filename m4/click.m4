@@ -73,7 +73,7 @@ AC_DEFUN([CLICK_PROG_CC], [
     test -z "$ac_user_cflags" && \
         CFLAGS="$CFLAGS$WARNING_CFLAGS"
 
-    AC_CHECK_HEADERS(sys/types.h unistd.h)
+    AC_CHECK_HEADERS_ONCE([sys/types.h unistd.h])
 ])
 
 
@@ -126,6 +126,18 @@ and Linux header files are GCC-specific.)
         if test "$ac_cv_good_new_h" = yes; then
             AC_DEFINE([HAVE_NEW_H], [1], [Define if <new.h> exists and works.])
         fi
+    fi
+
+    dnl require C++11
+    AC_CACHE_CHECK([whether the C++ compiler understands 'auto'], [ac_cv_cxx_auto], [
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[struct s { int a; }; int f(s x) { auto &y = x; return y.a; }]], [[]])],
+            [ac_cv_cxx_auto=yes], [ac_cv_cxx_auto=no])])
+    if test "$ac_cv_cxx_auto" != yes -a -z "$ac_user_cxx"; then
+        CXX="${CXX} -std=gnu++0x"
+        AC_MSG_CHECKING([whether the C++ compiler with -std=gnu++0x understands 'auto'])
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[struct s { int a; }; int f(s x) { auto &y = x; return y.a; }]], [[]])],
+            [ac_cv_cxx_auto=yes], [ac_cv_cxx_auto=no])
+        AC_MSG_RESULT([$ac_cv_cxx_auto])
     fi
 
     dnl check for C++11 features
@@ -236,10 +248,10 @@ dnl
 
 AC_DEFUN([CLICK_CHECK_DYNAMIC_LINKING], [
     DL_LIBS=
-    AC_CHECK_HEADERS(dlfcn.h, ac_have_dlfcn_h=yes, ac_have_dlfcn_h=no)
+    AC_CHECK_HEADERS_ONCE([dlfcn.h])
     AC_CHECK_FUNC(dlopen, ac_have_dlopen=yes,
         [AC_CHECK_LIB(dl, dlopen, [ac_have_dlopen=yes; DL_LIBS="-ldl"], ac_have_dlopen=no)])
-    if test "x$ac_have_dlopen" = xyes -a "x$ac_have_dlfcn_h" = xyes; then
+    if test "x$ac_have_dlopen" = xyes -a "x$ac_cv_header_dlfcn_h" = xyes; then
         AC_DEFINE([HAVE_DYNAMIC_LINKING], [1], [Define if dynamic linking is possible.])
         ac_have_dynamic_linking=yes
     fi
@@ -281,7 +293,7 @@ AC_DEFUN([CLICK_CHECK_BUILD_DYNAMIC_LINKING], [
     CXX="$BUILD_CXX"; CXXCPP="$BUILD_CXX -E"
     unset ac_cv_header_dlfcn_h ac_cv_func_dlopen ac_cv_lib_dl_dlopen
     BUILD_DL_LIBS=
-    AC_CHECK_HEADERS(dlfcn.h, ac_build_have_dlfcn_h=yes, ac_build_have_dlfcn_h=no)
+    AC_CHECK_HEADERS([dlfcn.h], [ac_build_have_dlfcn_h=yes], [ac_build_have_dlfcn_h=no])
     AC_CHECK_FUNC(dlopen, ac_build_have_dlopen=yes,
         [AC_CHECK_LIB(dl, dlopen, [ac_build_have_dlopen=yes; BUILD_DL_LIBS="-ldl"], ac_have_dlopen=no)])
     if test "x$ac_build_have_dlopen" = xyes -a "x$ac_build_have_dlfcn_h" = xyes; then
@@ -405,7 +417,7 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 
         savelibs="$LIBS"
         LIBS="$savelibs $PCAP_LIBS"
-        AC_CHECK_FUNCS([pcap_inject pcap_sendpacket pcap_setdirection pcap_setnonblock])
+        AC_CHECK_FUNCS([pcap_inject pcap_sendpacket pcap_setdirection pcap_setnonblock pcap_set_immediate_mode])
         LIBS="$savelibs"
     fi
 ])
@@ -551,16 +563,16 @@ dnl
 AC_DEFUN([CLICK_PROG_GMAKE], [
     if test "${GMAKE-NO}" = NO; then
         AC_CACHE_CHECK(for GNU make, ac_cv_gnu_make,
-        [if /bin/sh -c 'make -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
+        [if /bin/sh -c 'make -f /dev/null -n --version | grep GNU' >/dev/null 2>/dev/null; then
             ac_cv_gnu_make='make'
-        elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
+        elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>/dev/null; then
             ac_cv_gnu_make='gmake'
         else
             ac_cv_gnu_make='not found'
         fi])
         test "$ac_cv_gnu_make" != 'not found' && GMAKE="$ac_cv_gnu_make"
     else
-        /bin/sh -c '$GMAKE -f /dev/null -n --version | grep GNU' >/dev/null 2>&1 || GMAKE=''
+        /bin/sh -c '$GMAKE -f /dev/null -n --version | grep GNU' >/dev/null 2>/dev/null || GMAKE='1'
     fi
 
     SUBMAKE=''
@@ -577,8 +589,9 @@ dnl HAVE_INDIFFERENT_ALIGNMENT.
 dnl
 
 AC_DEFUN([CLICK_CHECK_ALIGNMENT], [
+    AC_CHECK_HEADERS_ONCE([inttypes.h])
     AC_CACHE_CHECK([whether machine is indifferent to alignment], [ac_cv_alignment_indifferent],
-    [if test "x$have_inttypes_h" = xyes; then inttypes_hdr='inttypes.h'; else inttypes_hdr='sys/types.h'; fi
+    [if test "x$ac_cv_header_inttypes_h" = xyes; then inttypes_hdr='inttypes.h'; else inttypes_hdr='sys/types.h'; fi
 
     AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <$inttypes_hdr>
 #include <stdlib.h>
@@ -616,21 +629,21 @@ dnl
 
 AC_DEFUN([CLICK_CHECK_INTEGER_TYPES], [
     AC_C_CHAR_UNSIGNED
-    AC_CHECK_HEADERS(inttypes.h, have_inttypes_h=yes, have_inttypes_h=no)
+    AC_CHECK_HEADERS_ONCE([stdint.h inttypes.h])
 
-    if test $have_inttypes_h = no; then
+    if test x$ac_cv_header_inttypes_h = xno; then
         AC_CACHE_CHECK(for uintXX_t typedefs, ac_cv_uint_t,
         [AC_EGREP_HEADER(dnl
 changequote(<<,>>)<<(^|[^a-zA-Z_0-9])uint32_t[^a-zA-Z_0-9]>>changequote([,]),
         sys/types.h, ac_cv_uint_t=yes, ac_cv_uint_t=no)])
     fi
-    if test $have_inttypes_h = no -a "$ac_cv_uint_t" = no; then
+    if test x$ac_cv_header_inttypes_h = xno -a "$ac_cv_uint_t" = no; then
         AC_CACHE_CHECK(for u_intXX_t typedefs, ac_cv_u_int_t,
         [AC_EGREP_HEADER(dnl
 changequote(<<,>>)<<(^|[^a-zA-Z_0-9])u_int32_t[^a-zA-Z_0-9]>>changequote([,]),
         sys/types.h, ac_cv_u_int_t=yes, ac_cv_u_int_t=no)])
     fi
-    if test $have_inttypes_h = yes -o "$ac_cv_uint_t" = yes; then :
+    if test x$ac_cv_header_inttypes_h = xyes -o "$ac_cv_uint_t" = yes; then :
     elif test "$ac_cv_u_int_t" = yes; then
         AC_DEFINE([HAVE_U_INT_TYPES], [1], [Define if you have u_intXX_t types but not uintXX_t types.])
     else
@@ -646,12 +659,12 @@ Neither uint32_t nor u_int32_t defined by <inttypes.h> or <sys/types.h>!
 dnl
 dnl CLICK_CHECK_INT64_TYPES
 dnl Finds definitions for 'int64_t' and 'uint64_t'.
-dnl On input, shell variable 'have_inttypes_h' should be 'yes' if the header
-dnl file <inttypes.h> exists.  If no 'uint64_t', looks for 'u_int64_t'.
+dnl If no 'uint64_t', looks for 'u_int64_t'.
 dnl
 
 AC_DEFUN([CLICK_CHECK_INT64_TYPES], [
-    if test "x$have_inttypes_h" = xyes; then
+    AC_CHECK_HEADERS_ONCE([inttypes.h])
+    if test "x$ac_cv_header_inttypes_h" = xyes; then
         inttypes_hdr='inttypes.h'
     else
         inttypes_hdr='sys/types.h'
@@ -704,60 +717,9 @@ dnl Checks endianness of machine.
 dnl
 
 AC_DEFUN([CLICK_CHECK_ENDIAN], [
-    AC_CHECK_HEADERS(endian.h machine/endian.h,
-dnl autoconf 2.53 versus autoconf 2.13
-                    if test "x$ac_header" != x; then
-                        endian_hdr=$ac_header
-                    else
-                        endian_hdr=$ac_hdr
-                    fi
-                    break, endian_hdr=no)
-    if test "x$endian_hdr" != xno; then
-        AC_CACHE_CHECK(endianness, ac_cv_endian, [
-            dnl cannot use AC_PREPROC_IFELSE because it throws out the results
-            ac_cv_endian=0
-            cat > conftest.$ac_ext <<EOF
-[#]line __oline__ "configure"
-#include "confdefs.h"
-#include <$endian_hdr>
-#ifdef __BYTE_ORDER
-__BYTE_ORDER
-#elif defined(BYTE_ORDER)
-BYTE_ORDER
-#else
-0
-#endif
-EOF
-            ac_try="$ac_cpp conftest.$ac_ext >conftest.result 2>conftest.out"
-            AC_TRY_EVAL(ac_try)
-            ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
-            if test -z "$ac_err"; then
-                ac_cv_endian=`grep '^[[1234]]' conftest.result`
-                test -z "$ac_cv_endian" && ac_cv_endian=0
-            else
-                echo "$ac_err" >&5
-                echo "configure: failed program was:" >&5
-                cat conftest.$ac_ext >&5
-            fi
-            rm -f conftest.$ac_ext conftest.result conftest.out])
-    elif test "x$cross_compiling" != xyes ; then
-        AC_CACHE_CHECK(endianness, ac_cv_endian,
-            [AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <stdlib.h>
-#include <stdio.h>
-int main(int argc, char *argv[]) {
-    union { int i; char c[4]; } u;
-    FILE *f = fopen("conftestdata", "w");
-    if (!f)
-        exit(1);
-    u.i = ('1') | ('2' << 8) | ('3' << 16) | ('4' << 24);
-    fprintf(f, "%4.4s\n", u.c);
-    exit(0);
-}]])], [ac_cv_endian=`cat conftestdata`], [ac_cv_endian=0], [ac_cv_endian=0])])
-    else
-        ac_cv_endian=0
-    fi
-    AC_DEFINE_UNQUOTED([CLICK_BYTE_ORDER], $ac_cv_endian, [Define to byte order of target machine.])
-    AC_CHECK_HEADERS(byteswap.h)
+    AC_CHECK_HEADERS_ONCE([endian.h machine/endian.h byteswap.h])
+    AC_C_BIGENDIAN([endian=CLICK_BIG_ENDIAN], [endian=CLICK_LITTLE_ENDIAN], [endian=CLICK_NO_ENDIAN], [endian=CLICK_NO_ENDIAN])
+    AC_DEFINE_UNQUOTED([CLICK_BYTE_ORDER], [$endian], [Define to byte order of target machine.])
 ])
 
 
@@ -835,7 +797,7 @@ AC_DEFUN([CLICK_CHECK_COMPILER_INTRINSICS], [
         AC_DEFINE([HAVE___THREAD_STORAGE_CLASS], [1], [Define if you have the __thread storage class specifier.])
     fi
 
-    AC_CHECK_HEADERS(strings.h)
+    AC_CHECK_HEADERS_ONCE([strings.h])
     AC_CHECK_FUNCS(ffs ffsl ffsll)
     ])
 
@@ -906,8 +868,8 @@ dnl HAVE_POLL_H.
 dnl
 
 AC_DEFUN([CLICK_CHECK_POLL_H], [
-    AC_CHECK_HEADER(poll.h, ac_cv_poll_h=yes, ac_cv_poll_h=no)
-    if test "$ac_cv_poll_h" = yes; then
+    AC_CHECK_HEADERS_ONCE([poll.h])
+    if test x"$ac_cv_header_poll_h" = xyes; then
         AC_CACHE_CHECK([whether <poll.h> is emulated], [ac_cv_emulated_poll_h],
             [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <poll.h>
 #ifdef _POLL_EMUL_H_

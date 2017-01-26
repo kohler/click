@@ -6,14 +6,14 @@ click CONFIG2
 %file CONFIG1
 a::FromIPSummaryDump(F1c);
 b::FromIPSummaryDump(F2);
-a -> t::TimeSortedSched(BUFFER 3, STOP true) -> ToIPSummaryDump(G1, DATA timestamp);
+a -> t::TimeSortedSched(BUFFER 3, STOP true) -> ToIPSummaryDump(G1, FIELDS timestamp);
 b -> [1]t;
 DriverManager(pause, print t.well_ordered);
 
 %file CONFIG2
 a::FromIPSummaryDump(F1c);
 b::FromIPSummaryDump(F2);
-a -> t::TimeSortedSched(BUFFER 2, STOP true) -> ToIPSummaryDump(G2, DATA timestamp);
+a -> t::TimeSortedSched(BUFFER 2, STOP true) -> ToIPSummaryDump(G2, FIELDS timestamp);
 b -> [1]t;
 DriverManager(pause, print t.well_ordered);
 

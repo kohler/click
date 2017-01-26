@@ -140,6 +140,9 @@
 /* Define if you have the pcap_setnonblock function. */
 #undef HAVE_PCAP_SETNONBLOCK
 
+/* Define if you have the pcap_set_immediate_mode function. */
+#undef HAVE_PCAP_SET_IMMEDIATE_MODE
+
 /* Define if you have -lproper and prop.h, and proper operations should be
    preferred to their non-proper counterparts. */
 #undef HAVE_PROPER
@@ -210,6 +213,9 @@
 
 /* Define if a Click user-level driver might run multiple threads. */
 #undef HAVE_USER_MULTITHREAD
+
+/* Define if a Click user-level driver uses Intel DPDK. */
+#undef HAVE_DPDK
 
 /* Define if Click should use Valgrind client requests. */
 #undef HAVE_VALGRIND

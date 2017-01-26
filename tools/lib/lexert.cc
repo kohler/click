@@ -598,6 +598,8 @@ LexerT::yport(Vector<int> &ports, const char *pos[2])
     }
 
     int nports = ports.size();
+    int last_port = -1;
+    bool dash = false;
     while (1) {
 	Lexeme t = lex();
 	if (t.is(lexIdent)) {
@@ -610,7 +612,13 @@ LexerT::yport(Vector<int> &ports, const char *pos[2])
 		lerror(t, "syntax error: port number should be integer");
 		port = 0;
 	    }
-	    ports.push_back(port);
+            if (dash) {
+                for (++last_port; last_port <= port; ++last_port)
+                    ports.push_back(last_port);
+            } else {
+                ports.push_back(port);
+                last_port = port;
+            }
 	} else if (t.is(']')) {
 	    if (nports == ports.size())
 		ports.push_back(0);
@@ -627,7 +635,11 @@ LexerT::yport(Vector<int> &ports, const char *pos[2])
 	if (t.is(']')) {
 	    pos[1] = t.pos2();
 	    return true;
-	} else if (!t.is(',')) {
+	} else if (t.is('-') && !dash)
+            dash = true;
+        else if (t.is(','))
+            dash = false;
+        else {
 	    lerror(t, "syntax error: expected ','");
 	    unlex(t);
 	}

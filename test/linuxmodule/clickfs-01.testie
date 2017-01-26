@@ -2,10 +2,13 @@
 test device up/down
 
 %require
-[ `whoami` = root ]
 click-buildtool provides linuxmodule
+[ `whoami` = root ] || sudo -n true
 
 %script
+SUDO=; if ! [ `whoami` = root ]; then SUDO="sudo -n"; fi
+test -n "`which click-install`"
+
 xtest () {
     (cd /click; find . -type f -printf '%i %n %p\n') | awk 'BEGIN { OFS = ""; }
 {
@@ -38,22 +41,22 @@ END {
 }
 
 testie_subtest 1
-click-install CONFIG1
+$SUDO "`which click-install`" CONFIG1
 xtest
 
 testie_subtest 2
-click-install CONFIG2
+$SUDO "`which click-install`" CONFIG2
 xtest
 
 testie_subtest 3
-click-install CONFIG3
+$SUDO "`which click-install`" CONFIG3
 xtest
 
 testie_subtest 4
-click-install CONFIG4
+$SUDO "`which click-install`" CONFIG4
 xtest
 
-click-uninstall
+$SUDO "`which click-uninstall`"
 
 %file CONFIG1
 i :: Idle;

@@ -85,13 +85,14 @@ $(LIBCLICKTOOL):
 
 click-combine: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	@-mkdir -p ../../bin; ln -sf ../tools/click-combine/$@ ../../bin/$@
 
 click-uncombine: Makefile $(UNOBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(UNOBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	@-mkdir -p ../../bin; ln -sf ../tools/click-combine/$@ ../../bin/$@
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)
@@ -107,7 +108,7 @@ uninstall:
 	/bin/rm -f $(DESTDIR)$(bindir)/click-combine $(DESTDIR)$(bindir)/click-uncombine
 
 clean:
-	rm -f *.d *.o click-combine click-uncombine
+	rm -f *.d *.o click-combine click-uncombine ../../bin/click-combine ../../bin/click-uncombine
 distclean: clean
 	-rm -f Makefile
 

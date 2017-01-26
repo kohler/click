@@ -1,0 +1,26 @@
+%require -q
+click-buildtool provides FromIPSummaryDump
+
+%script
+
+# read from hand-written IPSummaryDump data; check headers, emit to a dump
+click CONFIG
+
+%file CONFIG
+FromIPSummaryDump(STOP true, CHECKSUM true, DATA "!data src dst icmp_type
+!proto I
+18.26.4.44 10.0.0.4 echo
+10.0.0.4 18.26.4.44 echo-reply")
+	-> CheckICMPHeader(VERBOSE true)
+	-> ToIPSummaryDump(-, FIELDS src dst icmp_type_name)
+
+%expect stdout
+18.26.4.44 10.0.0.4 echo
+10.0.0.4 18.26.4.44 echo-reply
+
+%expect stderr
+
+%ignorex
+!.*
+
+%eof

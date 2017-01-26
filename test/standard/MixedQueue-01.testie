@@ -6,7 +6,7 @@ FromIPSummaryDump(-, STOP true)
 	-> c::IPClassifier(src 1.0.0.1, src 1.0.0.2)
 	-> m::MixedQueue
 	-> u::Unqueue(ACTIVE false)
-	-> ToIPSummaryDump(-, CONTENTS ip_dst);
+	-> ToIPSummaryDump(-, FIELDS ip_dst);
 c[1] -> [1]m;
 DriverManager(wait, write u.active true, wait_time 0.1s, stop)
 

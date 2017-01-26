@@ -208,7 +208,8 @@ Classifier::parse_program(Classification::Wordwise::Program &prog,
 	if (empty)
 	    prog.add_insn(tree, 0, 0, 0);
 
-	prog.finish_subtree(tree, Classification::c_and, -slot);
+	prog.finish_subtree(tree, Classification::c_and,
+                            -slot, Classification::j_failure);
     }
 
     prog.finish_subtree(tree, Classification::c_or, Classification::j_never, Classification::j_never);

@@ -203,20 +203,19 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
 	icmp6_code = 1;
       }
       break;
-      default:  {
-	icmp6_length = payload_length-sizeof(click_icmp_unreach)+sizeof(click_icmp6_unreach);
-	q2=Packet::make(icmp6_length);
-	memset(q2->data(), '\0', q2->length());
-	click_icmp6_unreach *icmp6 = (click_icmp6_unreach *)q2->data();
-	ip6=(unsigned char *)(icmp6+1);
-	icmp6->icmp6_type = ICMP6_UNREACH;
-	icmp6->icmp6_code = icmp6_code;
-	memcpy(ip6, (unsigned char *)ip, icmp6_length);
-	icmp->icmp_cksum  = 0;
-	icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
-      }
+      default:  
       break;
       }
+      icmp6_length = payload_length-sizeof(click_icmp_unreach)+sizeof(click_icmp6_unreach);
+      q2=Packet::make(icmp6_length);
+      memset(q2->data(), '\0', q2->length());
+      click_icmp6_unreach *icmp6 = (click_icmp6_unreach *)q2->data();
+      ip6=(unsigned char *)(icmp6+1);
+      icmp6->icmp6_type = ICMP6_UNREACH;
+      icmp6->icmp6_code = icmp6_code;
+      memcpy(ip6, (unsigned char *)ip, icmp6_length);
+      icmp->icmp_cksum  = 0;
+      icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
     }
   }
   break;

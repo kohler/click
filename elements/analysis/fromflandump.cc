@@ -463,9 +463,9 @@ FromFlanDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHa
 void
 FromFlanDump::add_handlers()
 {
-    add_read_handler("active", read_handler, ACTIVE_THUNK, Handler::CHECKBOX);
+    add_read_handler("active", read_handler, ACTIVE_THUNK, Handler::f_checkbox);
     add_write_handler("active", write_handler, ACTIVE_THUNK);
-    add_write_handler("stop", write_handler, STOP_THUNK, Handler::BUTTON);
+    add_write_handler("stop", write_handler, STOP_THUNK, Handler::f_button);
     add_read_handler("filesize", read_handler, FILESIZE_THUNK);
     add_read_handler("filepos", read_handler, FILEPOS_THUNK);
     if (output_is_push(0))

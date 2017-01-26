@@ -108,8 +108,8 @@ IPsecESPUnencap::simple_action(Packet *p)
   }
   blks = blk[blks - 2];
   blk = p->data() + p->length() - (blks + 2);
-  for(i = 0; (i < blks) && (blk[i] == ++i);)
-      /* nothing */;
+  for(i = 0; (i < blks) && (blk[i] == i + 1);)
+    ++i;
   if(i<blks) {
     click_chatter("Corrupt padding");
     p->kill();

@@ -160,7 +160,7 @@ inline StringAccum &operator<<(StringAccum &sa, uint64_t x);
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL) || defined(CLICK_MINIOS)
 StringAccum &operator<<(StringAccum &sa, double x);
 #endif
-StringAccum &operator<<(StringAccum &sa, void *ptr);
+StringAccum &operator<<(StringAccum &sa, const void *ptr);
 
 
 /** @brief Construct an empty StringAccum (with length 0). */

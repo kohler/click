@@ -34,7 +34,8 @@ AlignmentInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   // check for an earlier AlignmentInfo
   if (void *a = router()->attachment("AlignmentInfo"))
-    return ((AlignmentInfo *)a)->configure(conf, errh);
+    if (a != this)
+      return ((AlignmentInfo *)a)->configure(conf, errh);
   router()->set_attachment("AlignmentInfo", this);
 
   // this is the first AlignmentInfo; store all information here

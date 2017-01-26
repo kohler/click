@@ -57,6 +57,7 @@
  */
 #ifndef SHA1_IMPL_HH
 #define SHA1_IMPL_HH
+CLICK_DECLS
 
 #undef  SHA_0
 #define SHA_1
@@ -67,21 +68,17 @@
 #define SHA_LAST_BLOCK  56
 #define SHA_LENGTH_BLOCK 8
 #define SHA_DIGEST_LENGTH 20
-typedef struct SHAstate_st
-{
+typedef struct SHAstate_st {
   unsigned long h0, h1, h2, h3, h4;
   unsigned long Nl, Nh;
   unsigned long data[SHA_LBLOCK];
   int num;
-}
-SHA1_ctx;
+} SHA1_ctx;
 
 void SHA1_init (SHA1_ctx * c);
 void SHA1_update (SHA1_ctx * c, unsigned char *data, unsigned long len);
 void SHA1_final (unsigned char *md, SHA1_ctx * c);
 void SHA1_transform (SHA1_ctx * c, unsigned char *data);
 
-
-
+CLICK_ENDDECLS
 #endif
-

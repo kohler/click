@@ -25,6 +25,8 @@ RANLIB = @RANLIB@
 INSTALL = @INSTALL@
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
+CLICK_BUILDTOOL = $(top_builddir)/bin/click-buildtool
+
 ifeq ($(V),1)
 ccompile = $(COMPILE) $(DEPCFLAGS) $(1)
 ccompile_nodep = $(COMPILE) $(1)
@@ -88,7 +90,7 @@ INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(srcdir) -I$(top_srcdir) \
 	@PROPER_INCLUDES@ @PCAP_INCLUDES@ @NETMAP_INCLUDES@
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@ `$(top_builddir)/click-buildtool --otherlibs` $(ELEMENT_LIBS)
+LIBS = @LIBS@ `$(CLICK_BUILDTOOL) --otherlibs` $(ELEMENT_LIBS)
 DL_LDFLAGS = @DL_LDFLAGS@
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
@@ -97,6 +99,18 @@ CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+
+USE_DPDK = @USE_DPDK@
+ifeq ($(USE_DPDK),yes)
+RTE_SDK = @RTE_SDK@
+RTE_TARGET = @RTE_TARGET@
+RTE_VER_MAJOR = @RTE_VER_MAJOR@
+RTE_VER_MINOR = @RTE_VER_MINOR@
+RTE_VER_YEAR = @RTE_VER_YEAR@
+RTE_VER_MONTH = @RTE_VER_MONTH@
+include dpdk.mk
+EXTRA_DRIVER_OBJS := dpdkdevice.o $(EXTRA_DRIVER_OBJS)
+endif
 
 ifndef MINDRIVER
 DRIVER = click
@@ -125,24 +139,24 @@ endif
 
 $(DRIVER): Makefile libclick.a $(OBJS)
 	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) libclick.a $(LIBS),LINK)
+	@-mkdir -p ../bin; rm -f ../bin/$@; ln -s ../userlevel/$@ ../bin/$@
 
 libclick.a: Makefile $(LIBOBJS)
 	$(call verbose_cmd,$(AR_CREATE) libclick.a $(LIBOBJS),AR libclick.a)
 	$(call verbose_cmd,$(RANLIB),RANLIB,libclick.a)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 elemlist:
 	@rm -f elements.conf elements.csmk
 	@$(MAKE) elements.conf
-elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
-	$(call verbose_cmd,echo "userlevel @element_groups@" | $(top_builddir)/click-buildtool findelem -r userlevel -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) >,FINDELEMENTS,elements.conf)
-$(ELEMENTSCONF).mk: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
-	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf >,CREATE,$(ELEMENTSCONF).mk)
-$(ELEMENTSCONF).cc: $(ELEMENTSCONF).conf $(top_builddir)/click-buildtool
-	$(call verbose_cmd,$(top_builddir)/click-buildtool elem2export < $(ELEMENTSCONF).conf >,CREATE,$(ELEMENTSCONF).cc)
+elements.conf: $(top_builddir)/config.status $(CLICK_BUILDTOOL)
+	$(call verbose_cmd,echo "userlevel @element_groups@" | $(CLICK_BUILDTOOL) findelem -r userlevel -p $(top_srcdir) -X $(srcdir)/elements.exclude $(FINDELEMFLAGS) >,FINDELEMENTS,elements.conf)
+$(ELEMENTSCONF).mk: $(ELEMENTSCONF).conf $(CLICK_BUILDTOOL)
+	$(call verbose_cmd,$(CLICK_BUILDTOOL) elem2make -x "$(STD_ELEMENT_OBJS)" < $(ELEMENTSCONF).conf >,CREATE,$(ELEMENTSCONF).mk)
+$(ELEMENTSCONF).cc: $(ELEMENTSCONF).conf $(CLICK_BUILDTOOL)
+	$(call verbose_cmd,$(CLICK_BUILDTOOL) elem2export < $(ELEMENTSCONF).conf >,CREATE,$(ELEMENTSCONF).cc)
 	@rm -f $(ELEMENTSCONF).d
 
 DEPFILES := $(wildcard *.d)
@@ -166,6 +180,7 @@ uninstall:
 
 clean:
 	rm -f *.d *.o $(INSTALLPROGS) $(ELEMENTSCONF).mk $(ELEMENTSCONF).cc elements.conf elements.csmk libclick.a
+	@-for i in $(INSTALLPROGS); do rm -f ../bin/$$i; done
 clean-lib:
 	rm -f $(LIBOBJS) libclick.a
 distclean: clean

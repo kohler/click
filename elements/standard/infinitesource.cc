@@ -239,22 +239,22 @@ InfiniteSource::change_param(const String &s, Element *e, void *vparam,
 void
 InfiniteSource::add_handlers()
 {
-    add_data_handlers("data", Handler::OP_READ | Handler::RAW | Handler::CALM, &_data);
-    add_write_handler("data", change_param, h_data, Handler::RAW);
-    add_data_handlers("limit", Handler::OP_READ | Handler::CALM, &_limit);
+    add_data_handlers("data", Handler::f_read | Handler::f_raw | Handler::f_calm, &_data);
+    add_write_handler("data", change_param, h_data, Handler::f_raw);
+    add_data_handlers("limit", Handler::f_read | Handler::f_calm, &_limit);
     add_write_handler("limit", change_param, h_limit);
-    add_data_handlers("burst", Handler::OP_READ | Handler::CALM, &_burstsize);
+    add_data_handlers("burst", Handler::f_read | Handler::f_calm, &_burstsize);
     add_write_handler("burst", change_param, h_burst);
-    add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
+    add_data_handlers("active", Handler::f_read | Handler::CHECKBOX, &_active);
     add_write_handler("active", change_param, h_active);
-    add_data_handlers("count", Handler::OP_READ, &_count);
-    add_write_handler("reset", change_param, h_reset, Handler::BUTTON);
-    add_data_handlers("length", Handler::OP_READ | Handler::CALM, &_datasize);
+    add_data_handlers("count", Handler::f_read, &_count);
+    add_write_handler("reset", change_param, h_reset, Handler::f_button);
+    add_data_handlers("length", Handler::f_read | Handler::f_calm, &_datasize);
     add_write_handler("length", change_param, h_length);
     // deprecated
-    add_data_handlers("burstsize", Handler::OP_READ | Handler::CALM | Handler::DEPRECATED, &_burstsize);
+    add_data_handlers("burstsize", Handler::f_read | Handler::f_calm | Handler::f_deprecated, &_burstsize);
     add_write_handler("burstsize", change_param, h_burst);
-    add_data_handlers("datasize", Handler::OP_READ | Handler::CALM | Handler::DEPRECATED, &_datasize);
+    add_data_handlers("datasize", Handler::f_read | Handler::f_calm | Handler::f_deprecated, &_datasize);
     add_write_handler("datasize", change_param, h_length);
     //add_read_handler("notifier", read_param, h_notifier);
     if (output_is_push(0))

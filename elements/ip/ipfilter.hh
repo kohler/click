@@ -25,7 +25,7 @@ matched.
 Each ACTION is either a port number, which specifies that the packet should be
 sent out on that port; 'C<allow>', which is equivalent to 'C<0>'; or 'C<drop>'
 , which means drop the packet. You can also say 'C<deny>' instead of
-'C<drop>', but see the compatibility note below.
+'C<drop>'.
 
 The IPFilter element has an arbitrary number of outputs. Input packets must
 have their IP header annotation set; CheckIPHeader and MarkIPHeader do
@@ -36,11 +36,6 @@ this.
 Every IPFilter element has an equivalent corresponding IPClassifier element
 and vice versa. Use the element whose syntax is more convenient for your
 needs.
-
-B<Compatibility note>: 'C<deny>' formerly meant 'C<1>' if the element had at
-least two outputs and 'C<drop>' if it did not. We decided this was
-error-prone; now it just means 'C<drop>'. For now, however, 'C<deny>' will
-print a warning if used on an element with more than one output.
 
 =e
 

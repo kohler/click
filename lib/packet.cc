@@ -577,6 +577,8 @@ Packet::make(uint32_t headroom, const void *data,
  * @param length length of packet
  * @param destructor destructor function
  * @param argument argument to destructor function
+ * @param headroom headroom available before the data pointer
+ * @param tailroom tailroom available after data + length
  * @return new packet, or null if no packet could be created
  *
  * The packet's data pointer becomes the @a data: the data is not copied
@@ -591,7 +593,7 @@ Packet::make(uint32_t headroom, const void *data,
  * null. */
 WritablePacket *
 Packet::make(unsigned char *data, uint32_t length,
-	     buffer_destructor_type destructor, void* argument)
+	     buffer_destructor_type destructor, void* argument, int headroom, int tailroom)
 {
 # if HAVE_CLICK_PACKET_POOL
     WritablePacket *p = WritablePacket::pool_allocate(false);
@@ -600,15 +602,34 @@ Packet::make(unsigned char *data, uint32_t length,
 # endif
     if (p) {
 	p->initialize();
-	p->_head = p->_data = data;
-	p->_tail = p->_end = data + length;
+	p->_head = data - headroom;
+	p->_data = data;
+	p->_tail = data + length;
+	p->_end = p->_tail + tailroom;
 	p->_destructor = destructor;
         p->_destructor_argument = argument;
     }
     return p;
 }
-#endif
 
+/** @brief Copy the content and annotations of another packet (userlevel).
+ * @param source packet
+ * @param headroom for the new packet
+ */
+bool
+Packet::copy(Packet* p, int headroom)
+{
+    if (headroom + p->length() > buffer_length())
+        return false;
+    _data = _head + headroom;
+    memcpy(_data,p->data(),p->length());
+    _tail = _data + p->length();
+    copy_annotations(p);
+    set_mac_header(p->mac_header() ? data() + p->mac_header_offset() : 0);
+    set_network_header(p->network_header() ? data() + p->network_header_offset() : 0, p->network_header_length());
+    return true;
+}
+#endif
 
 //
 // UNIQUEIFICATION
@@ -654,16 +675,19 @@ Packet::clone()
 # endif
     if (!p)
 	return 0;
+    Packet* origin = this;
+    if (origin->_data_packet)
+        origin = origin->_data_packet;
     memcpy(p, this, sizeof(Packet));
     p->_use_count = 1;
-    p->_data_packet = this;
+    p->_data_packet = origin;
 # if CLICK_USERLEVEL || CLICK_MINIOS
     p->_destructor = 0;
 # else
     p->_m = m;
 # endif
     // increment our reference count because of _data_packet reference
-    _use_count++;
+    origin->_use_count++;
     return p;
 
 #endif /* CLICK_LINUXMODULE */
@@ -678,70 +702,26 @@ Packet::expensive_uniqueify(int32_t extra_headroom, int32_t extra_tailroom,
 #if CLICK_LINUXMODULE
 
     struct sk_buff *nskb = skb();
-    unsigned char *old_head = nskb->head;
-    uint32_t old_headroom = headroom(), old_length = length();
 
-    uint32_t size = buffer_length() + extra_headroom + extra_tailroom;
-    size = SKB_DATA_ALIGN(size);
-    unsigned char *new_head = reinterpret_cast<unsigned char *>(kmalloc(size + sizeof(struct skb_shared_info), GFP_ATOMIC));
-    if (!new_head) {
-	if (free_on_failure)
-	    kill();
-	return 0;
+    // preserve this, which otherwise loses a ref here
+    if (!free_on_failure)
+        if (!(nskb = skb_clone(nskb, GFP_ATOMIC)))
+            return NULL;
+
+    // nskb is now not shared, which psk_expand_head asserts
+    if (!(nskb = skb_share_check(nskb, GFP_ATOMIC)))
+        return NULL;
+
+    if (pskb_expand_head(nskb, extra_headroom, extra_tailroom, GFP_ATOMIC)) {
+        kfree_skb(nskb);
+        return NULL;
     }
 
-    unsigned char *start_copy = old_head + (extra_headroom >= 0 ? 0 : -extra_headroom);
-    unsigned char *end_copy = old_head + buffer_length() + (extra_tailroom >= 0 ? 0 : extra_tailroom);
-    memcpy(new_head + (extra_headroom >= 0 ? extra_headroom : 0), start_copy, end_copy - start_copy);
+    // success, so kill the clone from above
+    if (!free_on_failure)
+        kill();
 
-    if (!nskb->cloned || atomic_dec_and_test(&(skb_shinfo(nskb)->dataref))) {
-	assert(!skb_shinfo(nskb)->nr_frags && !skb_shinfo(nskb)->frag_list);
-	kfree(old_head);
-    }
-
-    nskb->head = new_head;
-    nskb->data = new_head + old_headroom + extra_headroom;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-    skb_set_tail_pointer(nskb, old_length);
-# else
-    nskb->tail = nskb->data + old_length;
-# endif
-# ifdef NET_SKBUFF_DATA_USES_OFFSET
-    nskb->end = size;
-# else
-    nskb->end = new_head + size;
-# endif
-    nskb->len = old_length;
-    nskb->cloned = 0;
-
-    nskb->truesize = size + sizeof(struct sk_buff);
-    struct skb_shared_info *nskb_shinfo = skb_shinfo(nskb);
-    atomic_set(&nskb_shinfo->dataref, 1);
-    nskb_shinfo->nr_frags = 0;
-    nskb_shinfo->frag_list = 0;
-# if HAVE_LINUX_SKB_SHINFO_GSO_SIZE
-    nskb_shinfo->gso_size = 0;
-    nskb_shinfo->gso_segs = 0;
-    nskb_shinfo->gso_type = 0;
-# elif HAVE_LINUX_SKB_SHINFO_TSO_SIZE
-    nskb_shinfo->tso_size = 0;
-    nskb_shinfo->tso_segs = 0;
-# endif
-# if HAVE_LINUX_SKB_SHINFO_UFO_SIZE
-    nskb_shinfo->ufo_size = 0;
-# endif
-# if HAVE_LINUX_SKB_SHINFO_IP6_FRAG_ID
-    nskb_shinfo->ip6_frag_id = 0;
-# endif
-# if HAVE_LINUX_SKB_SHINFO_TX_FLAGS_UNION
-    nskb_shinfo->tx_flags.flags = 0;
-# endif
-# if HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY
-    nskb_shinfo->tx_flags = 0;
-# endif
-
-    shift_header_annotations(old_head, extra_headroom);
-    return static_cast<WritablePacket *>(this);
+    return reinterpret_cast<WritablePacket *>(nskb);
 
 #else /* !CLICK_LINUXMODULE */
 

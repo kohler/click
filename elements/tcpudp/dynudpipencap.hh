@@ -39,7 +39,9 @@ class DynamicUDPIPEncap : public Element {
   uint16_t _sport;
   uint16_t _dport;
   bool _cksum : 1;
+#ifdef CLICK_LINUXMODULE
   bool _aligned : 1;
+#endif
   atomic_uint32_t _id;
   atomic_uint32_t _count;
   unsigned _interval;

@@ -19,42 +19,41 @@ typedef int (*WriteHandlerCallback)(const String &data, Element *element,
 class Handler { public:
 
     enum Flags {
-	h_read = 0x0001,	///< @brief Handler supports read operations.
-	h_write = 0x0002,	///< @brief Handler supports write operations.
-	h_read_param = 0x0004,	///< @brief Read handler takes parameters.
-	h_exclusive = 0,	///< @brief Handler is exclusive (the default):
+	f_read = 0x0001,	///< @brief Handler supports read operations.
+	f_write = 0x0002,	///< @brief Handler supports write operations.
+	f_read_param = 0x0004,	///< @brief Read handler takes parameters.
+	f_exclusive = 0,	///< @brief Handler is exclusive (the default):
 				///  router threads must stop while it is
 				///  called.
-	h_nonexclusive = 0x0020,///< @brief Handler is nonexclusive: router
+	f_nonexclusive = 0x0020,///< @brief Handler is nonexclusive: router
 				///  threads don't need to stop while it is
 				///  called.
-	h_raw = 0x0040,		///< @brief Don't add newline to results.
-	h_read_private = 0x0080,///< @brief Read handler private (invisible
+	f_raw = 0x0040,		///< @brief Don't add newline to results.
+	f_read_private = 0x0080,///< @brief Read handler private (invisible
 				///  outside the router configuration).
-	h_write_private = 0x0100,///< @brief Write handler private (invisible
+	f_write_private = 0x0100,///< @brief Write handler private (invisible
 				///  outside the router configuration).
-	h_deprecated = 0x0200,	///< @brief Handler is deprecated and available
+	f_deprecated = 0x0200,	///< @brief Handler is deprecated and available
 				///  only for compatibility.
-	h_uncommon = 0x0400,	///< @brief User interfaces should not display
+	f_uncommon = 0x0400,	///< @brief User interfaces should not display
 				///  handler by default.
-	h_calm = 0x0800,	///< @brief Read handler value changes rarely.
-	h_expensive = 0x1000,	///< @brief Read handler is expensive to call.
-	h_button = 0x2000,	///< @brief Write handler ignores data.
-	h_checkbox = 0x4000,	///< @brief Read/write handler is boolean and
+	f_calm = 0x0800,	///< @brief Read handler value changes rarely.
+	f_expensive = 0x1000,	///< @brief Read handler is expensive to call.
+	f_button = 0x2000,	///< @brief Write handler ignores data.
+	f_checkbox = 0x4000,	///< @brief Read/write handler is boolean and
 				///  should be rendered as a checkbox.
-	h_driver_flag_0 = 1U << 26,
-        h_driver_flag_1 = 1U << 27,
-				///< @brief Uninterpreted handler flags
+	f_driver0 = 1U << 26,
+        f_driver1 = 1U << 27,   ///< @brief Uninterpreted handler flags
 				///  available for drivers.
-	h_user_flag_shift = 28,
-	h_user_flag_0 = 1U << h_user_flag_shift,
+	f_user_shift = 28,
+	f_user0 = 1U << f_user_shift,
 				///< @brief First uninterpreted handler flag
 				///  available for element-specific use.
-				///  Equals 1 << h_user_flag_shift.
+				///  Equals 1 << f_user_shift.
 
-	h_read_comprehensive = 0x0008,
-	h_write_comprehensive = 0x0010,
-	h_special_flags = h_read | h_write | h_read_param | h_read_comprehensive | h_write_comprehensive
+	f_read_comprehensive = 0x0008,
+	f_write_comprehensive = 0x0010,
+	f_special = f_read | f_write | f_read_param | f_read_comprehensive | f_write_comprehensive
 				///< @brief These flags may not be set by
 				///  Router::set_handler_flags().
     };
@@ -72,9 +71,9 @@ class Handler { public:
     }
 
     /** @brief Return this handler's callback data.
-     * @param op either h_read or h_write. */
+     * @param op either f_read or f_write. */
     inline void *user_data(int op) const {
-	return op == h_write ? _write_user_data : _read_user_data;
+	return op == f_write ? _write_user_data : _read_user_data;
     }
 
     /** @brief Return this handler's read callback data. */
@@ -95,36 +94,36 @@ class Handler { public:
 
     /** @brief Test if this is a valid read handler. */
     inline bool readable() const {
-	return _flags & h_read;
+	return _flags & f_read;
     }
 
     /** @brief Test if this is a valid read handler that may accept
      * parameters. */
     inline bool read_param() const {
-	return _flags & h_read_param;
+	return _flags & f_read_param;
     }
 
     /** @brief Test if this is a public read handler.
      *
      * Private handlers may be not called from outside the router
      * configuration.  Handlers are public by default; to make a read handler
-     * private, add the h_read_private flag. */
+     * private, add the f_read_private flag. */
     inline bool read_visible() const {
-	return (_flags & (h_read | h_read_private)) == h_read;
+	return (_flags & (f_read | f_read_private)) == f_read;
     }
 
     /** @brief Test if this is a valid write handler. */
     inline bool writable() const {
-	return _flags & h_write;
+	return _flags & f_write;
     }
 
     /** @brief Test if this is a public write handler.
      *
      * Private handlers may not be called from outside the router
      * configuration.  Handlers are public by default; to make a write handler
-     * private, add the h_write_private flag. */
+     * private, add the f_write_private flag. */
     inline bool write_visible() const {
-	return (_flags & (h_write | h_write_private)) == h_write;
+	return (_flags & (f_write | f_write_private)) == f_write;
     }
 
     /** @brief Test if this is a public read or write handler. */
@@ -135,13 +134,13 @@ class Handler { public:
     /** @brief Test if this handler can execute concurrently with other
      *         handlers. */
     inline bool allow_concurrent_handlers() const {
-        return (_flags & h_nonexclusive);
+        return (_flags & f_nonexclusive);
     }
 
     /** @brief Test if this handler can execute concurrently with
      *         router threads. */
     inline bool allow_concurrent_threads() const {
-        return (_flags & h_nonexclusive);
+        return (_flags & f_nonexclusive);
     }
 
     /** @brief Test if spaces should be preserved when calling this handler.
@@ -150,7 +149,7 @@ class Handler { public:
      * values, for example by removing a terminating newline from write
      * handler values or adding a terminating newline to read handler values.
      * Raw handlers do not have their values manipulated in this way.  Rawness
-     * is set by the h_raw flag.
+     * is set by the f_raw flag.
      *
      * <ul>
      * <li>The linuxmodule driver adds a terminating newline to non-raw read
@@ -163,7 +162,7 @@ class Handler { public:
      * handlers' values in any way.</li>
      * </ul> */
     inline bool raw() const {
-	return _flags & h_raw;
+	return _flags & f_raw;
     }
 
 
@@ -227,25 +226,48 @@ class Handler { public:
 
 
     /** @cond never */
+    enum {
+	h_read = f_read,
+	h_write = f_write,
+	h_read_param = f_read_param,
+	h_exclusive = f_exclusive,
+	h_nonexclusive = f_nonexclusive,
+	h_raw = f_raw,
+	h_read_private = f_read_private,
+	h_write_private = f_write_private,
+	h_deprecated = f_deprecated,
+	h_uncommon = f_uncommon,
+	h_calm = f_calm,
+	h_expensive = f_expensive,
+	h_button = f_button,
+	h_checkbox = f_checkbox,
+	h_driver_flag_0 = f_driver0,
+        h_driver_flag_1 = f_driver1,
+	h_user_flag_shift = f_user_shift,
+	h_user_flag_0 = f_user0,
+	h_read_comprehensive = f_read_comprehensive,
+	h_write_comprehensive = f_write_comprehensive,
+	h_special_flags = f_special
+    };
     enum DeprecatedFlags {
-	OP_READ = h_read,
-	OP_WRITE = h_write,
-	READ_PARAM = h_read_param,
-	RAW = h_raw,
-	READ_PRIVATE = h_read_private,
-	WRITE_PRIVATE = h_write_private,
-	DEPRECATED = h_deprecated,
-	UNCOMMON = h_uncommon,
-	CALM = h_calm,
-	EXPENSIVE = h_expensive,
-	BUTTON = h_button,
-	CHECKBOX = h_checkbox,
-	USER_FLAG_SHIFT = h_user_flag_shift,
-	USER_FLAG_0 = h_user_flag_0
+	OP_READ = f_read,
+	OP_WRITE = f_write,
+	READ_PARAM = f_read_param,
+	RAW = f_raw,
+	// READ_PRIVATE = f_read_private,
+	// WRITE_PRIVATE = f_write_private,
+	// DEPRECATED = f_deprecated,
+	// UNCOMMON = f_uncommon,
+	CALM = f_calm,
+	EXPENSIVE = f_expensive,
+	BUTTON = f_button,
+	CHECKBOX = f_checkbox,
+	USER_FLAG_SHIFT = f_user_shift,
+	USER_FLAG_0 = f_user0
     };
     enum CLICK_DEPRECATED {
-	EXCLUSIVE = h_exclusive,
-	NONEXCLUSIVE = h_nonexclusive
+	EXCLUSIVE = f_exclusive,
+	NONEXCLUSIVE = f_nonexclusive
     };
     /** @endcond never */
 
@@ -257,7 +279,7 @@ class Handler { public:
      * This function should only be used for special purposes.  It fails
      * unless called on a handler created with a ReadHandlerCallback. */
     inline String __call_read(Element *e, void *new_user_data) const {
-	assert((_flags & (h_read | h_read_comprehensive)) == h_read);
+	assert((_flags & (f_read | f_read_comprehensive)) == f_read);
 	return _read_hook.r(e, new_user_data);
     }
     /** @endcond never */

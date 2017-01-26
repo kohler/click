@@ -1,0 +1,16 @@
+%info
+Simple Tee test.
+
+%script
+click CONFIG
+
+%file CONFIG
+InfiniteSource(LIMIT 1) ->
+q::Queue(CAPACITY 1) ->
+Unqueue() ->
+t::Tee();
+t[1] -> Discard();
+t[0] -> q;
+DriverManager(wait 0.1s, stop)
+
+%expect stdout

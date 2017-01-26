@@ -5,7 +5,6 @@
 # define class		linux_class
 # define virtual	linux_virtual
 # define typename	linux_typename
-# define private	linux_private
 # define protected	linux_protected
 # define public		linux_public
 # define namespace	linux_namespace

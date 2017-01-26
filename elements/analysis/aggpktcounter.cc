@@ -309,8 +309,8 @@ AggregatePacketCounter::add_handlers()
 {
     add_write_handler("clear", write_handler, H_CLEAR);
     add_read_handler("count", read_handler, H_COUNT);
-    set_handler("received", Handler::h_read | Handler::h_read_param, thing_read_handler, 0);
-    set_handler("undelivered", Handler::h_read | Handler::h_read_param, thing_read_handler, (void*) 1);
+    set_handler("received", Handler::f_read | Handler::f_read_param, thing_read_handler, 0);
+    set_handler("undelivered", Handler::f_read | Handler::f_read_param, thing_read_handler, (void*) 1);
 }
 
 CLICK_ENDDECLS

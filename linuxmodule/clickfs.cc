@@ -60,6 +60,10 @@ static int clickfs_ready;
 #define UNLOCK_CONFIG(...)	unlock_config(__FILE__, __LINE__, ## __VA_ARGS__)
 #define DOWNGRADE_CONFIG_LOCK(r) downgrade_config_lock(__FILE__, __LINE__, r)
 
+#if !defined(f_dentry) && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+# define f_dentry f_path.dentry
+#endif
+
 
 /*************************** Config locking *********************************/
 
@@ -84,7 +88,8 @@ unlock_config(const char* file, int line, Router* read_locked_router = 0)
 static inline Router*
 downgrade_config_lock(const char* file, int line, Router* router)
 {
-    router->use();
+    if (router)
+        router->use();
     SPIN_UNLOCK(&clickfs_lock, file, line);
     return router;
 }
@@ -643,7 +648,7 @@ handler_prepare_read(HandlerString* hs, struct file* filp,
         Element *e = Router::element(click_router, eindex);
 
         if (h->allow_concurrent_handlers())
-            locktype = DOWNGRADE_CONFIG_LOCK(e->router());
+            locktype = DOWNGRADE_CONFIG_LOCK(click_router);
 
         if ((hs->flags & HS_DIRECT) && buffer) {
             click_handler_direct_info hdi;
@@ -814,7 +819,7 @@ handler_do_write(struct file *filp, void *address_ptr)
 	Element *e = Router::element(click_router, eindex);
 
         if (h->allow_concurrent_handlers())
-            locktype = DOWNGRADE_CONFIG_LOCK(e->router());
+            locktype = DOWNGRADE_CONFIG_LOCK(click_router);
 
 	click_llrpc_call_handler_st chs;
 	chs.flags = 0;
@@ -891,7 +896,9 @@ handler_do_write(struct file *filp, void *address_ptr)
 
 static int
 handler_flush(struct file *filp
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
+              , fl_owner_t files
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
 	      , struct files_struct *files
 #endif
 	      )
@@ -950,7 +957,8 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
                || !(e = click_router->element(click_ino.ino_element(inode->i_ino))))
 	retval = -EIO;
     else {
-        if (command & _CLICK_IOC_SAFE)
+        bool ioc_safe = (command & _CLICK_IOC_SAFE);
+        if (ioc_safe)
             locktype = DOWNGRADE_CONFIG_LOCK(e->router());
 
 	union {
@@ -975,6 +983,9 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
 	    && (retval = CLICK_LLRPC_GET_DATA(data, address_ptr, size)) < 0)
 	    goto free_exit;
 
+        if (!ioc_safe)
+            lock_threads();
+
 	// call llrpc
         if (size && (command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)))
             arg_ptr = data;
@@ -985,6 +996,9 @@ do_handler_ioctl(struct inode *inode, struct file *filp,
 	    retval = e->llrpc(command, arg_ptr);
 	else
 	    retval = e->Element::llrpc(command, arg_ptr);
+
+        if (!ioc_safe)
+            unlock_threads();
 
 	// store outgoing data if necessary
 	if (retval >= 0 && size && (command & _CLICK_IOC_OUT))
@@ -1043,7 +1057,7 @@ click_new_file_operations(const char* name)
 int
 init_clickfs()
 {
-    static_assert(HANDLER_DIRECT + HANDLER_WRITE_UNLIMITED < Handler::USER_FLAG_0, "Too few driver handler flags available.");
+    static_assert(HANDLER_DIRECT + HANDLER_WRITE_UNLIMITED < Handler::f_user0, "Too few driver handler flags available.");
     static_assert(((HS_DIRECT | HS_WRITE_UNLIMITED) & (HS_READING | HS_DONE | HS_RAW)) == 0, "Handler flag overlap.");
 
     mutex_init(&handler_strings_lock);

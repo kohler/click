@@ -43,7 +43,7 @@ CLICK_CXX_UNPROTECT
    _CLICK_IOWR[S]: data of specified size transferred in both directions. */
 
 /* "Non-safe" LLRPCs will not be performed in parallel with other LLRPCs or
-   handlers. */
+   handlers.  They will also block the router threads. */
 #define _CLICK_IOX(d, n, sz)	((d) | ((sz) << 16) | (n))
 #define _CLICK_IO(n)		_CLICK_IOX(_CLICK_IOC_VOID, (n), 0)
 #define _CLICK_IOR(n, sz)	_CLICK_IOX(_CLICK_IOC_OUT, (n), (sz))
@@ -51,7 +51,8 @@ CLICK_CXX_UNPROTECT
 #define _CLICK_IOWR(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_OUT, (n), (sz))
 
 /* "Safe" LLRPCs may be performed in parallel with read handlers and other
-   safe LLRPCs, but not with write handlers or unsafe LLRPCs. */
+   safe LLRPCs, but not with write handlers or unsafe LLRPCs.  They will not
+   block the router threads. */
 #define _CLICK_IOS(n)		_CLICK_IOX(_CLICK_IOC_VOID|_CLICK_IOC_SAFE, (n), 0)
 #define _CLICK_IORS(n, sz)	_CLICK_IOX(_CLICK_IOC_OUT|_CLICK_IOC_SAFE, (n), (sz))
 #define _CLICK_IOWS(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_SAFE, (n), (sz))
@@ -74,8 +75,8 @@ CLICK_CXX_UNPROTECT
 #define CLICK_LLRPC_GET_SWITCH			_CLICK_IORSF(5, 4)
 #define CLICK_LLRPC_SET_SWITCH			_CLICK_IOWF(6, 4)
 #define CLICK_LLRPC_MAP_IPADDRESS		_CLICK_IOWRF(7, 4)
-#define CLICK_LLRPC_IPREWRITER_MAP_TCP		_CLICK_IOWRSF(8, 12)
-#define CLICK_LLRPC_IPREWRITER_MAP_UDP		_CLICK_IOWRSF(9, 12)
+#define CLICK_LLRPC_IPREWRITER_MAP_TCP		_CLICK_IOWRF(8, 12)
+#define CLICK_LLRPC_IPREWRITER_MAP_UDP		_CLICK_IOWRF(9, 12)
 #define CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG	_CLICK_IO(10)
 #define CLICK_LLRPC_IPRATEMON_LEVEL_REV_AVG	_CLICK_IO(11)
 #define CLICK_LLRPC_IPRATEMON_FWD_N_REV_AVG	_CLICK_IO(12)

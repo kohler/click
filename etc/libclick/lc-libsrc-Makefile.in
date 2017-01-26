@@ -88,8 +88,7 @@ libclick.a: Makefile $(LIBOBJS)
 	$(RANLIB) libclick.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 #!gmake
 DEPFILES := $(wildcard $(DEPDIR)/*.d)

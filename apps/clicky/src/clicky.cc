@@ -22,6 +22,7 @@
 #include "dstyle.hh"
 #include <click/hashtable.hh>
 #include <netdb.h>
+#include <locale.h>
 
 extern "C" {
 #include "interface.h"
@@ -123,7 +124,7 @@ main(int argc, char *argv[])
     if (gtkrc_file)
 	gtk_rc_add_default_file(gtkrc_file.c_str());
 
-    gtk_set_locale();
+    setlocale(LC_ALL, "");
     bool have_gui = gtk_init_check(&argc, &argv);
     add_pixmap_directory(PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");
 
@@ -341,9 +342,9 @@ particular purpose.\n");
 
     if (do_pdf) {
 	if (pdf_multipage)
-	    clicky::cdiagram::export_pdf(pdf_file.c_str(), cr, point(612, 792), point(24, 24), pdf_scale, true);
+	    clicky::cdiagram::export_to_file(pdf_file.c_str(), cr, point(612, 792), point(24, 24), pdf_scale, true);
 	else
-	    clicky::cdiagram::export_pdf(pdf_file.c_str(), cr, point(0, 0), point(24, 24), pdf_scale, false);
+	    clicky::cdiagram::export_to_file(pdf_file.c_str(), cr, point(0, 0), point(24, 24), pdf_scale, false);
 	exit(0);
     }
 

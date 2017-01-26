@@ -375,13 +375,13 @@ inline uint64_t int_divide(uint64_t a, uint32_t b) {
 inline int64_t int_divide(int64_t a, uint32_t b) {
 # if CLICK_LINUXMODULE && BITS_PER_LONG < 64
     if (unlikely(a < 0)) {
-	uint64_t a_abs = -(a + 1);
-	do_div(a_abs, b);
-	return (int64_t) -a_abs - 1;
+        uint64_t a_abs = -(a + 1);
+        do_div(a_abs, b);
+        return (int64_t) -a_abs - 1;
     } else {
-	uint64_t &a_unsigned = reinterpret_cast<uint64_t &>(a);
-	do_div(a_unsigned, b);
-	return a_unsigned;
+        uint64_t &a_unsigned = reinterpret_cast<uint64_t &>(a);
+        do_div(a_unsigned, b);
+        return a_unsigned;
     }
 # else
     return a / b;
@@ -398,14 +398,14 @@ void int_multiply(T a, T b, T &xlow, T &xhigh)
     typedef typename fasthalf::half_type half_type;
 
     half_type al = fasthalf::low(a), ah = fasthalf::high(a),
-	bl = fasthalf::low(b), bh = fasthalf::high(b);
+        bl = fasthalf::low(b), bh = fasthalf::high(b);
 
     T r0 = T(al) * bl;
     T r3 = T(ah) * bh;
     T r1 = T(ah) * bl;
     T r2 = T(al) * bh + fasthalf::high(r0) + r1;
     if (r2 < r1)
-	r3 += fasthalf::half_value;
+        r3 += fasthalf::half_value;
 
     xhigh = r3 + fasthalf::high(r2);
     xlow = (r2 << fasthalf::half_bits) + fasthalf::low(r0);
@@ -442,22 +442,22 @@ template<> struct has_fast_int_multiply<unsigned long long> : public true_type {
 
 
 /** @brief Divide @a a / @a b, placing quotient in @a quot and returning remainder. */
-inline uint32_t int_divide(uint32_t a, uint32_t b, uint32_t &quot) {
+inline uint32_t int_remainder(uint32_t a, uint32_t b, uint32_t &quot) {
     quot = a / b;
     return a - quot * b;
 }
 
 /** @overload */
-inline int32_t int_divide(int32_t a, uint32_t b, int32_t &quot) {
+inline int32_t int_remainder(int32_t a, uint32_t b, int32_t &quot) {
     if (unlikely(a < 0))
-	quot = -(-(a + 1) / b) - 1;
+        quot = -(-(a + 1) / b) - 1;
     else
-	quot = a / b;
+        quot = a / b;
     return a - quot * b;
 }
 
 /** @overload */
-inline uint32_t int_divide(uint64_t a, uint32_t b, uint64_t &quot) {
+inline uint32_t int_remainder(uint64_t a, uint32_t b, uint64_t &quot) {
 # if CLICK_LINUXMODULE && BITS_PER_LONG < 64
     uint32_t rem = do_div(a, b);
     quot = a;
@@ -469,31 +469,31 @@ inline uint32_t int_divide(uint64_t a, uint32_t b, uint64_t &quot) {
 }
 
 /** @overload */
-inline uint32_t int_divide(int64_t a, uint32_t b, int64_t &quot) {
+inline uint32_t int_remainder(int64_t a, uint32_t b, int64_t &quot) {
 # if CLICK_LINUXMODULE && BITS_PER_LONG < 64
     if (unlikely(a < 0)) {
-	uint64_t a_abs = -(a + 1);
-	uint32_t rem = do_div(a_abs, b);
-	quot = (int64_t) -a_abs - 1;
-	return rem ? b - rem : 0;
+        uint64_t a_abs = -(a + 1);
+        uint32_t rem = do_div(a_abs, b);
+        quot = (int64_t) -a_abs - 1;
+        return rem ? b - rem : 0;
     } else {
-	uint64_t &a_unsigned = reinterpret_cast<uint64_t &>(a);
-	uint32_t rem = do_div(a_unsigned, b);
-	quot = a_unsigned;
-	return rem;
+        uint64_t &a_unsigned = reinterpret_cast<uint64_t &>(a);
+        uint32_t rem = do_div(a_unsigned, b);
+        quot = a_unsigned;
+        return rem;
     }
 # else
     // This arithmetic is about twice as fast on my laptop as the
     // alternative "div = a / b;
-    //		rem = a - (value_type) div * b;
-    //		if (rem < 0) div--, rem += b;",
+    //          rem = a - (value_type) div * b;
+    //          if (rem < 0) div--, rem += b;",
     // and 3-4x faster than "div = a / b;
-    //			 rem = a % b;
-    //			 if (rem < 0) div--, rem += b;".
+    //                   rem = a % b;
+    //                   if (rem < 0) div--, rem += b;".
     if (unlikely(a < 0))
-	quot = -(-(a + 1) / b) - 1;
+        quot = -(-(a + 1) / b) - 1;
     else
-	quot = a / b;
+        quot = a / b;
     return a - quot * b;
 # endif
 }

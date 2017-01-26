@@ -343,12 +343,6 @@ linux-2.6.16.13-patch
 linux-2.6.19.2-patch
 ns-2.30-patch
 ns-2.34-patch
-pkg-Makefile
-pkg-config.mk.in
-pkg-linuxmodule-26.mk
-pkg-linuxmodule.mk
-pkg-bsdmodule.mk
-pkg-userlevel.mk
 samplellrpc
 samplepackage
 
@@ -435,6 +429,7 @@ ipaddress.hh
 ipflowid.hh
 iptable.hh
 lexer.hh
+libdivide.h
 list.hh
 llrpc.h
 machine.hh
@@ -545,8 +540,8 @@ variableenv.cc
 ./linuxmodule:
 Makefile.in
 clickfs.cc
+click-linuxtool.pl
 config.cc
-fixincludes.pl
 kernelversion.c
 module.cc
 moduleparm.h
@@ -565,6 +560,17 @@ CUT_BinHeap.h
 Makefile.in
 nsclick-test.cc
 nsclick.cc
+
+./share:
+click
+
+./share/click:
+pkg-Makefile
+pkg-config.mk.in
+pkg-linuxmodule-26.mk
+pkg-linuxmodule.mk
+pkg-bsdmodule.mk
+pkg-userlevel.mk
 
 ./test:
 IPRewriter
@@ -752,6 +758,9 @@ xform-ip-01.testie
 ./test/userlevel:
 ControlSocket-llrpc-01.testie
 ControlSocket-llrpc-02.testie
+McastSocket-01.testie
+McastSocket-02.testie
+McastSocket-03.testie
 Script-signal-01.testie
 Script-signal-02.testie
 Script-signal-03.testie

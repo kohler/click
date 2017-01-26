@@ -13,10 +13,21 @@ dnl legally binding.
 
 AC_INIT([click], [2.1])
 AC_PREREQ(2.60)
-AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in include/click/config-minios.h:config-minios.h.in)
+AC_CONFIG_HEADERS([include/click/config.h:config.h.in], [echo > stamp-h])
+AC_CONFIG_HEADERS([include/click/pathvars.h:pathvars.h.in])
+AC_CONFIG_HEADERS([include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-ns.h:config-ns.h.in include/click/config-userlevel.h:config-userlevel.h.in include/click/config-minios.h:config-minios.h.in])
+AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([bin/click-buildtool:click-buildtool.in], [chmod +x bin/click-buildtool])
+AC_CONFIG_FILES([bin/click-compile:click-compile.in], [chmod +x bin/click-compile])
+AC_CONFIG_FILES([installch], [chmod +x installch])
+AC_CONFIG_FILES([share/click/config.mk:config.mk.in share/click/pkg-config.mk])
+AC_CONFIG_FILES([doc/Makefile etc/libclick/Makefile tools/Makefile tools/lib/Makefile])
 AC_CONFIG_SRCDIR([click-buildtool.in])
+ac_user_cxx=${CXX+y}
 
 CLICK_VERSION=$PACKAGE_VERSION
+dnl NB a real tab character!
+tabchar='	'
 
 AC_SUBST(ac_configure_args)
 AC_DEFINE_UNQUOTED([CLICK_VERSION], ["$CLICK_VERSION"])
@@ -123,6 +134,52 @@ if echo "$enable_select" | grep poll >/dev/null 2>&1 && test "$enable_poll" = ye
 fi
 if echo "$enable_select" | grep kqueue >/dev/null 2>&1 && test "$enable_kqueue" = yes; then
     AC_DEFINE([HAVE_ALLOW_KQUEUE], [1], [Define if kqueue() may be used to wait for file descriptor events.])
+fi
+
+AC_ARG_ENABLE([dpdk],
+    [AS_HELP_STRING([  --enable-dpdk], [use Intel DPDK])],
+    [:], [enable_dpdk=no])
+
+if test "x$enable_dpdk" = xyes; then
+    if test "x$enable_user_multithread" != xyes; then
+        AC_MSG_ERROR([
+=========================================
+
+--enable-dpdk requires --enable-user-multithread which was not provided.
+
+=========================================])
+    fi
+    if test ! -f "$RTE_SDK/$RTE_TARGET/include/rte_eal.h"; then
+        AC_MSG_ERROR([
+=========================================
+
+Cannot find \$RTE_SDK/\$RTE_TARGET/include/rte_eal.h for Intel DPDK.
+Define \$RTE_SDK and \$RTE_TARGET as per Intel DPDK documentation.
+
+=========================================])
+    fi
+    if test ! -f "$RTE_SDK/$RTE_TARGET/lib/librte_eal.a"; then
+        AC_MSG_ERROR([
+=========================================
+
+Cannot find \$RTE_SDK/\$RTE_TARGET/lib/librte_eal.a for Intel DPDK.
+Define \$RTE_SDK and \$RTE_TARGET as per Intel DPDK documentation.
+
+=========================================])
+    fi
+    rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
+    rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
+    rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
+    rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
+
+    AC_SUBST(RTE_SDK)
+    AC_SUBST(RTE_TARGET)
+    AC_SUBST(RTE_VER_MAJOR, $rte_ver_major)
+    AC_SUBST(RTE_VER_MINOR, $rte_ver_minor)
+    AC_SUBST(RTE_VER_YEAR, $rte_ver_year)
+    AC_SUBST(RTE_VER_MONTH, $rte_ver_month)
+    AC_DEFINE([HAVE_DPDK])
+    AC_SUBST(USE_DPDK, yes)
 fi
 
 
@@ -442,8 +499,8 @@ ELEMENTS_ARG_ENABLE(tcpudp, [include TCP and UDP elements], yes)
 ELEMENTS_ARG_ENABLE(test, [include regression test elements], yes)
 ELEMENTS_ARG_ENABLE(threads, [include thread management elements], yes)
 ELEMENTS_ARG_ENABLE(wifi, [include wifi elements and support], NO)
-AC_ARG_ENABLE(experimental, [  --enable-experimental   enable experimental elements in normal groups], :, enable_experimental=no)
-AC_ARG_ENABLE(skip-elements, [  --enable-skip-elements=ELTS disable comma-separated elements], :, enable_skip_elements=no)
+AC_ARG_ENABLE(experimental, [AS_HELP_STRING([--enable-experimental], [enable experimental elements in normal groups])], :, enable_experimental=no)
+AC_ARG_ENABLE(skip-elements, [AS_HELP_STRING([--enable-skip-elements=ELTS], [disable comma-separated elements])], :, enable_skip_elements=no)
 
 for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d;/^minios$/d')`; do
     enableval=`eval 'echo $'"enable_$i"`
@@ -558,7 +615,7 @@ AC_CHECK_SIZEOF([void *])
 CLICK_CHECK_INTEGER_TYPES
 CLICK_CHECK_ALIGNMENT
 if test "x$enable_int64" = xyes; then
-    AC_CHECK_SIZEOF(long long)
+    AC_CHECK_SIZEOF([long long])
     CLICK_CHECK_INT64_TYPES
 fi
 CLICK_CHECK_ENDIAN
@@ -571,15 +628,20 @@ dnl
 dnl timestamps
 dnl
 
-AC_CHECK_HEADERS([time.h])
+AC_CHECK_HEADERS_ONCE([time.h])
 AC_CHECK_SIZEOF([struct timeval])
-AC_CHECK_TYPES([struct timespec], have_timespec=yes, have_timespec=no)
+AC_CHECK_TYPES([struct timespec], [have_timespec=yes], [have_timespec=no],
+               [AC_INCLUDES_DEFAULT
+[#ifdef HAVE_TIME_H]
+[# include <time.h>]
+[#endif]])
 if test "x$have_timespec" = xyes; then
     AC_CHECK_SIZEOF([struct timespec])
 fi
 CLICK_CHECK_POSIX_CLOCKS
 
-AC_ARG_ENABLE(nanotimestamp, [  --enable-nanotimestamp  enable nanosecond timestamps])
+AC_ARG_ENABLE([nanotimestamp],
+    [AS_HELP_STRING([--enable-nanotimestamp], [enable nanosecond timestamps])])
 # Default to nanosecond-precision timestamps if clock_gettime is available.
 if test "x$enable_nanotimestamp" = x -a "x$have_clock_gettime" = xyes; then
     enable_nanotimestamp=yes
@@ -594,7 +656,7 @@ dnl check forms of port transfer
 dnl
 
 AC_ARG_ENABLE(bound-port-transfer,
-  [[  --enable-bound-port-transfer  enable port transfer function ptr optimization]],
+  [AS_HELP_STRING([--enable-bound-port-transfer], [enable port transfer function ptr optimization])],
   :, enable_bound_port_transfer=no)
 
 if test "$enable_bound_port_transfer" = yes; then
@@ -608,7 +670,7 @@ dnl check whether tools should be built for host or build
 dnl
 
 AC_ARG_ENABLE(tools,
-  [[  --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]]],
+  [AC_HELP_STRING([--enable-tools=WHERE], [enable tools (host/build/mixed/no) [[mixed]]])],
   :, enable_tools=mixed)
 
 if test "$enable_tools" != mixed -a "$enable_tools" != host -a "$enable_tools" != build -a "$enable_tools" != no; then
@@ -638,7 +700,7 @@ dnl
 dnl headers, event detection, dynamic linking
 dnl
 
-AC_CHECK_HEADERS([termio.h netdb.h sys/event.h pwd.h grp.h execinfo.h])
+AC_CHECK_HEADERS_ONCE([termio.h netdb.h sys/event.h pwd.h grp.h execinfo.h])
 CLICK_CHECK_POLL_H
 AC_CHECK_FUNCS([pselect sigaction])
 
@@ -653,7 +715,9 @@ if test "x$have_kqueue" = xyes; then
     fi
 fi
 
-AC_ARG_ENABLE(dynamic-linking, [  --disable-dynamic-linking disable dynamic linking], :, enable_dynamic_linking=yes)
+AC_ARG_ENABLE(dynamic-linking,
+  [AS_HELP_STRING([--disable-dynamic-linking], [disable dynamic linking])],
+  :, enable_dynamic_linking=yes)
 
 if test "x$enable_dynamic_linking" = xyes; then
     CLICK_CHECK_DYNAMIC_LINKING
@@ -700,7 +764,7 @@ dnl mmap
 dnl
 
 AC_LANG_C
-AC_CHECK_HEADERS(sys/mman.h)
+AC_CHECK_HEADERS_ONCE([sys/mman.h])
 AC_FUNC_MMAP
 AC_LANG_CPLUSPLUS
 AC_CHECK_FUNCS(madvise)
@@ -799,7 +863,7 @@ else
 fi
 
 LINUXMODULE_2_6=0
-if test "$linux_version.$linux_patchlevel" = 2.6 -o "$linux_version" = 3; then
+if test "$linux_version.$linux_patchlevel" = 2.6 -o "$linux_version" -ge 3; then
     LINUXMODULE_2_6=1
     AC_DEFINE([HAVE_LINUXMODULE_2_6], [1], [Define if the Click linuxmodule is compiled for a 2.6 or later kernel.])
 fi
@@ -808,13 +872,13 @@ if test "$LINUXMODULE_2_6" = 0; then
 =========================================
 
 Click no longer supports in-kernel compilation on Linux 2.4 kernels.
-Try an older version of Click.
+Update your Linux or try an older version of Click.
 
 =========================================])
 fi
 AC_SUBST(LINUXMODULE_2_6)
 
-AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
+AC_CACHE_CHECK([for Click Linux kernel extensions], ac_cv_click_kernel,
 [if grep "register_net_in" $linux_system_map >/dev/null 2>&1; then
     ac_cv_click_kernel=yes
 else ac_cv_click_kernel=no; fi])
@@ -822,7 +886,7 @@ if test $ac_cv_click_kernel = yes; then
     AC_DEFINE(HAVE_CLICK_KERNEL)
 fi
 
-AC_CACHE_CHECK(for Click Linux kernel extensions for transmit notification, ac_cv_click_kernel_tx_notify,
+AC_CACHE_CHECK([for Click Linux kernel extensions for transmit notification], ac_cv_click_kernel_tx_notify,
 [if grep "register_net_tx" $linux_system_map >/dev/null 2>&1; then
     ac_cv_click_kernel_tx_notify=yes
 else ac_cv_click_kernel_tx_notify=no; fi])
@@ -830,7 +894,7 @@ if test $ac_cv_click_kernel_tx_notify = yes; then
     AC_DEFINE(HAVE_CLICK_KERNEL_TX_NOTIFY)
 fi
 
-AC_CACHE_CHECK(for read_net_skbcount kernel extension, ac_cv_linux_read_net_skbcount,
+AC_CACHE_CHECK([for read_net_skbcount kernel extension], ac_cv_linux_read_net_skbcount,
 [if grep "read_net_skbcount" $linux_system_map >/dev/null 2>&1; then
   ac_cv_linux_read_net_skbcount=yes
 else ac_cv_linux_read_net_skbcount=no; fi])
@@ -838,7 +902,7 @@ if test $ac_cv_linux_read_net_skbcount = yes; then
     AC_DEFINE(HAVE_LINUX_READ_NET_SKBCOUNT)
 fi
 
-AC_CACHE_CHECK(for strlen kernel symbol, ac_cv_linux_strlen_exposed,
+AC_CACHE_CHECK([for strlen kernel symbol], ac_cv_linux_strlen_exposed,
 [if grep ' strlen' $linux_system_map >/dev/null 2>&1; then
   ac_cv_linux_strlen_exposed=yes
 else ac_cv_linux_strlen_exposed=no; fi])
@@ -846,7 +910,7 @@ if test $ac_cv_linux_strlen_exposed = yes; then
     AC_DEFINE(HAVE_LINUX_STRLEN_EXPOSED)
 fi
 
-AC_CACHE_CHECK(for tulip_interrupt_hook kernel symbol, ac_cv_linux_tulip_intr_hook,
+AC_CACHE_CHECK([for tulip_interrupt_hook kernel symbol], ac_cv_linux_tulip_intr_hook,
 [if grep ' tulip_interrupt_hook' $linux_system_map >/dev/null 2>&1; then
   ac_cv_linux_tulip_intr_hook=yes
 else ac_cv_linux_tulip_intr_hook=no; fi])
@@ -854,7 +918,7 @@ if test $ac_cv_linux_tulip_intr_hook = yes; then
     AC_DEFINE(HAVE_LINUX_TULIP_INTERRUPT_HOOK)
 fi
 
-AC_CACHE_CHECK(for files_lock kernel symbol, ac_cv_linux_files_lock,
+AC_CACHE_CHECK([for files_lock kernel symbol], ac_cv_linux_files_lock,
 [if grep "__ksymtab_files_lock" $linux_system_map >/dev/null 2>&1; then
     ac_cv_linux_files_lock=yes
 else ac_cv_linux_files_lock=no; fi])
@@ -862,7 +926,7 @@ if test $ac_cv_linux_files_lock = yes; then
     AC_DEFINE(HAVE_LINUX_FILES_LOCK)
 fi
 
-AC_CACHE_CHECK(for files_lglock kernel symbol, ac_cv_linux_files_lglock,
+AC_CACHE_CHECK([for files_lglock kernel symbol], ac_cv_linux_files_lglock,
 [if grep "__ksymtab_files_lglock" $linux_system_map >/dev/null 2>&1; then
     ac_cv_linux_files_lglock=yes
 else ac_cv_linux_files_lglock=no; fi])
@@ -870,7 +934,7 @@ if test $ac_cv_linux_files_lglock = yes; then
     AC_DEFINE(HAVE_LINUX_FILES_LGLOCK)
 fi
 
-AC_CACHE_CHECK(for sb_lock kernel symbol, ac_cv_linux_sb_lock,
+AC_CACHE_CHECK([for sb_lock kernel symbol], ac_cv_linux_sb_lock,
 [if grep "__ksymtab_sb_lock" $linux_system_map >/dev/null 2>&1; then
     ac_cv_linux_sb_lock=yes
 else ac_cv_linux_sb_lock=no; fi])
@@ -878,7 +942,7 @@ if test $ac_cv_linux_sb_lock = yes; then
     AC_DEFINE(HAVE_LINUX_SB_LOCK)
 fi
 
-AC_CACHE_CHECK(for dev_ioctl kernel symbol, ac_cv_linux_dev_ioctl,
+AC_CACHE_CHECK([for dev_ioctl kernel symbol], ac_cv_linux_dev_ioctl,
 [if grep "__ksymtab_dev_ioctl" $linux_system_map >/dev/null 2>&1; then
     ac_cv_linux_dev_ioctl=yes
 else ac_cv_linux_dev_ioctl=no; fi])
@@ -886,7 +950,7 @@ if test $ac_cv_linux_dev_ioctl = yes; then
     AC_DEFINE(HAVE_LINUX_DEV_IOCTL)
 fi
 
-AC_CACHE_CHECK(for devinet_ioctl kernel symbol, ac_cv_linux_devinet_ioctl,
+AC_CACHE_CHECK([for devinet_ioctl kernel symbol], ac_cv_linux_devinet_ioctl,
 [if grep "__ksymtab_devinet_ioctl" $linux_system_map >/dev/null 2>&1; then
     ac_cv_linux_devinet_ioctl=yes
 else ac_cv_linux_devinet_ioctl=no; fi])
@@ -894,7 +958,7 @@ if test $ac_cv_linux_devinet_ioctl = yes; then
     AC_DEFINE(HAVE_LINUX_DEVINET_IOCTL)
 fi
 
-AC_CACHE_CHECK(for inet_ioctl kernel symbol, ac_cv_linux_inet_ioctl,
+AC_CACHE_CHECK([for inet_ioctl kernel symbol], ac_cv_linux_inet_ioctl,
 [if grep "__ksymtab_inet_ioctl" $linux_system_map >/dev/null 2>&1; then
     ac_cv_linux_inet_ioctl=yes
 else ac_cv_linux_inet_ioctl=no; fi])
@@ -902,7 +966,7 @@ if test $ac_cv_linux_inet_ioctl = yes; then
     AC_DEFINE(HAVE_LINUX_INET_IOCTL)
 fi
 
-AC_CACHE_CHECK(for inet_ctl_sock_create kernel symbol, ac_cv_linux_inet_ctl_sock_create,
+AC_CACHE_CHECK([for inet_ctl_sock_create kernel symbol], ac_cv_linux_inet_ctl_sock_create,
 [if grep "__ksymtab_inet_ctl_sock_create" $linux_system_map >/dev/null 2>&1; then
     ac_cv_linux_inet_ctl_sock_create=yes
 else ac_cv_linux_inet_ctl_sock_create=no; fi])
@@ -910,7 +974,7 @@ if test $ac_cv_linux_inet_ctl_sock_create = yes; then
     AC_DEFINE(HAVE_LINUX_INET_CTL_SOCK_CREATE)
 fi
 
-AC_CACHE_CHECK(for <linux/ktime.h>, ac_cv_linux_ktime_h,
+AC_CACHE_CHECK([for <linux/ktime.h>], ac_cv_linux_ktime_h,
 [if grep ktime_t `find_linuxpath include/linux/ktime.h` >/dev/null 2>&1; then
   ac_cv_linux_ktime_h=yes
 else ac_cv_linux_ktime_h=no; fi])
@@ -981,7 +1045,7 @@ dnl
 
 dnl statistics
 
-AC_ARG_ENABLE(stats, [[  --enable-stats[=LEVEL]  enable statistics collection]], :, enable_stats=no)
+AC_ARG_ENABLE([stats], [AS_HELP_STRING([--enable-stats[[=LEVEL]]], [enable statistics collection])], :, enable_stats=no)
 if test "$enable_stats" = no; then enable_stats=0; fi
 if test "$enable_stats" = yes; then enable_stats=1; fi
 if test "$enable_stats" -ge 0 > /dev/null 2>&1; then
@@ -997,12 +1061,12 @@ fi
 
 dnl type of scheduling
 
-AC_ARG_ENABLE(stride, [  --disable-stride        disable stride scheduler], :, enable_stride=yes)
+AC_ARG_ENABLE([stride], [AS_HELP_STRING([--disable-stride], [disable stride scheduler])], :, enable_stride=yes)
 if test $enable_stride = yes; then
     AC_DEFINE(HAVE_STRIDE_SCHED)
 fi
 
-AC_ARG_ENABLE(task-heap, [  --enable-task-heap      use heap for task list], :, enable_task_heap=no)
+AC_ARG_ENABLE([task-heap], [AS_HELP_STRING([--enable-task-heap], [use heap for task list])], :, enable_task_heap=no)
 if test $enable_task_heap = yes -a $enable_stride = yes; then
     AC_DEFINE(HAVE_TASK_HEAP)
 elif test $enable_task_heap = yes; then
@@ -1017,7 +1081,7 @@ fi
 
 dnl debugging malloc
 
-AC_ARG_ENABLE(dmalloc, [  --enable-dmalloc        enable debugging malloc], :, enable_dmalloc=no)
+AC_ARG_ENABLE([dmalloc], [AS_HELP_STRING([--enable-dmalloc], [enable debugging malloc])], :, enable_dmalloc=no)
 if test $enable_dmalloc = yes; then
     AC_DEFINE([CLICK_DMALLOC], [1], [Define for Click memory allocation debugging.])
 fi
@@ -1025,7 +1089,7 @@ fi
 
 dnl valgrind debugging support
 
-AC_ARG_ENABLE(valgrind, [  --enable-valgrind       extra support for debugging with valgrind], :, enable_valgrind=no)
+AC_ARG_ENABLE([valgrind], [AS_HELP_STRING([--enable-valgrind], [extra support for debugging with valgrind])], :, enable_valgrind=no)
 if test $enable_valgrind = yes; then
     AC_CHECK_HEADERS(valgrind/memcheck.h, ac_found_valgrind_memcheck_h=yes, ac_found_valgrind_memcheck_h=no)
     if test $ac_found_valgrind_memcheck_h = no; then
@@ -1044,7 +1108,7 @@ fi
 
 dnl Click debugging support
 
-AC_ARG_ENABLE(schedule-debugging, [[  --enable-schedule-debugging[=WHAT] enable Click scheduler debugging
+AC_ARG_ENABLE([schedule-debugging], [[  --enable-schedule-debugging[=WHAT] enable Click scheduler debugging
                           (no/yes/extra) [yes]]], :, enable_schedule_debugging=no)
 value=0
 if test "$enable_schedule_debugging" = yes; then
@@ -1059,7 +1123,7 @@ fi
 
 dnl use Intel-specific machine instructions
 
-AC_ARG_ENABLE(intel-cpu, [  --enable-intel-cpu      enable Intel-specific machine instructions], :, enable_intel_cpu=no)
+AC_ARG_ENABLE([intel-cpu], [AS_HELP_STRING([--enable-intel-cpu], [enable Intel-specific machine instructions])], :, enable_intel_cpu=no)
 if test $enable_intel_cpu = yes; then
     AC_DEFINE(HAVE_INTEL_CPU)
 fi
@@ -1114,7 +1178,7 @@ dnl
 dnl kernel interfaces
 dnl
 
-AC_CHECK_HEADERS([ifaddrs.h linux/if_tun.h net/if_dl.h net/if_tap.h net/if_tun.h net/if_types.h net/bpf.h netpacket/packet.h])
+AC_CHECK_HEADERS_ONCE([ifaddrs.h linux/if_tun.h net/if_dl.h net/if_tap.h net/if_tun.h net/if_types.h net/bpf.h netpacket/packet.h])
 
 
 dnl
@@ -1327,18 +1391,14 @@ Can't find Linux compilation flags.
             dnl ' fix syntax highlighting
         fi
         echo "$lCPPFLAGS $lCFLAGS $lLINUXINCLUDE $lKBUILD_CPPFLAGS $lKBUILD_CFLAGS" >conftest.dat
-        LINUX_CFLAGS="`sed -e 's,-Iinclude ',-I$linux_builddir/include' ,g' \
-            -e 's,-Iinclude2 ',-I$linux_builddir/include2' ,g' \
-            -e 's,-Iarch/',-I$linux_builddir/arch/',g' \
-            -e 's, include/, '$linux_builddir/include/,g \
-            -e s,-Iinclude/,-I${linux_srcdir}include/,g \
-            -e s,-Wno-pointer-sign,,g \
+        LINUX_CFLAGS="`sed -e s,-Wno-pointer-sign,,g \
             -e s,-fno-unit-at-a-time,,g \
             -e s,-Wstrict-prototypes,,g \
             -e s,-Wdeclaration-after-statement,,g \
             -e s,-fno-common,,g \
+            -e 's,-std=[[-a-z0-9+]]*,,g' \
             -e s,-Werror-implicit-function-declaration,,g \
-            -e 's,-W[^ ]*,,g' <conftest.dat`"
+            -e 's,-W[[^ ]]*,,g' <conftest.dat`"
         AC_MSG_RESULT($LINUX_CFLAGS)
         LINUX_DEBUG_FLAGS="$ldebug_flags"
     fi
@@ -1347,19 +1407,21 @@ Can't find Linux compilation flags.
     CLICKLINUX_FIXINCLUDES_PROGRAM=
     if test "$LINUXMODULE_FIXINCLUDES" = 1; then
         AC_MSG_NOTICE([making C++-safe versions of Linux kernel headers (may take a while)])
-        mydir="`pwd`/include/click-linuxmodule"
-        $srcdir/linuxmodule/fixincludes.pl -o "$mydir" $LINUX_CFLAGS >conftest.dat
+        mydir="`pwd`"
+        mysrcdir="$srcdir"
+        if expr $mysrcdir : / >/dev/null; then :; else mysrcdir="$mydir/$srcdir"; fi
+        (cd $linux_builddir; $mysrcdir/linuxmodule/click-linuxtool.pl -o "$mydir/include/click-linuxmodule" $LINUX_CFLAGS) >conftest.dat
         if test $? != 0; then
             AC_MSG_ERROR([
 ==============================================
 
-fixincludes.pl execution failed.
+click-linuxtool.pl execution failed.
 
 ==============================================])
         fi
         LINUX_CFLAGS="`head -n 1 conftest.dat`"
         LINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat`"
-        CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s       $mydir  $clickbuild_includedir/click-linuxmodule        g"`"
+        CLICKLINUX_FIXINCLUDES_PROGRAM="| sed `tail -n 1 conftest.dat | sed -e "s$tabchar$mydir/include/click-linuxmodule$tabchar$clickbuild_includedir/click-linuxmodule${tabchar}g"`"
     fi
     AC_SUBST([LINUX_FIXINCLUDES_PROGRAM])
     AC_SUBST([CLICKLINUX_FIXINCLUDES_PROGRAM])
@@ -1389,7 +1451,6 @@ fixincludes.pl execution failed.
 #define class linux_class
 #define virtual linux_virtual
 #define typename linux_typename
-#define private linux_private
 #define protected linux_protected
 #define public linux_public
 #define namespace linux_namespace
@@ -1421,11 +1482,11 @@ Your Linux kernel header files cause errors when included by a C++ program,
 so I won't try to compile the linuxmodule driver.
 
 Click modifies the Linux kernel's header files to make them work with
-C++, using the program 'linuxmodule/fixincludes.pl'. It looks like
-your kernel header files have features that 'linuxmodule/fixincludes.pl'
-doesn't know how to fix. You can report this error to us on the Click
-mailing list, or, even better, try to fix the error. See the config.log
-file for more information on the error.
+C++, using the program 'linuxmodule/click-linuxtool.pl'. It looks like
+your kernel header files have features the tool doesn't know how to fix.
+You can report this error to us via a Github issue, or, even better,
+try to fix the error. See the config.log file for more information on the
+error.
 
 =========================================])
         dnl ' fix syntax highlighting
@@ -1436,11 +1497,11 @@ file for more information on the error.
 Your Linux kernel header files cause errors when included by a C++ program.
 
 Click modifies the Linux kernel's header files to make them work with
-C++, using the program 'linuxmodule/fixincludes.pl'. It looks like
-your kernel header files have features that 'linuxmodule/fixincludes.pl'
-doesn't know how to fix. You can report this error to us on the Click
-mailing list, or, even better, try to fix the error. See the config.log
-file for more information on the error.
+C++, using the program 'linuxmodule/click-linuxtool.pl'. It looks like
+your kernel header files have features that tool doesn't know how to fix.
+You can report this error to us on the Click mailing list, or, even better,
+try to fix the error. See the config.log file for more information on the
+error.
 
 =========================================])
     fi
@@ -1515,6 +1576,16 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
         AC_DEFINE([HAVE_LINUX_ASM_ALTERNATIVE_H], [1], [Define if you have the <asm/alternative.h> header file.])
     fi
 
+    AC_CACHE_CHECK([for <asm/scatterlist.h>], [ac_cv_linux_asm_scatterlist_h],
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <asm/scatterlist.h>]],
+[[]])],
+        [ac_cv_linux_asm_scatterlist_h=yes], [ac_cv_linux_asm_scatterlist_h=no])])
+    if test $ac_cv_linux_asm_scatterlist_h = yes; then
+        AC_DEFINE([HAVE_LINUX_ASM_SCATTERLIST_H], [1], [Define if you have the <asm/scatterlist.h> header file.])
+    fi
+
     AC_CACHE_CHECK([for <asm/system.h>], [ac_cv_linux_asm_system_h],
         [AC_LANG_C
         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
@@ -1525,12 +1596,18 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
         AC_DEFINE([HAVE_LINUX_ASM_SYSTEM_H], [1], [Define if you have the <asm/system.h> header file.])
     fi
 
+    AC_CHECK_DECL([set_cpus_allowed_ptr], [ac_cv_linux_set_cpus_allowed_ptr=yes], [ac_cv_linux_set_cpus_allowed_ptr=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/sched.h>]])
+    if test $ac_cv_linux_set_cpus_allowed_ptr = yes; then
+        AC_DEFINE([HAVE_LINUX_SET_CPUS_ALLOWED_PTR], [1], [Define if your Linux kernel has set_cpus_allowed_ptr.])
+    fi
+
 
     dnl Linux kernel network configuration
 
+    AC_LANG_CPLUSPLUS
     AC_CACHE_CHECK([whether struct sk_buff has a security member], [ac_cv_linuxmodule_skbuff_security],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; s->security = 0;]])],
         [ac_cv_linuxmodule_skbuff_security=yes], [ac_cv_linuxmodule_skbuff_security=no])])
@@ -1539,8 +1616,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether struct sk_buff has an fclone member], [ac_cv_linuxmodule_skbuff_fclone],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; s->fclone = 0;]])],
         [ac_cv_linuxmodule_skbuff_fclone=yes], [ac_cv_linuxmodule_skbuff_fclone=no])])
@@ -1549,8 +1625,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has a tso_size member], [ac_cv_linuxmodule_skb_shinfo_tso_size],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->tso_size = 0;]])],
         [ac_cv_linuxmodule_skb_shinfo_tso_size=yes], [ac_cv_linuxmodule_skb_shinfo_tso_size=no])])
@@ -1559,8 +1634,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has a gso_size member], [ac_cv_linuxmodule_skb_shinfo_gso_size],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->gso_size = 0;]])],
         [ac_cv_linuxmodule_skb_shinfo_gso_size=yes], [ac_cv_linuxmodule_skb_shinfo_gso_size=no])])
@@ -1569,8 +1643,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has a ufo_size member], [ac_cv_linuxmodule_skb_shinfo_ufo_size],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->ufo_size = 0;]])],
         [ac_cv_linuxmodule_skb_shinfo_ufo_size=yes], [ac_cv_linuxmodule_skb_shinfo_ufo_size=no])])
@@ -1579,8 +1652,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has an ip6_frag_id member], [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->ip6_frag_id = 0;]])],
         [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=yes], [ac_cv_linuxmodule_skb_shinfo_ip6_frag_id=no])])
@@ -1589,18 +1661,16 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([whether skb_shinfo has tx_flags defining SKBTX_DEV_ZEROCOPY], [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->tx_flags = SKBTX_DEV_ZEROCOPY;]])],
         [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=yes], [ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy=no])])
     if test $ac_cv_linuxmodule_skb_shinfo_tx_flags_skbtx_dev_zerocopy = yes; then
-        AC_DEFINE([HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY], [1], [Define if 'struct skb_shared_info' has an 'tx_flags' member defining 'SKBTX_DEV_ZEROCOPY'.])
+        AC_DEFINE([HAVE_LINUX_SKB_SHINFO_TX_FLAGS_SKBTX_DEV_ZEROCOPY], [1], [Define if 'struct skb_shared_info' has a 'tx_flags' member defining 'SKBTX_DEV_ZEROCOPY'.])
     fi
 
-    AC_CACHE_CHECK([whether skb_shinfo has tx_flags.flags], [ac_cv_linuxmodule_skb_shinfo_tx_flags_union],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+    AC_CACHE_CHECK([whether skb_shinfo has a tx_flags union], [ac_cv_linuxmodule_skb_shinfo_tx_flags_union],
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *s; skb_shinfo(s)->tx_flags.flags = 0;]])],
         [ac_cv_linuxmodule_skb_shinfo_tx_flags_union=yes], [ac_cv_linuxmodule_skb_shinfo_tx_flags_union=no])])
@@ -1609,8 +1679,7 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
     fi
 
     AC_CACHE_CHECK([for device polling kernel extension], [ac_cv_linuxmodule_net_device_polling],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/netdevice.h>]],
 [[extern struct net_device *d; d->polling = 0;]])],
         [ac_cv_linuxmodule_net_device_polling=yes], [ac_cv_linuxmodule_net_device_polling=no])])
@@ -1630,12 +1699,17 @@ void f1(int64_t) { // will fail if long long and int64_t are the same type
         AC_DEFINE([HAVE_SKB_RECYCLE], [1], [Define if you have the skb_recycle function.])
     fi
 
+    AC_CHECK_DECL([skb_recycle_check], [ac_cv_skb_recycle_check=yes], [ac_cv_skb_recycle_check=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/skbuff.h>]])
+    if test $ac_cv_skb_recycle_check = yes; then
+        AC_DEFINE([HAVE_SKB_RECYCLE_CHECK], [1], [Define if you have the skb_recycle_check function.])
+    fi
+
 save_cflags="$CFLAGS"
 CFLAGS="$save_cflags -Werror-implicit-function-declaration"
 
     AC_CACHE_CHECK([whether skb_recycle returns an sk_buff], [ac_cv_linuxmodule_click_skb_recycle],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>]],
 [[extern struct sk_buff *b; b = skb_recycle(b);]])],
         [ac_cv_linuxmodule_click_skb_recycle=yes], [ac_cv_linuxmodule_click_skb_recycle=no])])
@@ -1652,8 +1726,7 @@ CFLAGS="$save_cflags"
     fi
 
     AC_CACHE_CHECK([whether netif_receive_skb has been extended], [ac_cv_linuxmodule_netif_receive_skb_extended],
-        [AC_LANG_C
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/netdevice.h>]],
 [[netif_receive_skb(0, 0, 0);]])],
         [ac_cv_linuxmodule_netif_receive_skb_extended=yes], [ac_cv_linuxmodule_netif_receive_skb_extended=no])])
@@ -1661,7 +1734,6 @@ CFLAGS="$save_cflags"
         AC_DEFINE([HAVE_NETIF_RECEIVE_SKB_EXTENDED], [1], [Define if netif_receive_skb takes 3 arguments.])
     fi
 
-    AC_LANG_C
     AC_CHECK_DECL(net_enable_timestamp, [ac_cv_net_enable_timestamp=yes], [ac_cv_net_enable_timestamp=no], [CLICK_LINUXMODULE_PROLOGUE()[
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>]])
@@ -1716,11 +1788,19 @@ CFLAGS="$save_cflags"
     dnl Linux kernel time configuration
 
     AC_CACHE_CHECK([for get_monotonic_coarse kernel symbol], [ac_cv_linux_get_monotonic_coarse],
-    [if grep "__ksymtab_get_monotonic_coarse" $linux_system_map >/dev/null 2>&1; then
+    [if grep '__ksymtab_get_monotonic_coarse$' $linux_system_map >/dev/null 2>&1; then
         ac_cv_linux_get_monotonic_coarse=yes
     else ac_cv_linux_get_monotonic_coarse=no; fi])
     if test $ac_cv_linux_get_monotonic_coarse = yes; then
         AC_DEFINE(HAVE_LINUX_GET_MONOTONIC_COARSE)
+    fi
+
+    AC_CACHE_CHECK([for ktime_mono_to_any kernel symbol], [ac_cv_linux_ktime_mono_to_any],
+    [if grep '__ksymtab_ktime_mono_to_any$' $linux_system_map >/dev/null 2>&1; then
+        ac_cv_linux_ktime_mono_to_any=yes
+    else ac_cv_linux_ktime_mono_to_any=no; fi])
+    if test $ac_cv_linux_ktime_mono_to_any = yes; then
+        AC_DEFINE(HAVE_LINUX_KTIME_MONO_TO_ANY)
     fi
 
     AC_CACHE_CHECK([for getboottime kernel symbol], [ac_cv_linux_getboottime],
@@ -1745,9 +1825,21 @@ CFLAGS="$save_cflags"
     fi
 
     AC_CHECK_DECL([d_make_root], [ac_cv_linux_d_make_root=yes], [ac_cv_linux_d_make_root=no], [CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/fs.h>
 #include <linux/dcache.h>]])
     if test $ac_cv_linux_d_make_root = yes; then
         AC_DEFINE([HAVE_LINUX_D_MAKE_ROOT], [1], [Define if you have the d_make_root function.])
+    fi
+
+    AC_CACHE_CHECK([whether struct dentry has a d_child member], [ac_cv_linuxmodule_dentry_d_child],
+        [AC_LANG_C
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([CLICK_LINUXMODULE_PROLOGUE()[
+#include <linux/fs.h>
+#include <linux/dcache.h>]],
+[[extern struct dentry* de; de->d_child.next = 0;]])],
+        [ac_cv_linuxmodule_dentry_d_child=yes], [ac_cv_linuxmodule_dentry_d_child=no])])
+    if test $ac_cv_linuxmodule_dentry_d_child = yes; then
+        AC_DEFINE([HAVE_LINUX_DENTRY_D_CHILD], [1], [Define if 'struct dentry' has a 'd_child' member.])
     fi
 
     fi dnl ac_cv_cxx_aware_system
@@ -1936,6 +2028,11 @@ if test "x$enable_analysis" = xyes; then
     provisions="$provisions analysis"
 fi
 
+dnl add 'dpdk' if compiled with --enable-dpdk
+if test "x$enable_dpdk" = xyes; then
+    provisions="$provisions dpdk"
+fi
+
 dnl add 'experimental' if --enable-experimental was supplied
 if test "x$enable_experimental" = xyes; then
     provisions="$provisions experimental"
@@ -1998,26 +2095,28 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile click-buildtool click-compile config.mk installch tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile etc/pkg-config.mk"
-for ac_dir in $POSSIBLE_DRIVERS; do
-    config_files="$config_files $ac_dir/Makefile"
-    if test "$ac_dir" = minios; then
-        config_files="$config_files $ac_dir/config.mk"
-    fi
-done
-for ac_dir in $TOOLDIRS; do
-    config_files="$config_files tools/$ac_dir/Makefile"
-done
-for ac_dir in etc include; do
+test -f $srcdir/bsdmodule/Makefile.in && AC_CONFIG_FILES([bsdmodule/Makefile])
+test -f $srcdir/linuxmodule/Makefile.in && AC_CONFIG_FILES([linuxmodule/Makefile])
+test -f $srcdir/minios/Makefile.in && AC_CONFIG_FILES([minios/Makefile minios/config.mk])
+test -f $srcdir/ns/Makefile.in && AC_CONFIG_FILES([ns/Makefile])
+test -f $srcdir/userlevel/Makefile.in && AC_CONFIG_FILES([userlevel/Makefile])
+
+test -d $srcdir/tools/click-align && AC_CONFIG_FILES([tools/click-align/Makefile])
+test -d $srcdir/tools/click-check && AC_CONFIG_FILES([tools/click-check/Makefile])
+test -d $srcdir/tools/click-combine && AC_CONFIG_FILES([tools/click-combine/Makefile])
+test -d $srcdir/tools/click-devirtualize && AC_CONFIG_FILES([tools/click-devirtualize/Makefile])
+test -d $srcdir/tools/click-fastclassifier && AC_CONFIG_FILES([tools/click-fastclassifier/Makefile])
+test -d $srcdir/tools/click-flatten && AC_CONFIG_FILES([tools/click-flatten/Makefile])
+test -d $srcdir/tools/click-install && AC_CONFIG_FILES([tools/click-install/Makefile])
+test -d $srcdir/tools/click-ipopt && AC_CONFIG_FILES([tools/click-ipopt/Makefile])
+test -d $srcdir/tools/click-mkmindriver && AC_CONFIG_FILES([tools/click-mkmindriver/Makefile])
+test -d $srcdir/tools/click-pretty && AC_CONFIG_FILES([tools/click-pretty/Makefile])
+test -d $srcdir/tools/click-undead && AC_CONFIG_FILES([tools/click-undead/Makefile])
+test -d $srcdir/tools/click-xform && AC_CONFIG_FILES([tools/click-xform/Makefile])
+test -d $srcdir/tools/click2xml && AC_CONFIG_FILES([tools/click2xml/Makefile])
+
+for ac_dir in bin etc include share share/click; do
     test ! -d "$ac_dir" && mkdir "$ac_dir"
 done
 
-AC_OUTPUT_COMMANDS([for ac_file in $CONFIG_HEADERS; do
-    test $ac_file = include/click/config.h:config.h.in && echo > stamp-h
-done
-for ac_file in $CONFIG_FILES; do
-    test $ac_file = click-buildtool && chmod +x click-buildtool
-    test $ac_file = click-compile && chmod +x click-compile
-    test $ac_file = installch && chmod +x installch
-done])
-AC_OUTPUT($config_files)
+AC_OUTPUT

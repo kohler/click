@@ -31,9 +31,9 @@ class ArgContext { public:
     /** @brief Construct an argument context.
      * @param errh optional error handler */
     ArgContext(ErrorHandler *errh = 0)
-	: _errh(errh), _arg_keyword(0), _read_status(false) {
+        : _errh(errh), _arg_keyword(0), _read_status(false) {
 #if !CLICK_TOOL
-	_context = 0;
+        _context = 0;
 #endif
     }
 
@@ -42,18 +42,18 @@ class ArgContext { public:
      * @param context optional element context
      * @param errh optional error handler */
     ArgContext(const Element *context, ErrorHandler *errh = 0)
-	: _context(context), _errh(errh), _arg_keyword(0), _read_status(false) {
+        : _context(context), _errh(errh), _arg_keyword(0), _read_status(false) {
     }
 
     /** @brief Return the element context. */
     const Element *context() const {
-	return _context;
+        return _context;
     }
 #endif
 
     /** @brief Return the associated error handler. */
     ErrorHandler *errh() const {
-	return _errh;
+        return _errh;
     }
 
     /** @brief Return a prefix string associated with the current argument.
@@ -98,37 +98,37 @@ struct Args_parse_helper;
 template <typename P> struct Args_parse_helper<P, false> {
     template <typename T, typename A>
     static inline T *slot(T &variable, A &args) {
-	return args.slot(variable);
+        return args.slot(variable);
     }
     template <typename T, typename A>
     static inline T *initialized_slot(T &variable, A &args) {
-	return args.initialized_slot(variable);
+        return args.initialized_slot(variable);
     }
     template <typename T, typename A>
     static inline bool parse(P parser, const String &str, T &s, A &args) {
-	return parser.parse(str, s, args);
+        return parser.parse(str, s, args);
     }
     template <typename T1, typename T2, typename A>
     static inline bool parse(P parser, const String &str, T1 &s1, T2 &s2, A &args) {
-	return parser.parse(str, s1, s2, args);
+        return parser.parse(str, s1, s2, args);
     }
 };
 template <typename P> struct Args_parse_helper<P, true> {
     template <typename T, typename A>
     static inline T *slot(T &variable, A &) {
-	return &variable;
+        return &variable;
     }
     template <typename T, typename A>
     static inline T *initialized_slot(T &variable, A &) {
-	return &variable;
+        return &variable;
     }
     template <typename T, typename A>
     static inline bool parse(P parser, const String &str, T &s, A &args) {
-	return parser.direct_parse(str, s, args);
+        return parser.direct_parse(str, s, args);
     }
     template <typename T1, typename T2, typename A>
     static inline bool parse(P parser, const String &str, T1 &s1, T2 &s2, A &args) {
-	return parser.direct_parse(str, s1, s2, args);
+        return parser.direct_parse(str, s1, s2, args);
     }
 };
 /** @endcond never */
@@ -269,7 +269,7 @@ class Args : public ArgContext {
      * @param context optional element context
      * @param errh optional error handler */
     Args(const Vector<String> &conf, const Element *context,
-	 ErrorHandler *errh = 0);
+         ErrorHandler *errh = 0);
 #endif
 
 
@@ -287,22 +287,22 @@ class Args : public ArgContext {
 
     /** @brief Return true iff this parser has no arguments or results. */
     bool empty() const {
-	return (!_conf || !_conf->size()) && !_slots && _simple_slotbuf[0] == 0;
+        return (!_conf || !_conf->size()) && !_slots && _simple_slotbuf[0] == 0;
     }
 
     /** @brief Return true iff this parser has no results. */
     bool results_empty() const {
-	return !_slots && _simple_slotbuf[0] == 0;
+        return !_slots && _simple_slotbuf[0] == 0;
     }
 
 
     /** @brief Remove all arguments.
      * @return *this */
     Args &clear() {
-	if (_conf)
-	    _conf->clear();
-	_kwpos.clear();
-	return *this;
+        if (_conf)
+            _conf->clear();
+        _kwpos.clear();
+        return *this;
     }
 
     /** @brief Bind this parser's arguments to @a conf.
@@ -319,11 +319,11 @@ class Args : public ArgContext {
     /** @brief Append arguments in the range [@a begin, @a end) to this parser.
      * @return *this */
     template<typename Iter> Args &push_back(Iter begin, Iter end) {
-	while (begin != end) {
-	    push_back(*begin);
-	    ++begin;
-	}
-	return *this;
+        while (begin != end) {
+            push_back(*begin);
+            ++begin;
+        }
+        return *this;
     }
 
     /** @brief Append the space-separated words in @a str to this parser.
@@ -348,8 +348,8 @@ class Args : public ArgContext {
      * @endcode
      * Results are not affected. */
     Args &reset() {
-	reset_from(0);
-	return *this;
+        reset_from(0);
+        return *this;
     }
 
 
@@ -367,24 +367,24 @@ class Args : public ArgContext {
      * DefaultArg<T>().parse(string, result, *this). */
     template <typename T>
     Args &read(const char *keyword, T &x) {
-	return read(keyword, 0, x);
+        return read(keyword, 0, x);
     }
     template <typename T>
     Args &read_m(const char *keyword, T &x) {
-	return read(keyword, mandatory, x);
+        return read(keyword, mandatory, x);
     }
     template <typename T>
     Args &read_p(const char *keyword, T &x) {
-	return read(keyword, positional, x);
+        return read(keyword, positional, x);
     }
     template <typename T>
     Args &read_mp(const char *keyword, T &x) {
-	return read(keyword, mandatory | positional, x);
+        return read(keyword, mandatory | positional, x);
     }
     template <typename T>
     Args &read(const char *keyword, int flags, T &x) {
-	args_base_read(this, keyword, flags, x);
-	return *this;
+        args_base_read(this, keyword, flags, x);
+        return *this;
     }
 
     /** @brief Read an argument using the default parser, or set it to a
@@ -399,16 +399,16 @@ class Args : public ArgContext {
      * result to @a value. */
     template <typename T, typename V>
     Args &read_or_set(const char *keyword, T &x, const V &default_value) {
-	return read_or_set(keyword, 0, x, default_value);
+        return read_or_set(keyword, 0, x, default_value);
     }
     template <typename T, typename V>
     Args &read_or_set_p(const char *keyword, T &x, const V &default_value) {
-	return read_or_set(keyword, positional, x, default_value);
+        return read_or_set(keyword, positional, x, default_value);
     }
     template <typename T, typename V>
     Args &read_or_set(const char *keyword, int flags, T &x, const V &default_value) {
-	args_base_read_or_set(this, keyword, flags, x, default_value);
-	return *this;
+        args_base_read_or_set(this, keyword, flags, x, default_value);
+        return *this;
     }
 
     /** @brief Read an argument using a specified parser.
@@ -421,24 +421,24 @@ class Args : public ArgContext {
      * result, *this). */
     template <typename P, typename T>
     Args &read(const char *keyword, P parser, T &x) {
-	return read(keyword, 0, parser, x);
+        return read(keyword, 0, parser, x);
     }
     template <typename P, typename T>
     Args &read_m(const char *keyword, P parser, T &x) {
-	return read(keyword, mandatory, parser, x);
+        return read(keyword, mandatory, parser, x);
     }
     template <typename P, typename T>
     Args &read_p(const char *keyword, P parser, T &x) {
-	return read(keyword, positional, parser, x);
+        return read(keyword, positional, parser, x);
     }
     template <typename P, typename T>
     Args &read_mp(const char *keyword, P parser, T &x) {
-	return read(keyword, mandatory | positional, parser, x);
+        return read(keyword, mandatory | positional, parser, x);
     }
     template <typename P, typename T>
     Args &read(const char *keyword, int flags, P parser, T &x) {
-	args_base_read(this, keyword, flags, parser, x);
-	return *this;
+        args_base_read(this, keyword, flags, parser, x);
+        return *this;
     }
 
     /** @brief Read an argument using a specified parser, or set it to a
@@ -454,16 +454,16 @@ class Args : public ArgContext {
      * result to @a default_value. */
     template <typename P, typename T, typename V>
     Args &read_or_set(const char *keyword, P parser, T &x, const V &default_value) {
-	return read_or_set(keyword, 0, parser, x, default_value);
+        return read_or_set(keyword, 0, parser, x, default_value);
     }
     template <typename P, typename T, typename V>
     Args &read_or_set_p(const char *keyword, P parser, T &x, const V &default_value) {
-	return read_or_set(keyword, positional, parser, x, default_value);
+        return read_or_set(keyword, positional, parser, x, default_value);
     }
     template <typename P, typename T, typename V>
     Args &read_or_set(const char *keyword, int flags, P parser, T &x, const V &default_value) {
-	args_base_read_or_set(this, keyword, flags, parser, x, default_value);
-	return *this;
+        args_base_read_or_set(this, keyword, flags, parser, x, default_value);
+        return *this;
     }
 
     /** @brief Read an argument using a specified parser with two results.
@@ -477,24 +477,24 @@ class Args : public ArgContext {
      * result1, result2, *this). */
     template<typename P, typename T1, typename T2>
     Args &read(const char *keyword, P parser, T1 &x1, T2 &x2) {
-	return read(keyword, 0, parser, x1, x2);
+        return read(keyword, 0, parser, x1, x2);
     }
     template<typename P, typename T1, typename T2>
     Args &read_m(const char *keyword, P parser, T1 &x1, T2 &x2) {
-	return read(keyword, mandatory, parser, x1, x2);
+        return read(keyword, mandatory, parser, x1, x2);
     }
     template<typename P, typename T1, typename T2>
     Args &read_p(const char *keyword, P parser, T1 &x1, T2 &x2) {
-	return read(keyword, positional, parser, x1, x2);
+        return read(keyword, positional, parser, x1, x2);
     }
     template<typename P, typename T1, typename T2>
     Args &read_mp(const char *keyword, P parser, T1 &x1, T2 &x2) {
-	return read(keyword, mandatory | positional, parser, x1, x2);
+        return read(keyword, mandatory | positional, parser, x1, x2);
     }
     template<typename P, typename T1, typename T2>
     Args &read(const char *keyword, int flags, P parser, T1 &x1, T2 &x2) {
-	args_base_read(this, keyword, flags, parser, x1, x2);
-	return *this;
+        args_base_read(this, keyword, flags, parser, x1, x2);
+        return *this;
     }
 
     /** @brief Pass an argument to a specified parser.
@@ -505,24 +505,24 @@ class Args : public ArgContext {
      * Calls @a parser.parse(string, *this). */
     template <typename P>
     Args &read_with(const char *keyword, P parser) {
-	return read_with(keyword, 0, parser);
+        return read_with(keyword, 0, parser);
     }
     template <typename P>
     Args &read_m_with(const char *keyword, P parser) {
-	return read_with(keyword, mandatory, parser);
+        return read_with(keyword, mandatory, parser);
     }
     template <typename P>
     Args &read_p_with(const char *keyword, P parser) {
-	return read_with(keyword, positional, parser);
+        return read_with(keyword, positional, parser);
     }
     template <typename P>
     Args &read_mp_with(const char *keyword, P parser) {
-	return read_with(keyword, mandatory | positional, parser);
+        return read_with(keyword, mandatory | positional, parser);
     }
     template <typename P>
     Args &read_with(const char *keyword, int flags, P parser) {
-	args_base_read_with(this, keyword, flags, parser);
-	return *this;
+        args_base_read_with(this, keyword, flags, parser);
+        return *this;
     }
 
     /** @brief Pass an argument to a specified parser.
@@ -537,23 +537,23 @@ class Args : public ArgContext {
      * @deprecated Use read(keyword, parser, variable) instead. */
     template <typename P, typename T>
     Args &read_with(const char *keyword, P parser, T &x) {
-	return read(keyword, parser, x);
+        return read(keyword, parser, x);
     }
     template <typename P, typename T>
     Args &read_m_with(const char *keyword, P parser, T &x) {
-	return read_m(keyword, parser, x);
+        return read_m(keyword, parser, x);
     }
     template <typename P, typename T>
     Args &read_p_with(const char *keyword, P parser, T &x) {
-	return read_p(keyword, parser, x);
+        return read_p(keyword, parser, x);
     }
     template <typename P, typename T>
     Args &read_mp_with(const char *keyword, P parser, T &x) {
-	return read_mp(keyword, parser, x);
+        return read_mp(keyword, parser, x);
     }
     template <typename P, typename T>
     Args &read_with(const char *keyword, int flags, P parser, T &x) {
-	return read(keyword, flags, parser, x);
+        return read(keyword, flags, parser, x);
     }
 
     /** @brief Pass all matching arguments to a specified parser.
@@ -567,12 +567,12 @@ class Args : public ArgContext {
      * matched and all matching arguments successfully parsed. */
     template <typename P>
     Args &read_all_with(const char *keyword, P parser) {
-	return read_all_with(keyword, 0, parser);
+        return read_all_with(keyword, 0, parser);
     }
     template <typename P>
     Args &read_all_with(const char *keyword, int flags, P parser) {
-	args_base_read_all_with(this, keyword, flags | firstmatch, parser);
-	return *this;
+        args_base_read_all_with(this, keyword, flags | firstmatch, parser);
+        return *this;
     }
 
     /** @brief Pass all matching arguments to a specified parser.
@@ -588,12 +588,12 @@ class Args : public ArgContext {
      * matched and all matching arguments successfully parsed. */
     template <typename P, typename T>
     Args &read_all_with(const char *keyword, P parser, T &x) {
-	return read_all_with(keyword, 0, parser, x);
+        return read_all_with(keyword, 0, parser, x);
     }
     template <typename P, typename T>
     Args &read_all_with(const char *keyword, int flags, P parser, T &x) {
-	args_base_read_all_with(this, keyword, flags | firstmatch, parser, x);
-	return *this;
+        args_base_read_all_with(this, keyword, flags | firstmatch, parser, x);
+        return *this;
     }
 
     /** @brief Pass all matching arguments to a specified parser.
@@ -610,56 +610,56 @@ class Args : public ArgContext {
      * matched and all matching arguments successfully parsed. */
     template <typename P, typename T>
     Args &read_all(const char *keyword, P parser, Vector<T> &x) {
-	return read_all(keyword, 0, parser, x);
+        return read_all(keyword, 0, parser, x);
     }
     template <typename T>
     Args &read_all(const char *keyword, Vector<T> &x) {
-	return read_all(keyword, 0, DefaultArg<T>(), x);
+        return read_all(keyword, 0, DefaultArg<T>(), x);
     }
     template <typename P, typename T>
     Args &read_all(const char *keyword, int flags, P parser, Vector<T> &x) {
-	args_base_read_all(this, keyword, flags | firstmatch, parser, x);
-	return *this;
+        args_base_read_all(this, keyword, flags | firstmatch, parser, x);
+        return *this;
     }
     template <typename P, typename T>
     Args &read_all(const char *keyword, int flags, Vector<T> &x) {
-	return read_all(keyword, flags, DefaultArg<T>(), x);
+        return read_all(keyword, flags, DefaultArg<T>(), x);
     }
 
 
     /** @brief Return the current parse status. */
     bool status() const {
-	return _status;
+        return _status;
     }
     /** @brief Set @a x to the current parse status.
      * @return *this */
     Args &status(bool &x) {
-	x = _status;
-	return *this;
+        x = _status;
+        return *this;
     }
     /** @overload */
     const Args &status(bool &x) const {
-	x = _status;
-	return *this;
+        x = _status;
+        return *this;
     }
 
     /** @brief Return true iff the last read request succeeded.
      *
      * This function should only be called after a read. */
     bool read_status() const {
-	return _read_status;
+        return _read_status;
     }
     /** @brief Set @a x to the success status of the last read request.
      *
      * This function should only be called after a read. */
     Args &read_status(bool &x) {
-	x = _read_status;
-	return *this;
+        x = _read_status;
+        return *this;
     }
     /** @overload */
     const Args &read_status(bool &x) const {
-	x = _read_status;
-	return *this;
+        x = _read_status;
+        return *this;
     }
 
 
@@ -699,10 +699,10 @@ class Args : public ArgContext {
      * slot might not be initialized. */
     template <typename T>
     T *slot(T &x) {
-	if (has_trivial_copy<T>::value)
-	    return reinterpret_cast<T *>(simple_slot(&x, sizeof(T)));
-	else
-	    return complex_slot(x);
+        if (has_trivial_copy<T>::value)
+            return reinterpret_cast<T *>(simple_slot(&x, sizeof(T)));
+        else
+            return complex_slot(x);
     }
 
     /** @brief Create and return a result slot for @a x.
@@ -710,160 +710,160 @@ class Args : public ArgContext {
      * The resulting slot is always default-initialized. */
     template <typename T>
     T *initialized_slot(T &x) {
-	T *s = slot(x);
-	if (has_trivial_copy<T>::value)
-	    *s = T();
-	return s;
+        T *s = slot(x);
+        if (has_trivial_copy<T>::value)
+            *s = T();
+        return s;
     }
 
     /** @brief Add a result that assigns @a x to @a value.
      * @return *this */
     template <typename T, typename V>
     Args &set(T &x, const V &value) {
-	if (T *s = slot(x))
-	    *s = value;
-	return *this;
+        if (T *s = slot(x))
+            *s = value;
+        return *this;
     }
 
 
     /** @cond never */
     template<typename T>
     void base_read(const char *keyword, int flags, T &variable) {
-	Slot *slot_status;
-	if (String str = find(keyword, flags, slot_status)) {
-	    T *s = Args_parse_helper<DefaultArg<T> >::slot(variable, *this);
-	    postparse(s && Args_parse_helper<DefaultArg<T> >::parse(DefaultArg<T>(), str, *s, *this), slot_status);
-	}
+        Slot *slot_status;
+        if (String str = find(keyword, flags, slot_status)) {
+            T *s = Args_parse_helper<DefaultArg<T> >::slot(variable, *this);
+            postparse(s && Args_parse_helper<DefaultArg<T> >::parse(DefaultArg<T>(), str, *s, *this), slot_status);
+        }
     }
 
     template<typename T, typename V>
     void base_read_or_set(const char *keyword, int flags, T &variable, const V &value) {
-	Slot *slot_status;
-	String str = find(keyword, flags, slot_status);
-	T *s = Args_parse_helper<DefaultArg<T> >::slot(variable, *this);
-	postparse(s && (str ? Args_parse_helper<DefaultArg<T> >::parse(DefaultArg<T>(), str, *s, *this) : (*s = value, true)), slot_status);
+        Slot *slot_status;
+        String str = find(keyword, flags, slot_status);
+        T *s = Args_parse_helper<DefaultArg<T> >::slot(variable, *this);
+        postparse(s && (str ? Args_parse_helper<DefaultArg<T> >::parse(DefaultArg<T>(), str, *s, *this) : (*s = value, true)), slot_status);
     }
 
     template<typename P, typename T>
     void base_read(const char *keyword, int flags, P parser, T &variable) {
-	Slot *slot_status;
-	if (String str = find(keyword, flags, slot_status)) {
-	    T *s = Args_parse_helper<P>::slot(variable, *this);
-	    postparse(s && Args_parse_helper<P>::parse(parser, str, *s, *this), slot_status);
-	}
+        Slot *slot_status;
+        if (String str = find(keyword, flags, slot_status)) {
+            T *s = Args_parse_helper<P>::slot(variable, *this);
+            postparse(s && Args_parse_helper<P>::parse(parser, str, *s, *this), slot_status);
+        }
     }
 
     template<typename T, typename P, typename V>
     void base_read_or_set(const char *keyword, int flags, P parser, T &variable, const V &value) {
-	Slot *slot_status;
-	String str = find(keyword, flags, slot_status);
-	T *s = Args_parse_helper<P>::slot(variable, *this);
-	postparse(s && (str ? Args_parse_helper<P>::parse(parser, str, *s, *this) : (*s = value, true)), slot_status);
+        Slot *slot_status;
+        String str = find(keyword, flags, slot_status);
+        T *s = Args_parse_helper<P>::slot(variable, *this);
+        postparse(s && (str ? Args_parse_helper<P>::parse(parser, str, *s, *this) : (*s = value, true)), slot_status);
     }
 
     template<typename P, typename T1, typename T2>
     void base_read(const char *keyword, int flags,
-		   P parser, T1 &variable1, T2 &variable2) {
-	Slot *slot_status;
-	if (String str = find(keyword, flags, slot_status)) {
-	    T1 *s1 = Args_parse_helper<P>::slot(variable1, *this);
-	    T2 *s2 = Args_parse_helper<P>::slot(variable2, *this);
-	    postparse(s1 && s2 && Args_parse_helper<P>::parse(parser, str, *s1, *s2, *this), slot_status);
-	}
+                   P parser, T1 &variable1, T2 &variable2) {
+        Slot *slot_status;
+        if (String str = find(keyword, flags, slot_status)) {
+            T1 *s1 = Args_parse_helper<P>::slot(variable1, *this);
+            T2 *s2 = Args_parse_helper<P>::slot(variable2, *this);
+            postparse(s1 && s2 && Args_parse_helper<P>::parse(parser, str, *s1, *s2, *this), slot_status);
+        }
     }
 
     template<typename P>
     void base_read_with(const char *keyword, int flags, P parser) {
-	Slot *slot_status;
-	if (String str = find(keyword, flags, slot_status))
-	    postparse(parser.parse(str, *this), slot_status);
+        Slot *slot_status;
+        if (String str = find(keyword, flags, slot_status))
+            postparse(parser.parse(str, *this), slot_status);
     }
 
     template<typename P>
     void base_read_all_with(const char *keyword, int flags, P parser) {
-	Slot *slot_status;
-	int read_status = -1;
-	while (String str = find(keyword, flags, slot_status)) {
-	    postparse(parser.parse(str, *this), slot_status);
-	    read_status = (read_status != 0) && _read_status;
-	    flags &= ~mandatory;
-	}
-	_read_status = (read_status == 1);
+        Slot *slot_status;
+        int read_status = -1;
+        while (String str = find(keyword, flags, slot_status)) {
+            postparse(parser.parse(str, *this), slot_status);
+            read_status = (read_status != 0) && _read_status;
+            flags &= ~mandatory;
+        }
+        _read_status = (read_status == 1);
     }
 
     template<typename P, typename T>
     void base_read_all_with(const char *keyword, int flags, P parser, T &variable) {
-	Slot *slot_status;
-	int read_status = -1;
-	T *s = Args_parse_helper<P>::initialized_slot(variable, *this);
-	while (String str = find(keyword, flags, slot_status)) {
-	    postparse(s && Args_parse_helper<P>::parse(parser, str, *s, *this), slot_status);
-	    read_status = (read_status != 0) && _read_status;
-	    flags &= ~mandatory;
-	}
-	_read_status = (read_status == 1);
+        Slot *slot_status;
+        int read_status = -1;
+        T *s = Args_parse_helper<P>::initialized_slot(variable, *this);
+        while (String str = find(keyword, flags, slot_status)) {
+            postparse(s && Args_parse_helper<P>::parse(parser, str, *s, *this), slot_status);
+            read_status = (read_status != 0) && _read_status;
+            flags &= ~mandatory;
+        }
+        _read_status = (read_status == 1);
     }
 
     template<typename P, typename T>
     void base_read_all(const char *keyword, int flags, P parser, Vector<T> &variable) {
-	Slot *slot_status;
-	int read_status = -1;
-	Vector<T> *s = slot(variable);
-	while (String str = find(keyword, flags, slot_status)) {
-	    T sx = T();
-	    postparse(parser.parse(str, sx, *this), slot_status);
-	    if (_read_status)
-		s->push_back(sx);
-	    read_status = (read_status != 0) && _read_status;
-	    flags &= ~mandatory;
-	}
-	_read_status = (read_status == 1);
+        Slot *slot_status;
+        int read_status = -1;
+        Vector<T> *s = slot(variable);
+        while (String str = find(keyword, flags, slot_status)) {
+            T sx = T();
+            postparse(parser.parse(str, sx, *this), slot_status);
+            if (_read_status)
+                s->push_back(sx);
+            read_status = (read_status != 0) && _read_status;
+            flags &= ~mandatory;
+        }
+        _read_status = (read_status == 1);
     }
     /** @endcond never */
 
   private:
 
     struct Slot {
-	Slot() {
-	}
-	virtual ~Slot() {
-	}
-	virtual void store() = 0;
-	Slot *_next;
+        Slot() {
+        }
+        virtual ~Slot() {
+        }
+        virtual void store() = 0;
+        Slot *_next;
     };
 
     struct BytesSlot : public Slot {
-	BytesSlot(void *ptr, size_t size)
-	    : _ptr(ptr), _slot(new char[size]), _size(size) {
-	}
-	~BytesSlot() {
-	    delete[] _slot;
-	}
-	void store() {
-	    memcpy(_ptr, _slot, _size);
-	}
-	void *_ptr;
-	char *_slot;
-	size_t _size;
+        BytesSlot(void *ptr, size_t size)
+            : _ptr(ptr), _slot(new char[size]), _size(size) {
+        }
+        ~BytesSlot() {
+            delete[] _slot;
+        }
+        void store() {
+            memcpy(_ptr, _slot, _size);
+        }
+        void *_ptr;
+        char *_slot;
+        size_t _size;
     };
 
     template<typename T>
     struct SlotT : public Slot {
-	SlotT(T *ptr)
-	    : _ptr(ptr) {
-	}
-	void store() {
-	    assign_consume(*_ptr, _slot);
-	}
-	T *_ptr;
-	T _slot;
+        SlotT(T *ptr)
+            : _ptr(ptr) {
+        }
+        void store() {
+            assign_consume(*_ptr, _slot);
+        }
+        T *_ptr;
+        T _slot;
     };
 
     enum {
 #if SIZEOF_VOID_P == 4
-	simple_slotbuf_size = 24
+        simple_slotbuf_size = 24
 #else
-	simple_slotbuf_size = 48
+        simple_slotbuf_size = 48
 #endif
     };
 
@@ -891,7 +891,7 @@ class Args : public ArgContext {
 
     static inline int simple_slot_size(int size);
     inline void simple_slot_info(int offset, int size,
-				 void *&slot, void **&pointer);
+                                 void *&slot, void **&pointer);
     void *simple_slot(void *data, size_t size);
     template<typename T> T *complex_slot(T &variable);
 
@@ -908,12 +908,12 @@ template<typename T>
 T *Args::complex_slot(T &variable)
 {
     if (SlotT<T> *s = new SlotT<T>(&variable)) {
-	s->_next = _slots;
-	_slots = s;
-	return &s->_slot;
+        s->_next = _slots;
+        _slots = s;
+        return &s->_slot;
     } else {
-	error("out of memory");
-	return 0;
+        error("out of memory");
+        return 0;
     }
 }
 
@@ -932,40 +932,40 @@ void args_base_read(Args *args, const char *keyword, int flags, T &variable)
 
 template<typename T, typename V>
 void args_base_read_or_set(Args *args, const char *keyword, int flags,
-			   T &variable, const V &value) CLICK_NOINLINE;
+                           T &variable, const V &value) CLICK_NOINLINE;
 template<typename T, typename V>
 void args_base_read_or_set(Args *args, const char *keyword, int flags,
-			   T &variable, const V &value)
+                           T &variable, const V &value)
 {
     args->base_read_or_set(keyword, flags, variable, value);
 }
 
 template<typename P, typename T>
 void args_base_read(Args *args, const char *keyword, int flags,
-		    P parser, T &variable) CLICK_NOINLINE;
+                    P parser, T &variable) CLICK_NOINLINE;
 template<typename P, typename T>
 void args_base_read(Args *args, const char *keyword, int flags,
-		    P parser, T &variable)
+                    P parser, T &variable)
 {
     args->base_read(keyword, flags, parser, variable);
 }
 
 template<typename P, typename T, typename V>
 void args_base_read_or_set(Args *args, const char *keyword, int flags,
-			   P parser, T &variable, const V &value) CLICK_NOINLINE;
+                           P parser, T &variable, const V &value) CLICK_NOINLINE;
 template<typename P, typename T, typename V>
 void args_base_read_or_set(Args *args, const char *keyword, int flags,
-			   P parser, T &variable, const V &value)
+                           P parser, T &variable, const V &value)
 {
     args->base_read_or_set(keyword, flags, parser, variable, value);
 }
 
 template<typename P, typename T1, typename T2>
 void args_base_read(Args *args, const char *keyword, int flags,
-		    P parser, T1 &variable1, T2 &variable2) CLICK_NOINLINE;
+                    P parser, T1 &variable1, T2 &variable2) CLICK_NOINLINE;
 template<typename P, typename T1, typename T2>
 void args_base_read(Args *args, const char *keyword, int flags,
-		    P parser, T1 &variable1, T2 &variable2)
+                    P parser, T1 &variable1, T2 &variable2)
 {
     args->base_read(keyword, flags, parser, variable1, variable2);
 }
@@ -990,20 +990,20 @@ void args_base_read_all_with(Args *args, const char *keyword, int flags, P parse
 
 template<typename P, typename T>
 void args_base_read_all_with(Args *args, const char *keyword, int flags,
-			     P parser, T &variable) CLICK_NOINLINE;
+                             P parser, T &variable) CLICK_NOINLINE;
 template<typename P, typename T>
 void args_base_read_all_with(Args *args, const char *keyword, int flags,
-			     P parser, T &variable)
+                             P parser, T &variable)
 {
     args->base_read_all_with(keyword, flags, parser, variable);
 }
 
 template <typename P, typename T>
 void args_base_read_all(Args *args, const char *keyword, int flags,
-			P parser, Vector<T> &variable) CLICK_NOINLINE;
+                        P parser, Vector<T> &variable) CLICK_NOINLINE;
 template <typename P, typename T>
 void args_base_read_all(Args *args, const char *keyword, int flags,
-			P parser, Vector<T> &variable)
+                        P parser, Vector<T> &variable)
 {
     args->base_read_all(keyword, flags, parser, variable);
 }
@@ -1012,17 +1012,17 @@ void args_base_read_all(Args *args, const char *keyword, int flags,
 
 class NumArg { public:
     enum {
-	status_ok = 0,
-	status_inval = EINVAL,
-	status_range = ERANGE,
+        status_ok = 0,
+        status_inval = EINVAL,
+        status_range = ERANGE,
 #if defined(ENOTSUP)
-	status_notsup = ENOTSUP,
+        status_notsup = ENOTSUP,
 #elif defined(ENOTSUPP)
-	status_notsup = ENOTSUPP,
+        status_notsup = ENOTSUPP,
 #else
-	status_notsup,
+        status_notsup,
 #endif
-	status_unitless
+        status_unitless
     };
 };
 
@@ -1042,44 +1042,44 @@ class IntArg : public NumArg { public:
     typedef uint32_t limb_type;
 
     IntArg(int b = 0)
-	: base(b) {
+        : base(b) {
     }
 
     const char *parse(const char *begin, const char *end,
-		      bool is_signed, int size,
-		      limb_type *value, int nlimb);
+                      bool is_signed, int size,
+                      limb_type *value, int nlimb);
 
     template<typename V>
     bool parse_saturating(const String &str, V &result, const ArgContext &args = blank_args) {
-	constexpr bool is_signed = integer_traits<V>::is_signed;
-	constexpr int nlimb = int((sizeof(V) + sizeof(limb_type) - 1) / sizeof(limb_type));
-	limb_type x[nlimb];
-	if (parse(str.begin(), str.end(), is_signed, int(sizeof(V)), x, nlimb)
-	    != str.end())
-	    status = status_inval;
-	if (status && status != status_range) {
-	    args.error("invalid number");
-	    return false;
-	}
-	typedef typename make_unsigned<V>::type unsigned_v_type;
-	extract_integer(x, reinterpret_cast<unsigned_v_type &>(result));
-	return true;
+        constexpr bool is_signed = integer_traits<V>::is_signed;
+        constexpr int nlimb = int((sizeof(V) + sizeof(limb_type) - 1) / sizeof(limb_type));
+        limb_type x[nlimb];
+        if (parse(str.begin(), str.end(), is_signed, int(sizeof(V)), x, nlimb)
+            != str.end())
+            status = status_inval;
+        if (status && status != status_range) {
+            args.error("invalid number");
+            return false;
+        }
+        typedef typename make_unsigned<V>::type unsigned_v_type;
+        extract_integer(x, reinterpret_cast<unsigned_v_type &>(result));
+        return true;
     }
 
     template<typename V>
     bool parse(const String &str, V &result, const ArgContext &args = blank_args) {
-	V x;
-	if (!parse_saturating(str, x, args)
-	    || (status && status != status_range))
-	    return false;
-	else if (status == status_range) {
-	    range_error(args, integer_traits<V>::is_signed,
-			click_int_large_t(x));
-	    return false;
-	} else {
-	    result = x;
-	    return true;
-	}
+        V x;
+        if (!parse_saturating(str, x, args)
+            || (status && status != status_range))
+            return false;
+        else if (status == status_range) {
+            range_error(args, integer_traits<V>::is_signed,
+                        click_int_large_t(x));
+            return false;
+        } else {
+            result = x;
+            return true;
+        }
     }
 
     int base;
@@ -1088,9 +1088,9 @@ class IntArg : public NumArg { public:
   protected:
 
     static const char *span(const char *begin, const char *end,
-			    bool is_signed, int &b);
+                            bool is_signed, int &b);
     void range_error(const ArgContext &args, bool is_signed,
-		     click_int_large_t value);
+                     click_int_large_t value);
 
 };
 
@@ -1103,12 +1103,12 @@ class IntArg : public NumArg { public:
   @sa IntArg */
 class SaturatingIntArg : public IntArg { public:
     SaturatingIntArg(int b = 0)
-	: IntArg(b) {
+        : IntArg(b) {
     }
 
     template<typename V>
     bool parse(const String &str, V &result, const ArgContext &args = blank_args) {
-	return parse_saturating(str, result, args);
+        return parse_saturating(str, result, args);
     }
 };
 
@@ -1122,51 +1122,51 @@ class SaturatingIntArg : public IntArg { public:
 class BoundedIntArg : public IntArg { public:
     template <typename T>
     BoundedIntArg(T min_value, T max_value, int b = 0)
-	: IntArg(b), min_value(min_value), max_value(max_value) {
-	static_assert(integer_traits<T>::is_integral, "BoundedIntArg argument must be integral");
-	is_signed = integer_traits<T>::is_signed;
+        : IntArg(b), min_value(min_value), max_value(max_value) {
+        static_assert(integer_traits<T>::is_integral, "BoundedIntArg argument must be integral");
+        is_signed = integer_traits<T>::is_signed;
     }
 
     template <typename V>
     bool parse(const String &str, V &result, const ArgContext &args = blank_args) {
-	V x;
-	if (!IntArg::parse(str, x, args))
-	    return false;
-	else if (!check_min(typename integer_traits<V>::max_type(x))) {
-	    range_error(args, is_signed, min_value);
-	    return false;
-	} else if (!check_max(typename integer_traits<V>::max_type(x))) {
-	    range_error(args, is_signed, max_value);
-	    return false;
-	} else {
-	    result = x;
-	    return true;
-	}
+        V x;
+        if (!IntArg::parse(str, x, args))
+            return false;
+        else if (!check_min(typename integer_traits<V>::max_type(x))) {
+            range_error(args, is_signed, min_value);
+            return false;
+        } else if (!check_max(typename integer_traits<V>::max_type(x))) {
+            range_error(args, is_signed, max_value);
+            return false;
+        } else {
+            result = x;
+            return true;
+        }
     }
 
     inline bool check_min(click_int_large_t x) const {
-	if (is_signed)
-	    return x >= min_value;
-	else
-	    return x >= 0 && click_uint_large_t(x) >= click_uint_large_t(min_value);
+        if (is_signed)
+            return x >= min_value;
+        else
+            return x >= 0 && click_uint_large_t(x) >= click_uint_large_t(min_value);
     }
     inline bool check_min(click_uint_large_t x) const {
-	if (is_signed)
-	    return min_value < 0 || x >= click_uint_large_t(min_value);
-	else
-	    return click_uint_large_t(x) >= click_uint_large_t(min_value);
+        if (is_signed)
+            return min_value < 0 || x >= click_uint_large_t(min_value);
+        else
+            return click_uint_large_t(x) >= click_uint_large_t(min_value);
     }
     inline bool check_max(click_int_large_t x) const {
-	if (is_signed)
-	    return x <= max_value;
-	else
-	    return x >= 0 && click_uint_large_t(x) <= click_uint_large_t(max_value);
+        if (is_signed)
+            return x <= max_value;
+        else
+            return x >= 0 && click_uint_large_t(x) <= click_uint_large_t(max_value);
     }
     inline bool check_max(click_uint_large_t x) const {
-	if (is_signed)
-	    return max_value >= 0 && x <= click_uint_large_t(max_value);
-	else
-	    return click_uint_large_t(x) <= click_uint_large_t(max_value);
+        if (is_signed)
+            return max_value >= 0 && x <= click_uint_large_t(max_value);
+        else
+            return click_uint_large_t(x) <= click_uint_large_t(max_value);
     }
 
     click_intmax_t min_value;
@@ -1193,7 +1193,7 @@ template<> struct DefaultArg<long long> : public IntArg {};
   @brief Parser class for fixed-point numbers with @a b bits of fraction. */
 class FixedPointArg : public NumArg { public:
     explicit FixedPointArg(int b, int exponent = 0)
-	: fraction_bits(b), exponent_delta(exponent) {
+        : fraction_bits(b), exponent_delta(exponent) {
     }
     inline bool parse_saturating(const String &str, uint32_t &result, const ArgContext &args = blank_args);
     bool parse(const String &str, uint32_t &result, const ArgContext &args = blank_args);
@@ -1216,7 +1216,7 @@ FixedPointArg::parse_saturating(const String &str, uint32_t &result, const ArgCo
   @brief Parser class for fixed-point numbers with @a d decimal digits of fraction. */
 class DecimalFixedPointArg : public NumArg { public:
     DecimalFixedPointArg(int d, int exponent = 0)
-	: fraction_digits(d), exponent_delta(exponent) {
+        : fraction_digits(d), exponent_delta(exponent) {
     }
     inline bool parse_saturating(const String &str, uint32_t &result, const ArgContext &args = blank_args);
     bool parse(const String &str, uint32_t &result, const ArgContext &args = blank_args);
@@ -1257,7 +1257,7 @@ template<> struct DefaultArg<double> : public DoubleArg {};
 class BoolArg { public:
     static bool parse(const String &str, bool &result, const ArgContext &args = blank_args);
     static String unparse(bool x) {
-	return String(x);
+        return String(x);
     }
 };
 
@@ -1266,8 +1266,8 @@ template<> struct DefaultArg<bool> : public BoolArg {};
 
 class UnitArg { public:
     explicit UnitArg(const char *unit_def, const char *prefix_chars_def)
-	: units_(reinterpret_cast<const unsigned char *>(unit_def)),
-	  prefix_chars_(reinterpret_cast<const unsigned char *>(prefix_chars_def)) {
+        : units_(reinterpret_cast<const unsigned char *>(unit_def)),
+          prefix_chars_(reinterpret_cast<const unsigned char *>(prefix_chars_def)) {
     }
     const char *parse(const char *begin, const char *end, int &power, int &factor) const;
   private:
@@ -1293,7 +1293,7 @@ class BandwidthArg : public NumArg { public:
   @brief Parser class for annotation specifications. */
 class AnnoArg { public:
     AnnoArg(int s)
-	: size(s) {
+        : size(s) {
     }
     bool parse(const String &str, int &result, const ArgContext &args = blank_args);
   private:
@@ -1309,7 +1309,7 @@ class AnnoArg { public:
   For example, to parse milliseconds, use SecondsArg(3). */
 class SecondsArg : public NumArg { public:
     SecondsArg(int d = 0)
-	: fraction_digits(d) {
+        : fraction_digits(d) {
     }
     bool parse_saturating(const String &str, uint32_t &result, const ArgContext &args = blank_args);
     bool parse(const String &str, uint32_t &result, const ArgContext &args = blank_args);
@@ -1325,15 +1325,15 @@ class SecondsArg : public NumArg { public:
   @brief Parser class that accepts any argument. */
 class AnyArg { public:
     static bool parse(const String &, const ArgContext & = blank_args) {
-	return true;
+        return true;
     }
     static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
-	result = str;
-	return true;
+        result = str;
+        return true;
     }
     static bool parse(const String &str, Vector<String> &result, const ArgContext & = blank_args) {
-	result.push_back(str);
-	return true;
+        result.push_back(str);
+        return true;
     }
 };
 
@@ -1344,7 +1344,7 @@ bool cp_string(const String &str, String *result, String *rest);
   @brief Parser class for possibly-quoted strings. */
 class StringArg { public:
     static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
-	return cp_string(str, &result, 0);
+        return cp_string(str, &result, 0);
     }
 };
 
@@ -1357,7 +1357,7 @@ bool cp_keyword(const String &str, String *result, String *rest);
   @brief Parser class for keywords. */
 class KeywordArg { public:
     static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
-	return cp_keyword(str, &result, 0);
+        return cp_keyword(str, &result, 0);
     }
 };
 
@@ -1368,7 +1368,7 @@ bool cp_word(const String &str, String *result, String *rest);
   @brief Parser class for words. */
 class WordArg { public:
     static bool parse(const String &str, String &result, const ArgContext & = blank_args) {
-	return cp_word(str, &result, 0);
+        return cp_word(str, &result, 0);
     }
 };
 
@@ -1395,11 +1395,11 @@ template<> struct DefaultArg<Element *> : public ElementArg {};
   @brief Parser class for elements of type @a t. */
 class ElementCastArg { public:
     ElementCastArg(const char *t)
-	: type(t) {
+        : type(t) {
     }
     bool parse(const String &str, Element *&result, const ArgContext &args);
     template<typename T> bool parse(const String &str, T *&result, const ArgContext &args) {
-	return parse(str, reinterpret_cast<Element *&>(result), args);
+        return parse(str, reinterpret_cast<Element *&>(result), args);
     }
     const char *type;
 };

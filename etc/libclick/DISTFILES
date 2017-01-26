@@ -67,6 +67,7 @@ include/click/ipflowid.hh
 include/click/iptable.hh
 include/click/ip6table.hh
 include/click/lexer.hh
+include/click/libdivide.h
 include/click/list.hh
 include/click/llrpc.h
 include/click/machine.hh

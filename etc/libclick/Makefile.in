@@ -30,8 +30,7 @@ all:
 	@echo Its only important target is '`make dist'"'".
 
 Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in
-	cd $(top_builddir) && \
-	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 distdir = libclick-$(VERSION)
 top_distdir = $(distdir)

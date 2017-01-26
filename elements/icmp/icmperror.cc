@@ -236,7 +236,8 @@ ICMPError::simple_action(Packet *p)
 
   nip->ip_v = 4;
   nip->ip_tos = 0;		// XXX should be same as incoming datagram?
-  nip->ip_id = htons(id++);
+  nip->ip_id = htons(id);
+  ++id;
   nip->ip_off = 0;
   nip->ip_ttl = 200;
   nip->ip_p = IP_PROTO_ICMP;

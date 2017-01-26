@@ -784,7 +784,7 @@ IPFilter::Primitive::compile(Classification::Wordwise::Program &p, Vector<int> &
 
   }
 
-  p.finish_subtree(tree);
+  p.finish_subtree(tree, Classification::c_and);
 }
 
 
@@ -925,7 +925,7 @@ IPFilter::Parser::parse_expr_iterative(int pos)
 	    new_state = s_factor0;
 	    break;
 	finish_term:
-	    _prog.finish_subtree(_tree);
+	    _prog.finish_subtree(_tree, Classification::c_and);
 	    break;
 
 	case s_factor0:
@@ -1212,8 +1212,7 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 			const Vector<String> &conf, int noutputs,
 			const Element *context, ErrorHandler *errh)
 {
-    Classification::Wordwise::Program prog;
-    Vector<int> tree = prog.init_subtree();
+    Vector<Classification::Wordwise::Program> progs;
 
     // [QUALS] [host|net|port|proto] [data]
     // QUALS ::= src | dst | src and dst | src or dst | \empty
@@ -1237,10 +1236,7 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 		slot = 0;
 		if (noutputs == 0)
 		    cerrh.error("%<allow%> is meaningless, element has zero outputs");
-	    } else if (slotwd == "deny") {
-		if (noutputs > 1)
-		    cerrh.warning("meaning of %<deny%> has changed (now it means %<drop%>)");
-	    } else if (slotwd == "drop")
+	    } else if (slotwd == "deny" || slotwd == "drop")
 		/* nada */;
 	    else if (IntArg().parse(slotwd, slot)) {
 		if (slot < 0 || slot >= noutputs) {
@@ -1251,6 +1247,9 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 		cerrh.error("unknown slot ID %<%s%>", slotwd.c_str());
 	}
 
+        progs.push_back(Classification::Wordwise::Program());
+	Classification::Wordwise::Program& prog = progs.back();
+	Vector<int> tree = prog.init_subtree();
 	prog.start_subtree(tree);
 
 	// check for "-"
@@ -1265,20 +1264,29 @@ IPFilter::parse_program(Classification::Wordwise::CompressedProgram &zprog,
 		cerrh.error("garbage after expression at %<%s%>", words[pos].c_str());
 	}
 
-	prog.finish_subtree(tree, Classification::c_and, -slot);
+	prog.finish_subtree(tree, Classification::c_and,
+                            -slot, Classification::j_failure);
     }
 
-    if (tree.size())
-	prog.finish_subtree(tree, Classification::c_or, Classification::j_never, Classification::j_never);
-
-    // click_chatter("%s", prog.unparse().c_str());
     static const int offset_map[] = { offset_net + 8, offset_net + 3 };
-    prog.optimize(offset_map, offset_map + 2, Classification::offset_max);
+    // merge programs
+    for (int merge_step = 1; merge_step < progs.size(); merge_step *= 2)
+        for (int i = 0; i + merge_step < progs.size(); i += 2 * merge_step) {
+            progs[i].add_or_program(progs[i + merge_step]);
+            progs[i].optimize(offset_map, offset_map + 2, Classification::offset_max);
+        }
+    // special-case single program
+    if (progs.empty())
+        progs.push_back(Classification::Wordwise::Program());
+    if (progs.size() == 1)
+        progs[0].optimize(offset_map, offset_map + 2, Classification::offset_max);
+    // any remaining failure branches drop the input
+    progs[0].set_failure(Classification::j_never);
 
     // Compress the program into _zprog.
     // It helps to do another bubblesort for things like ports.
-    prog.bubble_sort_and_exprs(offset_map, offset_map + 2, Classification::offset_max);
-    zprog.compile(prog, PERFORM_BINARY_SEARCH, MIN_BINARY_SEARCH);
+    progs[0].bubble_sort_and_exprs(offset_map, offset_map + 2, Classification::offset_max);
+    zprog.compile(progs[0], PERFORM_BINARY_SEARCH, MIN_BINARY_SEARCH);
 
     // click_chatter("%s", zprog.unparse().c_str());
 }

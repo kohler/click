@@ -41,8 +41,8 @@ static bool test_multiply(uint32_t a, uint32_t b, ErrorHandler *errh) {
     bigint::multiply(x[1], x[0], a, b);
     uint64_t c = (((uint64_t) x[1]) << 32) | x[0];
     if (c != (uint64_t) a * b) {
-	errh->error("%u * %u == %llu, not %llu", a, b, (uint64_t) a * b, c);
-	return false;
+        errh->error("%u * %u == %llu, not %llu", a, b, (uint64_t) a * b, c);
+        return false;
     }
     return true;
 }
@@ -56,8 +56,8 @@ static bool test_mul(uint64_t a, uint32_t b, ErrorHandler *errh) {
     bigint::multiply_add(cx, ax, 2, b);
     uint64_t c = (((uint64_t) cx[1]) << 32) | cx[0];
     if (c != a * b) {
-	errh->error("%llu * %u == %llu, not %llu", a, b, a * b, c);
-	return false;
+        errh->error("%llu * %u == %llu, not %llu", a, b, a * b, c);
+        return false;
     }
     return true;
 }
@@ -69,12 +69,12 @@ static bool test_div(uint64_t a, uint32_t b, ErrorHandler *errh) {
     uint32_t r = bigint::divide(ax+2, ax, 2, b);
     uint64_t c = ((uint64_t) ax[3] << 32) | ax[2];
     if (c != a / b) {
-	errh->error("%llu / %u == %llu, not %llu", a, b, a * b, c);
-	return false;
+        errh->error("%llu / %u == %llu, not %llu", a, b, a * b, c);
+        return false;
     }
     if (r != a % b) {
-	errh->error("%llu %% %u == %llu, not %u", a, b, a % b, r);
-	return false;
+        errh->error("%llu %% %u == %llu, not %u", a, b, a % b, r);
+        return false;
     }
     return true;
 }
@@ -87,8 +87,8 @@ static bool test_inverse(uint32_t a, ErrorHandler *errh) {
     uint64_t want_inverse = (b * (b - a) - 1) / a;
     assert(want_inverse < b);
     if (a_inverse != want_inverse) {
-	errh->error("inverse(%u) == %u, not %u", a, (uint32_t) want_inverse, a_inverse);
-	return false;
+        errh->error("inverse(%u) == %u, not %u", a, (uint32_t) want_inverse, a_inverse);
+        return false;
     }
     return true;
 }
@@ -102,8 +102,8 @@ static bool test_add(uint64_t a, uint64_t b, ErrorHandler *errh) {
     bigint::add(ax[1], ax[0], ax[3], ax[2], ax[5], ax[4]);
     uint64_t c = ((uint64_t) ax[1] << 32) | ax[0];
     if (c != a + b) {
-	errh->error("%llu + %llu == %llu, not %llu", a, b, a + b, c);
-	return false;
+        errh->error("%llu + %llu == %llu, not %llu", a, b, a + b, c);
+        return false;
     }
     return true;
 }
@@ -112,32 +112,32 @@ int
 BigintTest::initialize(ErrorHandler *errh)
 {
     for (int i = 0; i < 3000; i++) {
-	uint32_t a = click_random() | (click_random() << 31);
-	uint32_t b = click_random() | (click_random() << 31);
-	CHECK(test_multiply(a, b, errh), a, b);
-	CHECK(test_mul(a, b, errh), a, b);
+        uint32_t a = click_random() | (click_random() << 31);
+        uint32_t b = click_random() | (click_random() << 31);
+        CHECK(test_multiply(a, b, errh), a, b);
+        CHECK(test_mul(a, b, errh), a, b);
     }
     for (int i = 0; i < 8000; i++) {
-	uint32_t a = click_random();
-	CHECK0(test_inverse(a | 0x80000000, errh));
+        uint32_t a = click_random();
+        CHECK0(test_inverse(a | 0x80000000, errh));
     }
     CHECK0(test_inverse(0x80000000, errh));
     for (int i = 0; i < 8000; i++) {
-	uint64_t a = click_random() | ((uint64_t) click_random() << 31) | ((uint64_t) click_random() << 62);
-	uint64_t b = click_random() | ((uint64_t) click_random() << 31) | ((uint64_t) click_random() << 62);
-	CHECK0(test_add(a, b, errh));
+        uint64_t a = click_random() | ((uint64_t) click_random() << 31) | ((uint64_t) click_random() << 62);
+        uint64_t b = click_random() | ((uint64_t) click_random() << 31) | ((uint64_t) click_random() << 62);
+        CHECK0(test_add(a, b, errh));
     }
     CHECK0(test_div(12884758640815563913ULL, 2506284098U, errh));
     for (int i = 0; i < 3000; i++) {
-	uint64_t a = click_random() | ((uint64_t) click_random() << 31) | ((uint64_t) click_random() << 62);
-	uint32_t b = click_random();
-	CHECK(test_div(a, b | 0x80000000, errh), a, b | 0x80000000);
+        uint64_t a = click_random() | ((uint64_t) click_random() << 31) | ((uint64_t) click_random() << 62);
+        uint32_t b = click_random();
+        CHECK(test_div(a, b | 0x80000000, errh), a, b | 0x80000000);
     }
     for (int i = 0; i < 3000; i++) {
-	uint64_t a = click_random() | ((uint64_t) click_random() << 31) | ((uint64_t) click_random() << 62);
-	uint32_t b = click_random();
-	CHECK(test_div(a, b & ~0x80000000, errh), a, b & ~0x80000000);
-	CHECK(test_div(a, b | 0x80000000, errh), a, b | 0x80000000);
+        uint64_t a = click_random() | ((uint64_t) click_random() << 31) | ((uint64_t) click_random() << 62);
+        uint32_t b = click_random();
+        CHECK(test_div(a, b & ~0x80000000, errh), a, b & ~0x80000000);
+        CHECK(test_div(a, b | 0x80000000, errh), a, b | 0x80000000);
     }
 
     uint32_t x[3] = { 3481, 592182, 3024921038U };
@@ -149,11 +149,11 @@ BigintTest::initialize(ErrorHandler *errh)
     CHECK0(bigint::multiply(x, x, 2, 4191384139U) == 0 && x[0] == 0x9698A54CU && x[1] == 0x61U);
 
     {
-	int32_t quot, rem;
-	rem = int_divide((int32_t) 0x80000000, 2, quot);
-	CHECK0(quot == -0x40000000 && rem == 0);
-	rem = int_divide((int32_t) 0x80000000, 3, quot);
-	CHECK0(quot == -715827883 && rem == 1);
+        int32_t quot, rem;
+        rem = int_remainder((int32_t) 0x80000000, 2, quot);
+        CHECK0(quot == -0x40000000 && rem == 0);
+        rem = int_remainder((int32_t) 0x80000000, 3, quot);
+        CHECK0(quot == -715827883 && rem == 1);
     }
 
     errh->message("All tests pass!");

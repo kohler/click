@@ -35,6 +35,15 @@ FunctionTest::FunctionTest()
 int
 FunctionTest::initialize(ErrorHandler *errh)
 {
+    CHECK((same_type<int, int>::value));
+    CHECK((!same_type<int, long>::value));
+    CHECK((!same_type<int, const int>::value));
+    CHECK((!same_type<int, int*>::value));
+    CHECK((types_compatible<int, int>::value));
+    CHECK((!types_compatible<int, long>::value));
+    CHECK((types_compatible<int, const int>::value));
+    CHECK((!types_compatible<int, int*>::value));
+
     CHECK(ffs_msb(0U) == 0);
     CHECK(ffs_msb(1U) == 32);
     CHECK(ffs_msb(0x80000000U) == 1);

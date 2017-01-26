@@ -239,9 +239,11 @@ can more concisely be written like this, using the `=>' many-to-many connector:
 .Rs
 .IR c " [0], " c " [1], " c " [2] => Paint(0), Paint(1), Paint(2) -> " next ";"
 .Re
-or, even more concisely, either of the following:
+or, even more concisely, any of the following:
 .Rs
 .IR c " [0,1,2] => Paint(0), Paint(1), Paint(2) -> " next ";"
+.br
+.IR c " [0-2] => Paint(0), Paint(1), Paint(2) -> " next ";"
 .br
 .IR c " => Paint(0), Paint(1), Paint(2) -> " next ";"
 .Re

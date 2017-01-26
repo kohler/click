@@ -47,7 +47,7 @@ Master::Master(int nthreads)
     _nthreads = nthreads + 1;
     _threads = new RouterThread *[_nthreads];
     for (int tid = -1; tid < nthreads; tid++)
-	_threads[tid + 1] = new RouterThread(this, tid);
+        _threads[tid + 1] = new RouterThread(this, tid);
 
 #if CLICK_USERLEVEL
     // signal information
@@ -73,24 +73,24 @@ Master::~Master()
     lock_master();
     _refcount++;
     while (_routers) {
-	Router *r = _routers;
-	r->use();
-	unlock_master();
-	unregister_router(r);
-	r->unuse();
-	lock_master();
+        Router *r = _routers;
+        r->use();
+        unlock_master();
+        unregister_router(r);
+        r->unuse();
+        lock_master();
     }
     _refcount--;
     unlock_master();
 
     if (_refcount > 0)
-	click_chatter("deleting master while ref count = %d", _refcount);
+        click_chatter("deleting master while ref count = %d", _refcount);
 
 #if CLICK_USERLEVEL
     signal_thread = 0;
 #endif
     for (int i = 0; i < _nthreads; i++)
-	delete _threads[i];
+        delete _threads[i];
     delete[] _threads;
 }
 
@@ -110,7 +110,7 @@ Master::unuse()
     bool del = (_refcount <= 0);
     unlock_master();
     if (del)
-	delete this;
+        delete this;
 }
 
 void
@@ -118,9 +118,9 @@ Master::pause()
 {
     _master_paused++;
     for (int i = 1; i < _nthreads; ++i) {
-	_threads[i]->timer_set().fence();
+        _threads[i]->timer_set().fence();
 #if CLICK_USERLEVEL
-	_threads[i]->select_set().fence();
+        _threads[i]->select_set().fence();
 #endif
     }
 }
@@ -129,9 +129,9 @@ void
 Master::block_all()
 {
     for (int i = 1; i < _nthreads; ++i)
-	_threads[i]->schedule_block_tasks();
+        _threads[i]->schedule_block_tasks();
     for (int i = 1; i < _nthreads; ++i)
-	_threads[i]->block_tasks(true);
+        _threads[i]->block_tasks(true);
     pause();
 }
 
@@ -140,7 +140,7 @@ Master::unblock_all()
 {
     unpause();
     for (int i = 1; i < _nthreads; ++i)
-	_threads[i]->unblock_tasks();
+        _threads[i]->unblock_tasks();
 }
 
 
@@ -151,7 +151,7 @@ Master::register_router(Router *router)
 {
     lock_master();
     assert(router && router->_master == 0 && router->_running == Router::RUNNING_INACTIVE && !router->_next_router);
-    _refcount++;		// balanced in unregister_router()
+    _refcount++;                // balanced in unregister_router()
     router->_master = this;
     router->_next_router = _routers;
     _routers = router;
@@ -191,15 +191,18 @@ Master::kill_router(Router *router)
     assert(router && router->_master == this);
     int was_running = router->_running;
     router->_running = Router::RUNNING_DEAD;
+    assert(router->dying());
+    // After this point, tasks on this router will not be enqueued on
+    // threads' pending lists. We'll soon clear those lists.
     if (was_running >= Router::RUNNING_BACKGROUND)
-	pause();
+        pause();
     else if (was_running == Router::RUNNING_PREPARING)
-	/* nada */;
+        /* nada */;
     else {
-	/* could not have anything on the list */
-	assert(was_running == Router::RUNNING_INACTIVE || was_running == Router::RUNNING_DEAD);
-	unlock_master();
-	return;
+        /* could not have anything on the list */
+        assert(was_running == Router::RUNNING_INACTIVE || was_running == Router::RUNNING_DEAD);
+        unlock_master();
+        return;
     }
 
     // Fix stopper
@@ -210,36 +213,46 @@ Master::kill_router(Router *router)
     unlock_master();
 
     // Remove tasks
+    // First, process the current RouterThread (if any). This avoids
+    // deadlock. Situation: Thread 2's pending list includes task
+    // T. Thread 2 calls Master::check_driver(), which calls
+    // kill_router(r). Meanwhile, thread 1 deletes task T: Thread 1
+    // will block until T is removed from Thread 2's pending list.
+    for (RouterThread** tp = _threads; tp != _threads + _nthreads; ++tp)
+        if ((*tp)->current_thread_is_running())
+            (*tp)->kill_router(router);
+    // Then process other RouterThreads.
     for (RouterThread **tp = _threads; tp != _threads + _nthreads; ++tp)
-	(*tp)->kill_router(router);
-
-    // 4.Sep.2007 - Don't bother to remove pending tasks.  They will be
-    // removed shortly anyway, either when the task itself is deleted or (more
-    // likely) when the pending list is processed.
+        if (!(*tp)->current_thread_is_running())
+            (*tp)->kill_router(router);
 
 #if CLICK_USERLEVEL
     // Remove signals
     {
-	_signal_lock.acquire();
-	SignalInfo **pprev = &_siginfo;
-	for (SignalInfo *si = *pprev; si; si = *pprev)
-	    if (si->router == router) {
-		remove_signal_handler(si->signo, si->router, si->handler);
-		pprev = &_siginfo;
-	    } else
-		pprev = &si->next;
-	_signal_lock.release();
+        _signal_lock.acquire();
+        SignalInfo **pprev = &_siginfo;
+        for (SignalInfo *si = *pprev; si; si = *pprev)
+            if (si->router == router) {
+                remove_signal_handler(si->signo, si->router, si->handler);
+                pprev = &_siginfo;
+            } else
+                pprev = &si->next;
+        _signal_lock.release();
     }
 #endif
 
     unpause();
 #if CLICK_LINUXMODULE
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
+    preempt_enable();
+#  else
     preempt_enable_no_resched();
+#  endif
 #endif
 
     // something has happened, so wake up threads
     for (RouterThread **tp = _threads + 1; tp != _threads + _nthreads; ++tp)
-	(*tp)->wake();
+        (*tp)->wake();
 }
 
 void
@@ -249,20 +262,20 @@ Master::unregister_router(Router *router)
     lock_master();
 
     if (router->_master) {
-	assert(router->_master == this);
+        assert(router->_master == this);
 
-	if (router->_running >= Router::RUNNING_PREPARING)
-	    kill_router(router);
+        if (router->_running >= Router::RUNNING_PREPARING)
+            kill_router(router);
 
-	Router **pprev = &_routers;
-	for (Router *r = *pprev; r; r = r->_next_router)
-	    if (r != router) {
-		*pprev = r;
-		pprev = &r->_next_router;
-	    }
-	*pprev = 0;
-	_refcount--;		// balanced in register_router()
-	router->_master = 0;
+        Router **pprev = &_routers;
+        for (Router *r = *pprev; r; r = r->_next_router)
+            if (r != router) {
+                *pprev = r;
+                pprev = &r->_next_router;
+            }
+        *pprev = 0;
+        _refcount--;            // balanced in register_router()
+        router->_master = 0;
     }
 
     unlock_master();
@@ -279,29 +292,29 @@ Master::check_driver()
     request_go();
 
     for (Router *r = _routers; r; ) {
-	Router *next_router = r->_next_router;
-	if (r->runcount() <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
-	    Element *dm = (Element *)(r->attachment("Script"));
-	    if (dm) {
-		int max = 1000;
-		while (HandlerCall::call_write(dm, "step", "router", ErrorHandler::default_handler()) == 0
-		       && r->runcount() <= 0 && --max >= 0)
-		    /* do nothing */;
-	    }
-	    if (r->runcount() <= 0 && r->_running >= Router::RUNNING_BACKGROUND)
-		kill_router(r);
-	}
-	r = next_router;
+        Router *next_router = r->_next_router;
+        if (r->runcount() <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
+            Element *dm = (Element *)(r->attachment("Script"));
+            if (dm) {
+                int max = 1000;
+                while (HandlerCall::call_write(dm, "step", "router", ErrorHandler::default_handler()) == 0
+                       && r->runcount() <= 0 && --max >= 0)
+                    /* do nothing */;
+            }
+            if (r->runcount() <= 0 && r->_running >= Router::RUNNING_BACKGROUND)
+                kill_router(r);
+        }
+        r = next_router;
     }
 
     bool any_active = false;
     for (Router *r = _routers; r; r = r->_next_router)
-	if (r->_running == Router::RUNNING_ACTIVE) {
-	    any_active = true;
-	    break;
-	}
+        if (r->_running == Router::RUNNING_ACTIVE) {
+            any_active = true;
+            break;
+        }
     if (!any_active)
-	request_stop();
+        request_stop();
     unlock_master();
     return any_active;
 }
@@ -319,7 +332,7 @@ Master::signal_handler(int signo)
     click_fence();
 # endif
     if (signal_thread)
-	signal_thread->wake();
+        signal_thread->wake();
 }
 
 extern "C" {
@@ -334,24 +347,24 @@ int
 Master::add_signal_handler(int signo, Router *router, String handler)
 {
     if (signo < 0 || signo >= NSIG || router->master() != this)
-	return -1;
+        return -1;
 
     _signal_lock.acquire();
     int status = 0, nhandlers = 0;
     SignalInfo **pprev = &_siginfo;
     for (SignalInfo *si = *pprev; si; si = *pprev)
-	if (si->equals(signo, router, handler))
-	    goto unlock_exit;
-	else {
-	    nhandlers += (si->signo == signo);
-	    pprev = &si->next;
-	}
+        if (si->equals(signo, router, handler))
+            goto unlock_exit;
+        else {
+            nhandlers += (si->signo == signo);
+            pprev = &si->next;
+        }
 
     if ((*pprev = new SignalInfo(signo, router, handler))) {
-	if (nhandlers == 0 && sigismember(&_sig_dispatching, signo) == 0)
-	    click_signal(signo, sighandler, false);
+        if (nhandlers == 0 && sigismember(&_sig_dispatching, signo) == 0)
+            click_signal(signo, sighandler, false);
     } else
-	status = -1;
+        status = -1;
 
   unlock_exit:
     _signal_lock.release();
@@ -365,18 +378,18 @@ Master::remove_signal_handler(int signo, Router *router, String handler)
     int nhandlers = 0, status = -1;
     SignalInfo **pprev = &_siginfo;
     for (SignalInfo *si = *pprev; si; si = *pprev)
-	if (si->equals(signo, router, handler)) {
-	    *pprev = si->next;
-	    delete si;
-	    status = 0;
-	} else {
-	    nhandlers += (si->signo == signo);
-	    pprev = &si->next;
-	}
+        if (si->equals(signo, router, handler)) {
+            *pprev = si->next;
+            delete si;
+            status = 0;
+        } else {
+            nhandlers += (si->signo == signo);
+            pprev = &si->next;
+        }
 
     if (status >= 0 && nhandlers == 0
-	&& sigismember(&_sig_dispatching, signo) == 0)
-	click_signal(signo, SIG_DFL, false);
+        && sigismember(&_sig_dispatching, signo) == 0)
+        click_signal(signo, SIG_DFL, false);
 
     _signal_lock.release();
     return status;
@@ -394,27 +407,27 @@ Master::process_signals(RouterThread *thread)
     // collect activated signal handler info
     SignalInfo *happened, **hpprev = &happened;
     for (SignalInfo **pprev = &_siginfo, *si = *pprev; si; si = *pprev)
-	if ((signal_pending[si->signo]
-	     || sigismember(&_sig_dispatching, si->signo) > 0)
-	    && si->router->running()) {
-	    sigaddset(&_sig_dispatching, si->signo);
-	    signal_pending[si->signo] = 0;
-	    *pprev = si->next;
-	    *hpprev = si;
-	    hpprev = &si->next;
-	} else
-	    pprev = &si->next;
+        if ((signal_pending[si->signo]
+             || sigismember(&_sig_dispatching, si->signo) > 0)
+            && si->router->running()) {
+            sigaddset(&_sig_dispatching, si->signo);
+            signal_pending[si->signo] = 0;
+            *pprev = si->next;
+            *hpprev = si;
+            hpprev = &si->next;
+        } else
+            pprev = &si->next;
     *hpprev = 0;
 
     // call relevant signal handlers
     sigset_t sigset_handled;
     sigemptyset(&sigset_handled);
     while (happened) {
-	SignalInfo *next = happened->next;
-	if (HandlerCall::call_write(happened->handler, happened->router->root_element()) >= 0)
-	    sigaddset(&sigset_handled, happened->signo);
-	delete happened;
-	happened = next;
+        SignalInfo *next = happened->next;
+        if (HandlerCall::call_write(happened->handler, happened->router->root_element()) >= 0)
+            sigaddset(&sigset_handled, happened->signo);
+        delete happened;
+        happened = next;
     }
 
     // collect currently active signal handlers (handler calls may have
@@ -422,25 +435,25 @@ Master::process_signals(RouterThread *thread)
     sigset_t sigset_active;
     sigemptyset(&sigset_active);
     for (SignalInfo *si = _siginfo; si; si = si->next)
-	sigaddset(&sigset_active, si->signo);
+        sigaddset(&sigset_active, si->signo);
 
     // reset & possibly redeliver unhandled signals and signals that we gave
     // up on that happened again since we started running this function
     for (int signo = 0; signo < NSIG; ++signo)
-	if (sigismember(&_sig_dispatching, signo) > 0) {
-	    if (sigismember(&sigset_active, signo) == 0) {
-		click_signal(signo, SIG_DFL, false);
-		click_fence();
-		if (signal_pending[signo] != 0) {
-		    signal_pending[signo] = 0;
-		    goto suicide;
-		}
-	    }
-	    if (sigismember(&sigset_handled, signo) == 0) {
-	    suicide:
-		kill(getpid(), signo);
-	    }
-	}
+        if (sigismember(&_sig_dispatching, signo) > 0) {
+            if (sigismember(&sigset_active, signo) == 0) {
+                click_signal(signo, SIG_DFL, false);
+                click_fence();
+                if (signal_pending[signo] != 0) {
+                    signal_pending[signo] = 0;
+                    goto suicide;
+                }
+            }
+            if (sigismember(&sigset_handled, signo) == 0) {
+            suicide:
+                kill(getpid(), signo);
+            }
+        }
 
     sigemptyset(&_sig_dispatching);
     _signal_lock.release();
@@ -473,44 +486,44 @@ Master::info() const
     sa << "paused:\t\t" << _master_paused << '\n';
     sa << "stop_flag:\t" << _threads[0]->_stop_flag << '\n';
     for (int i = 0; i < _nthreads; i++) {
-	RouterThread *t = _threads[i];
-	sa << "thread " << (i - 1) << ":";
+        RouterThread *t = _threads[i];
+        sa << "thread " << (i - 1) << ":";
 # ifdef CLICK_LINUXMODULE
-	if (t->_sleeper)
-	    sa << "\tsleep";
-	else
-	    sa << "\twake";
+        if (t->_sleeper)
+            sa << "\tsleep";
+        else
+            sa << "\twake";
 # endif
-	if (t->_pending_head.x)
-	    sa << "\tpending";
+        if (t->_pending_head.x)
+            sa << "\tpending";
 # if CLICK_USERLEVEL
-	if (t->select_set()._wake_pipe[0] >= 0) {
-	    fd_set rfd;
-	    struct timeval to;
-	    FD_ZERO(&rfd);
-	    FD_SET(t->select_set()._wake_pipe[0], &rfd);
-	    timerclear(&to);
-	    (void) select(t->select_set()._wake_pipe[0] + 1, &rfd, 0, 0, &to);
-	    if (FD_ISSET(t->select_set()._wake_pipe[0], &rfd))
-		sa << "\tpipewoken";
-	}
+        if (t->select_set()._wake_pipe[0] >= 0) {
+            fd_set rfd;
+            struct timeval to;
+            FD_ZERO(&rfd);
+            FD_SET(t->select_set()._wake_pipe[0], &rfd);
+            timerclear(&to);
+            (void) select(t->select_set()._wake_pipe[0] + 1, &rfd, 0, 0, &to);
+            if (FD_ISSET(t->select_set()._wake_pipe[0], &rfd))
+                sa << "\tpipewoken";
+        }
 # endif
 # if CLICK_DEBUG_SCHEDULING
-	sa << '\t' << RouterThread::thread_state_name(t->thread_state());
+        sa << '\t' << RouterThread::thread_state_name(t->thread_state());
 # endif
-	sa << '\n';
+        sa << '\n';
 # if CLICK_DEBUG_SCHEDULING > 1
-	t->set_thread_state(t->thread_state()); // account for time
-	bool any = false;
-	for (int s = 0; s < RouterThread::NSTATES; ++s)
-	    if (Timestamp time = t->thread_state_time(s)) {
-		sa << (any ? ", " : "\t\t")
-		   << RouterThread::thread_state_name(s)
-		   << ' ' << time << '/' << t->thread_state_count(s);
-		any = true;
-	    }
-	if (any)
-	    sa << '\n';
+        t->set_thread_state(t->thread_state()); // account for time
+        bool any = false;
+        for (int s = 0; s < RouterThread::NSTATES; ++s)
+            if (Timestamp time = t->thread_state_time(s)) {
+                sa << (any ? ", " : "\t\t")
+                   << RouterThread::thread_state_name(s)
+                   << ' ' << time << '/' << t->thread_state_count(s);
+                any = true;
+            }
+        if (any)
+            sa << '\n';
 # endif
     }
     return sa.take_string();

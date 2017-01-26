@@ -15,7 +15,11 @@ configure.lineno
 depcomp
 elementmap
 elementmap.xml
+etc/pkg-config.mk
 installch
 man
+share/click/config.mk
+share/click/elementmap.xml
+share/click/pkg-config.mk
 stamp-egroup
 stamp-h

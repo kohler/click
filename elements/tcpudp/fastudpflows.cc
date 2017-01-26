@@ -24,6 +24,8 @@
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
 
+CLICK_DECLS
+
 const unsigned FastUDPFlows::NO_LIMIT;
 
 FastUDPFlows::FastUDPFlows()
@@ -45,10 +47,11 @@ FastUDPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
   _active = true;
   unsigned rate;
   int limit;
+  int len;
   if (Args(conf, this, errh)
       .read_mp("RATE", rate)
       .read_mp("LIMIT", limit)
-      .read_mp("LENGTH", _len)
+      .read_mp("LENGTH", len)
       .read_mp("SRCETH", EtherAddressArg(), _ethh.ether_shost)
       .read_mp("SRCIP", _sipaddr)
       .read_mp("DSTETH", EtherAddressArg(), _ethh.ether_dhost)
@@ -59,10 +62,7 @@ FastUDPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
       .read_p("ACTIVE", _active)
       .complete() < 0)
     return -1;
-  if (_len < 60) {
-    click_chatter("warning: packet length < 60, defaulting to 60");
-    _len = 60;
-  }
+  set_length(len);
   _ethh.ether_type = htons(0x0800);
   if(rate != 0){
     _rate_limited = true;
@@ -87,9 +87,8 @@ FastUDPFlows::change_ports(int flow)
   udp->uh_sum = 0;
   unsigned short len = _len-14-sizeof(click_ip);
   if (_cksum) {
-    unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
-    udp->uh_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-				    len, IP_PROTO_UDP, csum);
+    unsigned csum = click_in_cksum((uint8_t *)udp, len);
+    udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
   } else
     udp->uh_sum = 0;
 }
@@ -120,7 +119,7 @@ FastUDPFlows::initialize(ErrorHandler *)
   _count = 0;
   _flows = new flow_t[_nflows];
 
-  for (int i=0; i<_nflows; i++) {
+  for (unsigned i=0; i<_nflows; i++) {
     WritablePacket *q = Packet::make(_len);
     _flows[i].packet = q;
     memcpy(q->data(), &_ethh, 14);
@@ -150,9 +149,8 @@ FastUDPFlows::initialize(ErrorHandler *)
     unsigned short len = _len-14-sizeof(click_ip);
     udp->uh_ulen = htons(len);
     if (_cksum) {
-      unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
-      udp->uh_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
-				      len, IP_PROTO_UDP, csum);
+      unsigned csum = click_in_cksum((uint8_t *)udp, len);
+      udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
     } else
       udp->uh_sum = 0;
     _flows[i].flow_count = 0;
@@ -162,16 +160,21 @@ FastUDPFlows::initialize(ErrorHandler *)
 }
 
 void
+FastUDPFlows::cleanup_flows() {
+    if (_flows) {
+        for (unsigned i=0; i<_nflows; i++) {
+            _flows[i].packet->kill();
+            _flows[i].packet=0;
+        }
+        delete[] _flows;
+        _flows = 0;
+    }
+}
+
+void
 FastUDPFlows::cleanup(CleanupStage)
 {
-  if (_flows) {
-    for (int i=0; i<_nflows; i++) {
-      _flows[i].packet->kill();
-      _flows[i].packet=0;
-    }
-    delete[] _flows;
-    _flows = 0;
-  }
+	cleanup_flows();
 }
 
 Packet *
@@ -243,7 +246,7 @@ FastUDPFlows_limit_write_handler
 (const String &s, Element *e, void *, ErrorHandler *errh)
 {
   FastUDPFlows *c = (FastUDPFlows *)e;
-  unsigned limit;
+  int limit;
   if (!IntArg().parse(s, limit))
     return errh->error("limit parameter must be integer >= 0");
   c->_limit = (limit >= 0 ? limit : c->NO_LIMIT);
@@ -278,6 +281,22 @@ FastUDPFlows_active_write_handler
   return 0;
 }
 
+int
+FastUDPFlows::length_write_handler
+(const String &s, Element *e, void *, ErrorHandler *errh)
+{
+  FastUDPFlows *c = (FastUDPFlows *)e;
+  unsigned len;
+  if (!IntArg().parse(s, len))
+    return errh->error("length parameter must be integer");
+  if (len != c->_len) {
+	  c->set_length(len);
+	  c->cleanup_flows();
+	  c->initialize(0);
+  }
+  return 0;
+}
+
 void
 FastUDPFlows::add_handlers()
 {
@@ -287,7 +306,9 @@ FastUDPFlows::add_handlers()
   add_write_handler("reset", FastUDPFlows_reset_write_handler, 0, Handler::BUTTON);
   add_write_handler("active", FastUDPFlows_active_write_handler, 0, Handler::CHECKBOX);
   add_write_handler("limit", FastUDPFlows_limit_write_handler, 0);
+  add_data_handlers("length", Handler::OP_READ, &_len);
+  add_write_handler("length", length_write_handler, 0);
 }
 
-ELEMENT_REQUIRES(linuxmodule)
+CLICK_ENDDECLS
 EXPORT_ELEMENT(FastUDPFlows)

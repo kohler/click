@@ -55,8 +55,7 @@ install-include: stamp-h
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/clicknet/*.h $(DESTDIR)$(netincludedir)
 
 click-buildtool: $(srcdir)/click-buildtool.in config.status
-	cd $(top_builddir) && \
-	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 	@chmod +x click-buildtool; touch click-buildtool
 
 $(srcdir)/configure: $(srcdir)/configure.ac $(srcdir)/m4/click.m4
@@ -64,12 +63,10 @@ $(srcdir)/configure: $(srcdir)/configure.ac $(srcdir)/m4/click.m4
 config.status: $(srcdir)/configure
 	$(SHELL) $(srcdir)/configure @ac_configure_args@
 Makefile: config.status $(srcdir)/Makefile.in
-	cd $(top_builddir) && \
-	  CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 config.h: stamp-h
 stamp-h: $(srcdir)/config.h.in $(srcdir)/config-userlevel.h.in config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status
 	echo > stamp-h
 
 always:

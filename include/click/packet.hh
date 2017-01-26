@@ -65,7 +65,7 @@ class Packet { public:
     typedef void (*buffer_destructor_type)(unsigned char* buf, size_t sz, void* argument);
     static WritablePacket* make(unsigned char* data, uint32_t length,
 				buffer_destructor_type buffer_destructor,
-                                void* argument = (void*) 0) CLICK_WARN_UNUSED_RESULT;
+                                void* argument = (void*) 0, int headroom = 0, int tailroom = 0) CLICK_WARN_UNUSED_RESULT;
 #endif
 
     static void static_cleanup();
@@ -97,6 +97,15 @@ class Packet { public:
     buffer_destructor_type buffer_destructor() const {
 	return _destructor;
     }
+
+    void set_buffer_destructor(buffer_destructor_type destructor) {
+        _destructor = destructor;
+    }
+
+    void* destructor_argument() {
+        return _destructor_argument;
+    }
+
     void reset_buffer() {
 	assert(!shared());
 	_head = _data = _tail = _end = 0;
@@ -262,6 +271,7 @@ class Packet { public:
     inline void shrink_data(const unsigned char *data, uint32_t length);
     inline void change_headroom_and_length(uint32_t headroom, uint32_t length);
 #endif
+    bool copy(Packet* p, int headroom=0);
     //@}
 
     /** @name Header Pointers */
@@ -311,7 +321,8 @@ class Packet { public:
     //@}
 
 #if CLICK_LINUXMODULE
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
+# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET) || \
+     (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0))
   protected:
     typedef typeof(((struct sk_buff*)0)->mac_header) mac_header_type;
     typedef typeof(((struct sk_buff*)0)->network_header) network_header_type;
@@ -628,6 +639,12 @@ class Packet { public:
 #endif
 	*reinterpret_cast<click_aliasable_void_pointer_t *>(xanno()->c + i) = const_cast<void *>(x);
     }
+
+#if !CLICK_LINUXMODULE
+    inline Packet* data_packet() {
+        return _data_packet;
+    }
+#endif
 
     inline void clear_annotations(bool all = true);
     inline void copy_annotations(const Packet *);
@@ -2053,7 +2070,11 @@ Packet::shift_header_annotations(const unsigned char *old_head,
 {
 #if CLICK_LINUXMODULE
     struct sk_buff *mskb = skb();
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET
+    /* From Linux 2.6.24 - 3.10, the header offsets are integers if
+     * NET_SKBUFF_DATA_USES_OFFSET is 1.  From 3.11 onward, they're
+     * always integers. */
+# if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && NET_SKBUFF_DATA_USES_OFFSET) || \
+     (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0))
     (void) old_head;
     mskb->mac_header += (mskb->mac_header == (mac_header_type) ~0U ? 0 : extra_headroom);
     mskb->network_header += (mskb->network_header == (network_header_type) ~0U ? 0 : extra_headroom);

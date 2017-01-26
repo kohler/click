@@ -128,13 +128,13 @@ Unqueue::write_param(const String &conf, Element *e, void *user_data,
 void
 Unqueue::add_handlers()
 {
-    add_data_handlers("active", Handler::OP_READ | Handler::CHECKBOX, &_active);
-    add_data_handlers("count", Handler::OP_READ, &_count);
-    add_data_handlers("burst", Handler::OP_READ, &_burst);
-    add_data_handlers("limit", Handler::OP_READ, &_limit);
+    add_data_handlers("active", Handler::f_read | Handler::f_checkbox, &_active);
+    add_data_handlers("count", Handler::f_read, &_count);
+    add_data_handlers("burst", Handler::f_read, &_burst);
+    add_data_handlers("limit", Handler::f_read, &_limit);
     add_write_handler("active", write_param, h_active);
-    add_write_handler("reset", write_param, h_reset, Handler::BUTTON);
-    add_write_handler("reset_counts", write_param, h_reset, Handler::BUTTON | Handler::UNCOMMON);
+    add_write_handler("reset", write_param, h_reset, Handler::f_button);
+    add_write_handler("reset_counts", write_param, h_reset, Handler::f_button | Handler::f_uncommon);
     add_write_handler("burst", write_param, h_burst);
     add_write_handler("limit", write_param, h_limit);
     add_task_handlers(&_task, &_signal);

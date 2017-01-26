@@ -92,18 +92,17 @@ ipb:
 
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 elemlist:
 	@/bin/rm -f elements.conf
 	@$(MAKE) elements.conf
-elements.conf: $(top_builddir)/config.status $(top_builddir)/click-buildtool
-	echo "exopc @element_groups@" | $(top_builddir)/click-buildtool findelem -r linuxmodule -p $(top_srcdir) > elements.conf
-elements.mk: elements.conf $(top_builddir)/click-buildtool
-	$(top_builddir)/click-buildtool elem2make -x "$(STD_ELEMENT_OBJS)" < elements.conf > elements.mk
-elements.cc: elements.conf $(top_builddir)/click-buildtool
-	$(top_builddir)/click-buildtool elem2export < elements.conf > elements.cc
+elements.conf: $(top_builddir)/config.status $(CLICK_BUILDTOOL)
+	echo "exopc @element_groups@" | $(CLICK_BUILDTOOL) findelem -r linuxmodule -p $(top_srcdir) > elements.conf
+elements.mk: elements.conf $(CLICK_BUILDTOOL)
+	$(CLICK_BUILDTOOL) elem2make -x "$(STD_ELEMENT_OBJS)" < elements.conf > elements.mk
+elements.cc: elements.conf $(CLICK_BUILDTOOL)
+	$(CLICK_BUILDTOOL) elem2export < elements.conf > elements.cc
 	@rm -f elements.d
 
 DEPFILES := $(wildcard *.d)

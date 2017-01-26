@@ -57,7 +57,7 @@ AdjustTimestamp::simple_action(Packet *p)
 void
 AdjustTimestamp::add_handlers()
 {
-    add_data_handlers("time", Handler::OP_READ | Handler::OP_WRITE, &_ts, true);
+    add_data_handlers("time", Handler::f_read | Handler::f_write, &_ts, true);
 }
 
 CLICK_ENDDECLS

@@ -132,7 +132,7 @@ LinkUnqueue::run_task(Task *)
 	// hook up, and remember we were doing this back to back
 	_qtail = p;
 	p->set_next(0);
-	Storage::_tail++;
+	Storage::set_tail(Storage::tail() + 1);
 	worked = _back_to_back = true;
     }
 
@@ -145,7 +145,7 @@ LinkUnqueue::run_task(Task *)
 	p->set_next(0);
 	//click_chatter("%p{timestamp}: RELEASE %p{timestamp}", &now, &p->timestamp_anno());
 	output(0).push(p);
-	Storage::_tail--;
+	Storage::set_tail(Storage::tail() - 1);
 	worked = true;
     }
 
@@ -228,7 +228,7 @@ LinkUnqueue::write_handler(const String &s, Element *e, void *thunk, ErrorHandle
     /* do a full reset */
     u->cleanup(CLEANUP_MANUAL);
     u->_qhead = u->_qtail = 0;
-    u->Storage::_tail = 0;
+    u->Storage::set_tail(0);
     u->_timer.unschedule();
     u->_task.reschedule();
     return 0;

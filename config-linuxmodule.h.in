@@ -34,6 +34,9 @@
 /* Define if you have the <asm/alternative.h> header file. */
 #undef HAVE_LINUX_ASM_ALTERNATIVE_H
 
+/* Define if you have the <asm/scatterlist.h> header file. */
+#undef HAVE_LINUX_ASM_SCATTERLIST_H
+
 /* Define if you have the <asm/system.h> header file. */
 #undef HAVE_LINUX_ASM_SYSTEM_H
 
@@ -54,6 +57,9 @@
 
 /* Define if you have the d_make_root function. */
 #undef HAVE_LINUX_D_MAKE_ROOT
+
+/* Define if 'struct dentry' has a 'd_child' member. */
+#undef HAVE_LINUX_DENTRY_D_CHILD
 
 /* Define if your Linux kernel has dev_ioctl. */
 #undef HAVE_LINUX_DEV_IOCTL
@@ -76,6 +82,9 @@
 /* Define if you have the <linux/ktime.h> header file. */
 #undef HAVE_LINUX_KTIME_H
 
+/* Define if your Linux kernel exports ktime_mono_to_any. */
+#undef HAVE_LINUX_KTIME_MONO_TO_ANY
+
 /* Define if your Linux kernel has polling extensions. */
 #undef HAVE_LINUX_POLLING
 
@@ -84,6 +93,9 @@
 
 /* Define if your Linux kernel has sb_lock. */
 #undef HAVE_LINUX_SB_LOCK
+
+/* Define if your Linux kernel has set_cpus_allowed_ptr. */
+#undef HAVE_LINUX_SET_CPUS_ALLOWED_PTR
 
 /* Define if 'struct skb_shared_info' has a 'gso_size' member. */
 #undef HAVE_LINUX_SKB_SHINFO_GSO_SIZE
@@ -156,6 +168,9 @@
 
 /* Define if you have the skb_recycle function. */
 #undef HAVE_SKB_RECYCLE
+
+/* Define if you have the skb_recycle_check function. */
+#undef HAVE_SKB_RECYCLE_CHECK
 
 /* Define if you have the strnlen function. */
 #define HAVE_STRNLEN 1

@@ -1,5 +1,7 @@
 %require -q
 click-buildtool provides FromIPSummaryDump
+printf '\xd4\xc3\xb2\xa1\x02\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\xd0\x07\x00\x00\x01\x00\x00\x00' > TESTDUMP
+tcpdump -r TESTDUMP >/dev/null 2>&1
 
 %script
 
@@ -20,17 +22,17 @@ tcpdump -nn -t -v -r OUT1 > OUT2
 # NB: ToIPSummaryDump's ip_opt option DOES NOT write nop and eol
 click -e "
 FromDump(OUT1, FORCE_IP true, STOP true)
-	-> ToIPSummaryDump(OUT3, CONTENTS src sport dst dport proto ip_opt);
+	-> ToIPSummaryDump(OUT3, FIELDS src sport dst dport proto ip_opt);
 "
 
 # go to and from a binary dump to test that
 click -e "
 FromDump(OUT1, FORCE_IP true, STOP true)
-	-> ToIPSummaryDump(OUT4, BINARY true, CONTENTS src sport dst dport proto ip_opt);
+	-> ToIPSummaryDump(OUT4, BINARY true, FIELDS src sport dst dport proto ip_opt);
 " 
 
 click -e "FromIPSummaryDump(OUT4, STOP true)
-	-> ToIPSummaryDump(OUT5, CONTENTS src sport dst dport proto ip_opt);"
+	-> ToIPSummaryDump(OUT5, FIELDS src sport dst dport proto ip_opt);"
 
 %file IN1
 !data src sport dst dport proto ip_opt

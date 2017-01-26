@@ -186,28 +186,27 @@ use the patchless install procedure above.
 NS-3 CLICK INTEGRATION
 ----------------------
 
-The Network Simulator 3 (NS-3) project offers support for Click integration.
+The Network Simulator 3 (ns-3) project offers support for Click integration.
 
-The first step is to build Click. At the top of your Click source
-directory, execute the following:
+The first step is to build Click. Execute the following in your Click source
+directory:
 
 	./configure --enable-userlevel --disable-linuxmodule --enable-nsclick
 	make
 
-Note: The 'make install' step is optional.
+Due to limitations of the ns-3 build procedure, you must configure
+Click in its source directory.
 
-Once Click has been built successfully, change into the ns-3 directory and
-configure ns-3 with Click Integration support:
+Once Click has built, change into the ns-3 directory and configure
+ns-3 with Click Integration support:
 
 	./waf configure --enable-examples --with-nsclick=/path/to/click/source
+
+If it says "NS-3 Click Integration : enabled", then you’re good to go.
+
+Next, build, and try running one of the examples:
+
 	./waf build
-
-If it says "enabled" beside "NS-3 Click Integration Support", then you’re
-good to go.  The --with-nsclick argument may also point to the Click
-installation prefix in case you've done a 'make install'.
-
-Next, try running one of the examples:
-
 	./waf --run nsclick-simple-lan
 
 Using tcpdump or wireshark, you may then view the resulting .pcap traces
@@ -256,6 +255,7 @@ You should see some NS printouts intermixed with some Click printouts,
 which begin with "tokernel", "discard", "fromkernel", and so forth.
 
 Please note that the NS-2 patch no longer requires libnet.
+
 
 CLICKOS
 -------
@@ -326,6 +326,20 @@ If you are looking towards faster ways of booting up these virtual machines,
 have a look at the following Xen toolstack:
 
 	http://github.com/cnplab/cosmos
+
+
+DPDK
+----
+
+Support for using Intel DPDK for high-speed userspace I/O is enabled using
+
+    ./configure RTE_SDK=... RTE_TARGET=... \
+        --enable-dpdk --enable-user-multithread --disable-linuxmodule
+
+where RTE_SDK and RTE_TARGET are defined as per the DPDK documentation, e.g.
+
+    RTE_SDK=/path/to/dpdk-2.1.0/
+    RTE_TARGET=x86_64-native-linuxapp-gcc
 
 CLICKY GUI
 ----------

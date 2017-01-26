@@ -32,11 +32,11 @@ class RouterThread { public:
     inline int thread_id() const;
 
     inline Master *master() const;
-    inline TimerSet &timer_set()		{ return _timers; }
-    inline const TimerSet &timer_set() const	{ return _timers; }
+    inline TimerSet &timer_set()                { return _timers; }
+    inline const TimerSet &timer_set() const    { return _timers; }
 #if CLICK_USERLEVEL
-    inline SelectSet &select_set()		{ return _selects; }
-    inline const SelectSet &select_set() const	{ return _selects; }
+    inline SelectSet &select_set()              { return _selects; }
+    inline const SelectSet &select_set() const  { return _selects; }
 #endif
 
     // Task list functions
@@ -55,6 +55,7 @@ class RouterThread { public:
 
     inline bool stop_flag() const;
 
+    inline void mark_driver_entry();
     void driver();
 
     void kill_router(Router *router);
@@ -62,15 +63,15 @@ class RouterThread { public:
 #if HAVE_ADAPTIVE_SCHEDULER
     // min_cpu_share() and max_cpu_share() are expressed on a scale with
     // Task::MAX_UTILIZATION == 100%.
-    unsigned min_cpu_share() const	{ return _min_click_share; }
-    unsigned max_cpu_share() const	{ return _max_click_share; }
-    unsigned cur_cpu_share() const	{ return _cur_click_share; }
+    unsigned min_cpu_share() const      { return _min_click_share; }
+    unsigned max_cpu_share() const      { return _max_click_share; }
+    unsigned cur_cpu_share() const      { return _cur_click_share; }
     void set_cpu_share(unsigned min_share, unsigned max_share);
 #endif
 
 #if CLICK_LINUXMODULE || CLICK_BSDMODULE
-    bool greedy() const			{ return _greedy; }
-    void set_greedy(bool g)		{ _greedy = g; }
+    bool greedy() const                 { return _greedy; }
+    void set_greedy(bool g)             { _greedy = g; }
 #endif
 
     inline void wake();
@@ -80,19 +81,19 @@ class RouterThread { public:
 #endif
 
     enum { S_PAUSED, S_BLOCKED, S_TIMERWAIT,
-	   S_LOCKSELECT, S_LOCKTASKS,
-	   S_RUNTASK, S_RUNTIMER, S_RUNSIGNAL, S_RUNPENDING, S_RUNSELECT,
-	   NSTATES };
+           S_LOCKSELECT, S_LOCKTASKS,
+           S_RUNTASK, S_RUNTIMER, S_RUNSIGNAL, S_RUNPENDING, S_RUNSELECT,
+           NSTATES };
     inline void set_thread_state(int state);
     inline void set_thread_state_for_blocking(int delay_type);
 #if CLICK_DEBUG_SCHEDULING
-    int thread_state() const		{ return _thread_state; }
+    int thread_state() const            { return _thread_state; }
     static String thread_state_name(int state);
-    uint32_t driver_epoch() const	{ return _driver_epoch; }
-    uint32_t driver_task_epoch() const	{ return _driver_task_epoch; }
+    uint32_t driver_epoch() const       { return _driver_epoch; }
+    uint32_t driver_task_epoch() const  { return _driver_task_epoch; }
     Timestamp task_epoch_time(uint32_t epoch) const;
 # if CLICK_LINUXMODULE
-    struct task_struct *sleeper() const	{ return _linux_task; }
+    struct task_struct *sleeper() const { return _linux_task; }
 # endif
 # if CLICK_DEBUG_SCHEDULING > 1
     inline Timestamp thread_state_time(int state) const;
@@ -104,13 +105,13 @@ class RouterThread { public:
 
 #if HAVE_TASK_HEAP
     struct task_heap_element {
-	unsigned pass;
-	Task *t;
-	task_heap_element() {
-	}
-	task_heap_element(Task *t_)
-	    : pass(t_->_pass), t(t_) {
-	}
+        unsigned pass;
+        Task *t;
+        task_heap_element() {
+        }
+        task_heap_element(Task *t_)
+            : pass(t_->_pass), t(t_) {
+        }
     };
 #endif
 
@@ -128,17 +129,17 @@ class RouterThread { public:
 
 #if HAVE_ADAPTIVE_SCHEDULER
     enum { C_CLICK, C_KERNEL, NCLIENTS };
-    struct Client {			// top-level stride clients
-	unsigned pass;
-	unsigned stride;
-	int tickets;
-	Client() : pass(0), tickets(0)	{ }
+    struct Client {                     // top-level stride clients
+        unsigned pass;
+        unsigned stride;
+        int tickets;
+        Client() : pass(0), tickets(0)  { }
     };
     Client _clients[NCLIENTS];
-    unsigned _global_pass;		// global pass
-    unsigned _max_click_share;		// maximum allowed Click share of CPU
-    unsigned _min_click_share;		// minimum allowed Click share of CPU
-    unsigned _cur_click_share;		// current Click share
+    unsigned _global_pass;              // global pass
+    unsigned _max_click_share;          // maximum allowed Click share of CPU
+    unsigned _min_click_share;          // minimum allowed Click share of CPU
+    unsigned _cur_click_share;          // current Click share
     Timestamp _adaptive_restride_timestamp;
     int _adaptive_restride_iter;
 #endif
@@ -155,12 +156,13 @@ class RouterThread { public:
     // SHARED STATE GROUP
     Master *_master CLICK_ALIGNED(CLICK_CACHE_LINE_SIZE);
     int _id;
+    bool _driver_entered;
 #if HAVE_MULTITHREAD && !(CLICK_LINUXMODULE || CLICK_MINIOS)
     click_processor_t _running_processor;
 #endif
 #if CLICK_LINUXMODULE
-    struct task_struct *_linux_task;
     bool _greedy;
+    struct task_struct *_linux_task;
 #endif
 #if CLICK_MINIOS
     struct thread *_minios_thread;
@@ -208,9 +210,9 @@ class RouterThread { public:
 #if HAVE_STRIDE_SCHED
     inline unsigned pass() const {
 # if HAVE_TASK_HEAP
-	return _task_heap.size() ? _task_heap.unchecked_at(0).pass : 0;
+        return _task_heap.size() ? _task_heap.unchecked_at(0).pass : 0;
 # else
-	return _task_link._next->_pass;
+        return _task_link._next->_pass;
 # endif
     }
 #endif
@@ -230,6 +232,7 @@ class RouterThread { public:
 #endif
     static inline bool running_in_interrupt();
     inline bool current_thread_is_running() const;
+    inline bool current_thread_is_running_cleanup() const;
     void request_stop();
     inline void request_go();
 
@@ -357,6 +360,12 @@ RouterThread::running_in_interrupt()
 #endif
 }
 
+inline void
+RouterThread::mark_driver_entry()
+{
+    _driver_entered = true;
+}
+
 inline bool
 RouterThread::current_thread_is_running() const
 {
@@ -365,12 +374,18 @@ RouterThread::current_thread_is_running() const
 #elif CLICK_MINIOS
     return get_current() == _minios_thread;
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD && HAVE___THREAD_STORAGE_CLASS
-    return click_current_thread_id == _id;
+    return click_current_thread_id == (_id | 0x40000000);
 #elif CLICK_USERLEVEL && HAVE_MULTITHREAD
     return click_current_processor() == _running_processor;
 #else
     return true;
 #endif
+}
+
+inline bool
+RouterThread::current_thread_is_running_cleanup() const
+{
+    return current_thread_is_running() || (!_driver_entered && _id >= 0);
 }
 
 inline void
@@ -385,22 +400,22 @@ RouterThread::block_tasks(bool scheduled)
 {
     assert(!current_thread_is_running() && !running_in_interrupt());
     if (!scheduled)
-	++_task_blocker_waiting;
+        ++_task_blocker_waiting;
     while (1) {
-	uint32_t blocker = _task_blocker.value();
-	if ((int32_t) blocker >= 0
-	    && _task_blocker.compare_swap(blocker, blocker + 1) == blocker)
-	    break;
+        uint32_t blocker = _task_blocker.value();
+        if ((int32_t) blocker >= 0
+            && _task_blocker.compare_swap(blocker, blocker + 1) == blocker)
+            break;
 #if CLICK_LINUXMODULE
-	// 3.Nov.2008: Must allow other threads a chance to run.  Otherwise,
-	// soft lock is possible: the thread in block_tasks() waits for
-	// RouterThread::_linux_task to complete a task set, but
-	// RouterThread::_linux_task can't run until the thread in
-	// block_tasks() relinquishes the CPU.
-	//
-	// We might be able to avoid schedule() in some cases, but don't
-	// bother to try.
-	schedule();
+        // 3.Nov.2008: Must allow other threads a chance to run.  Otherwise,
+        // soft lock is possible: the thread in block_tasks() waits for
+        // RouterThread::_linux_task to complete a task set, but
+        // RouterThread::_linux_task can't run until the thread in
+        // block_tasks() relinquishes the CPU.
+        //
+        // We might be able to avoid schedule() in some cases, but don't
+        // bother to try.
+        schedule();
 #endif
     }
     --_task_blocker_waiting;
@@ -418,8 +433,8 @@ RouterThread::lock_tasks()
 {
     assert(!running_in_interrupt());
     if (unlikely(!current_thread_is_running())) {
-	block_tasks(false);
-	_task_lock.acquire();
+        block_tasks(false);
+        _task_lock.acquire();
     }
 }
 
@@ -428,8 +443,8 @@ RouterThread::unlock_tasks()
 {
     assert(!running_in_interrupt());
     if (unlikely(!current_thread_is_running())) {
-	_task_lock.release();
-	unblock_tasks();
+        _task_lock.release();
+        unblock_tasks();
     }
 }
 
@@ -439,14 +454,14 @@ RouterThread::wake()
 #if CLICK_LINUXMODULE
     struct task_struct *task = _linux_task;
     if (task)
-	wake_up_process(task);
+        wake_up_process(task);
 #elif CLICK_USERLEVEL
     // see also Master::add_select()
     if (!current_thread_is_running())
-	_selects.wake_immediate();
+        _selects.wake_immediate();
 #elif CLICK_BSDMODULE && !BSD_NETISRSCHED
     if (_sleep_ident)
-	wakeup_one(&_sleep_ident);
+        wakeup_one(&_sleep_ident);
 #endif
 }
 
@@ -477,9 +492,9 @@ RouterThread::set_thread_state(int state)
 # if CLICK_DEBUG_SCHEDULING > 1
     Timestamp now = Timestamp::now();
     if (_thread_state_timestamp)
-	_thread_state_time[_thread_state] += now - _thread_state_timestamp;
+        _thread_state_time[_thread_state] += now - _thread_state_timestamp;
     if (_thread_state != state)
-	++_thread_state_count[_thread_state];
+        ++_thread_state_count[_thread_state];
     _thread_state_timestamp = now;
 # endif
     _thread_state = state;
@@ -490,9 +505,9 @@ inline void
 RouterThread::set_thread_state_for_blocking(int delay_type)
 {
     if (delay_type < 0)
-	set_thread_state(S_BLOCKED);
+        set_thread_state(S_BLOCKED);
     else
-	set_thread_state(delay_type ? S_TIMERWAIT : S_PAUSED);
+        set_thread_state(delay_type ? S_TIMERWAIT : S_PAUSED);
 }
 
 #if CLICK_DEBUG_SCHEDULING > 1

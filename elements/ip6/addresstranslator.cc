@@ -205,7 +205,7 @@ AddressTranslator::configure(Vector<String> &conf, ErrorHandler *errh)
   _v.clear();
   int s = 0;
   IP6Address ia, ma, ea;
-  int ip, mp, ep;
+  int ip, mp, ep = 0;
 
 
   //get the static mapping entries for the mapping table

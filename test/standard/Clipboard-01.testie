@@ -2,19 +2,19 @@
 Test Clipboard.
 
 %script
-click CONFIG
+click --simtime CONFIG
 
 %file CONFIG
 clipboard :: Clipboard(0/1, 2/1, 9/1);
 
-TimedSource(0.002, "Simplistic")
+TimedSource(0.0019, "Simplistic", LIMIT 1)
 -> [0]clipboard[0]
 -> Discard();
 
-TimedSource(0.003, "Dance tour")
+TimedSource(0.0029, "Dance tour", LIMIT 1)
 -> [0]clipboard;
 
-TimedSource(0.004, "Ionize tub")
+TimedSource(0.0039, "Ionize tub", LIMIT 1)
 -> [0]clipboard;
 
 TimedSource(0.001, ".a. is a .at,", LIMIT 4, STOP true)

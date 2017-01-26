@@ -129,6 +129,7 @@ String::create_memo(char *space, int dirty, int capacity)
 void
 String::delete_memo(memo_t *memo)
 {
+    assert(!memo->refcount);
     assert(memo->capacity > 0);
     assert(memo->capacity >= memo->dirty);
 #if HAVE_STRING_PROFILING

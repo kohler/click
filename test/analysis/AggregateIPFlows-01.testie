@@ -7,7 +7,7 @@ click -e "
 FromIPSummaryDump(IN1, STOP true, ZERO true)
 	-> SetTimestamp
 	-> a::AggregateIPFlows
-	-> ToIPSummaryDump(OUT1, CONTENTS aggregate link ip_len ip_id);
+	-> ToIPSummaryDump(OUT1, FIELDS aggregate link ip_len ip_id);
 DriverManager(pause, write a.clear, stop)
 "
 

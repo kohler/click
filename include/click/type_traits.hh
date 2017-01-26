@@ -75,7 +75,7 @@ template <> struct has_trivial_copy<long> : public true_type {};
 template <> struct has_trivial_copy<unsigned long long> : public true_type {};
 template <> struct has_trivial_copy<long long> : public true_type {};
 # endif
-template <typename T> struct has_trivial_copy<T *> : public true_type {};
+template <typename T> struct has_trivial_copy<T*> : public true_type {};
 #endif
 class IPAddress;
 template <> struct has_trivial_copy<IPAddress> : public true_type {};
@@ -86,9 +86,9 @@ template <> struct has_trivial_copy<IPAddress> : public true_type {};
   is_reference<T> is equivalent to true_type if T is a reference type (T& or
   T&&), false_type if it is not. */
 template <typename T> struct is_reference : public false_type {};
-template <typename T> struct is_reference<T &> : public true_type {};
+template <typename T> struct is_reference<T&> : public true_type {};
 #if HAVE_CXX_RVALUE_REFERENCES
-template <typename T> struct is_reference<T &&> : public true_type {};
+template <typename T> struct is_reference<T&&> : public true_type {};
 #endif
 
 /** @class remove_reference
@@ -100,18 +100,37 @@ template <typename T> struct is_reference<T &&> : public true_type {};
 template <typename T> struct remove_reference {
     typedef T type;
 };
-template <typename T> struct remove_reference<T &> {
+template <typename T> struct remove_reference<T&> {
     typedef T type;
 };
 #if HAVE_CXX_RVALUE_REFERENCES
-template <typename T> struct remove_reference<T &&> {
+template <typename T> struct remove_reference<T&&> {
     typedef T type;
 };
 template <typename T>
-inline typename remove_reference<T>::type &&click_move(T &&x) {
-    return static_cast<typename remove_reference<T>::type &&>(x);
+inline typename remove_reference<T>::type&& click_move(T&& x) {
+    return static_cast<typename remove_reference<T>::type&&>(x);
 }
 #endif
+
+template <typename T> struct remove_cv {
+    typedef T type;
+};
+template <typename T> struct remove_cv<const T> {
+    typedef T type;
+};
+template <typename T> struct remove_cv<volatile T> {
+    typedef T type;
+};
+template <typename T> struct remove_cv<const volatile T> {
+    typedef T type;
+};
+
+template <typename T, typename U> struct same_type : public false_type {};
+template <typename T> struct same_type<T, T> : public true_type {};
+
+template <typename T, typename U> struct types_compatible
+    : public same_type<typename remove_cv<T>::type, typename remove_cv<U>::type> {};
 
 /** @class fast_argument
   @brief Template defining a fast argument type for objects of type T.

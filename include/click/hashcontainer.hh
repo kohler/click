@@ -2,6 +2,7 @@
 #define CLICK_HASHCONTAINER_HH
 #include <click/glue.hh>
 #include <click/hashcode.hh>
+#include <click/libdivide.h>
 #if CLICK_DEBUG_HASHMAP
 # define click_hash_assert(x) assert(x)
 #else
@@ -18,9 +19,10 @@ template <typename T, typename A = HashContainer_adapter<T> > class HashContaine
 template <typename T, typename A>
 class HashContainer_rep : public A {
     T **buckets;
-    size_t nbuckets;
+    uint32_t nbuckets;
+    mutable uint32_t first_bucket;
     size_t size;
-    mutable size_t first_bucket;
+    libdivide_u32_t bucket_divider;
     friend class HashContainer<T, A>;
     friend class HashContainer_const_iterator<T, A>;
     friend class HashContainer_iterator<T, A>;
@@ -90,11 +92,14 @@ class HashContainer { public:
     /** @brief Type of sizes. */
     typedef size_t size_type;
 
+    /** @brief Type of bucket counts. */
+    typedef uint32_t bucket_count_type;
+
     enum {
 #if CLICK_LINUXMODULE
 	max_bucket_count = 4194303,
 #else
-	max_bucket_count = (size_t) -1,
+	max_bucket_count = (bucket_count_type) -1,
 #endif
 	initial_bucket_count = 63
     };
@@ -103,7 +108,7 @@ class HashContainer { public:
     HashContainer();
 
     /** @brief Construct an empty HashContainer with at least @a n buckets. */
-    explicit HashContainer(size_type n);
+    explicit HashContainer(bucket_count_type n);
 
     /** @brief Destroy the HashContainer. */
     ~HashContainer();
@@ -120,12 +125,12 @@ class HashContainer { public:
     }
 
     /** @brief Return the number of buckets. */
-    inline size_type bucket_count() const {
+    inline bucket_count_type bucket_count() const {
 	return _rep.nbuckets;
     }
 
     /** @brief Return the number of elements in bucket @a n. */
-    inline size_type bucket_size(size_type n) const {
+    inline size_type bucket_size(bucket_count_type n) const {
 	click_hash_assert(n < _rep.nbuckets);
 	size_type s = 0;
 	for (T *element = _rep.buckets[n]; element; element = _rep.hashnext(element))
@@ -134,7 +139,7 @@ class HashContainer { public:
     }
 
     /** @brief Return the bucket number containing elements with @a key. */
-    size_type bucket(const key_type &key) const;
+    bucket_count_type bucket(const key_type &key) const;
 
     /** @brief Return true if this HashContainer should be rebalanced. */
     inline bool unbalanced() const {
@@ -158,9 +163,9 @@ class HashContainer { public:
     inline const_iterator end() const;
 
     /** @brief Return an iterator for the first element in bucket @a n. */
-    inline iterator begin(size_type n);
+    inline iterator begin(bucket_count_type n);
     /** @overload */
-    inline const_iterator begin(size_type n) const;
+    inline const_iterator begin(bucket_count_type n) const;
 
     /** @brief Test if an element with key @a key exists in the table. */
     inline bool contains(const key_type& key) const;
@@ -269,7 +274,7 @@ class HashContainer { public:
      * slower.
      *
      * @note Rehashing invalidates all existing iterators. */
-    void rehash(size_type n);
+    void rehash(bucket_count_type n);
 
     /** @brief Rehash the table if it is unbalanced.
      *
@@ -297,6 +302,7 @@ template <typename T, typename A>
 class HashContainer_const_iterator { public:
 
     typedef typename HashContainer<T, A>::size_type size_type;
+    typedef typename HashContainer<T, A>::bucket_count_type bucket_count_type;
 
     /** @brief Construct an uninitialized iterator. */
     HashContainer_const_iterator() {
@@ -335,7 +341,7 @@ class HashContainer_const_iterator { public:
     }
 
     /** @brief Return the bucket number this iterator is in. */
-    size_type bucket() const {
+    bucket_count_type bucket() const {
 	return _bucket;
     }
 
@@ -363,7 +369,7 @@ class HashContainer_const_iterator { public:
 
     T *_element;
     T **_pprev;
-    size_type _bucket;
+    bucket_count_type _bucket;
     const HashContainer<T, A> *_hc;
 
     inline HashContainer_const_iterator(const HashContainer<T, A> *hc)
@@ -378,7 +384,7 @@ class HashContainer_const_iterator { public:
 	}
     }
 
-    inline HashContainer_const_iterator(const HashContainer<T, A> *hc, size_type b, T **pprev, T *element)
+    inline HashContainer_const_iterator(const HashContainer<T, A> *hc, bucket_count_type b, T **pprev, T *element)
 	: _element(element), _pprev(pprev), _bucket(b), _hc(hc) {
 	click_hash_assert((!_pprev && !_element) || *_pprev == _element);
     }
@@ -420,7 +426,7 @@ class HashContainer_iterator : public HashContainer_const_iterator<T, A> { publi
 	: inherited(hc) {
     }
 
-    inline HashContainer_iterator(HashContainer<T, A> *hc, typename inherited::size_type b, T **pprev, T *element)
+    inline HashContainer_iterator(HashContainer<T, A> *hc, typename inherited::bucket_count_type b, T **pprev, T *element)
 	: inherited(hc, b, pprev, element) {
     }
 
@@ -435,20 +441,24 @@ HashContainer<T, A>::HashContainer()
     _rep.nbuckets = initial_bucket_count;
     _rep.buckets = (T **) CLICK_LALLOC(sizeof(T *) * _rep.nbuckets);
     _rep.first_bucket = _rep.nbuckets;
-    for (size_type b = 0; b < _rep.nbuckets; ++b)
+    _rep.bucket_divider = libdivide_u32_gen(_rep.nbuckets);
+    click_hash_assert(_rep.nbuckets == libdivide_u32_recover(&_rep.bucket_divider));
+    for (bucket_count_type b = 0; b < _rep.nbuckets; ++b)
 	_rep.buckets[b] = 0;
 }
 
 template <typename T, typename A>
-HashContainer<T, A>::HashContainer(size_type nb)
+HashContainer<T, A>::HashContainer(bucket_count_type nb)
 {
-    size_type b = 1;
+    bucket_count_type b = 1;
     while (b < nb && b < max_bucket_count)
 	b = ((b + 1) << 1) - 1;
     _rep.size = 0;
     _rep.nbuckets = b;
     _rep.buckets = (T **) CLICK_LALLOC(sizeof(T *) * _rep.nbuckets);
     _rep.first_bucket = _rep.nbuckets;
+    _rep.bucket_divider = libdivide_u32_gen(_rep.nbuckets);
+    click_hash_assert(_rep.nbuckets == libdivide_u32_recover(&_rep.bucket_divider));
     for (b = 0; b < _rep.nbuckets; ++b)
 	_rep.buckets[b] = 0;
 }
@@ -460,10 +470,15 @@ HashContainer<T, A>::~HashContainer()
 }
 
 template <typename T, typename A>
-inline typename HashContainer<T, A>::size_type
+inline typename HashContainer<T, A>::bucket_count_type
 HashContainer<T, A>::bucket(const key_type &key) const
 {
-    return ((size_type) hashcode(key)) % _rep.nbuckets;
+    bucket_count_type h = hashcode(key);
+    bucket_count_type d = libdivide_u32_do(h, &_rep.bucket_divider);
+    bucket_count_type r = h - _rep.nbuckets * d;
+    click_hash_assert(_rep.nbuckets == libdivide_u32_recover(&_rep.bucket_divider));
+    click_hash_assert(r == h % _rep.nbuckets);
+    return r;
 }
 
 template <typename T, typename A>
@@ -496,7 +511,7 @@ HashContainer<T, A>::end()
 
 template <typename T, typename A>
 inline typename HashContainer<T, A>::iterator
-HashContainer<T, A>::begin(size_type b)
+HashContainer<T, A>::begin(bucket_count_type b)
 {
     click_hash_assert(b < _rep.nbuckets);
     return iterator(this, b, &_rep.buckets[b], _rep.buckets[b]);
@@ -504,7 +519,7 @@ HashContainer<T, A>::begin(size_type b)
 
 template <typename T, typename A>
 inline typename HashContainer<T, A>::const_iterator
-HashContainer<T, A>::begin(size_type b) const
+HashContainer<T, A>::begin(bucket_count_type b) const
 {
     click_hash_assert(b < _rep.nbuckets);
     return const_iterator(this, b, &_rep.buckets[b], _rep.buckets[b]);
@@ -513,7 +528,7 @@ HashContainer<T, A>::begin(size_type b) const
 template <typename T, typename A>
 inline bool HashContainer<T, A>::contains(const key_type& key) const
 {
-    size_type b = bucket(key);
+    bucket_count_type b = bucket(key);
     T **pprev;
     for (pprev = &_rep.buckets[b]; *pprev; pprev = &_rep.hashnext(*pprev))
 	if (_rep.hashkeyeq(_rep.hashkey(*pprev), key))
@@ -525,7 +540,8 @@ template <typename T, typename A>
 inline typename HashContainer<T, A>::size_type
 HashContainer<T, A>::count(const key_type& key) const
 {
-    size_type b = bucket(key), c = 0;
+    bucket_count_type b = bucket(key);
+    size_t c = 0;
     T **pprev;
     for (pprev = &_rep.buckets[b]; *pprev; pprev = &_rep.hashnext(*pprev))
 	c += _rep.hashkeyeq(_rep.hashkey(*pprev), key);
@@ -536,7 +552,7 @@ template <typename T, typename A>
 inline typename HashContainer<T, A>::iterator
 HashContainer<T, A>::find(const key_type &key)
 {
-    size_type b = bucket(key);
+    bucket_count_type b = bucket(key);
     T **pprev;
     for (pprev = &_rep.buckets[b]; *pprev; pprev = &_rep.hashnext(*pprev))
 	if (_rep.hashkeyeq(_rep.hashkey(*pprev), key))
@@ -555,7 +571,7 @@ template <typename T, typename A>
 inline typename HashContainer<T, A>::iterator
 HashContainer<T, A>::find_prefer(const key_type &key)
 {
-    size_type b = bucket(key);
+    bucket_count_type b = bucket(key);
     T **pprev;
     for (pprev = &_rep.buckets[b]; *pprev; pprev = &_rep.hashnext(*pprev))
 	if (_rep.hashkeyeq(_rep.hashkey(*pprev), key)) {
@@ -641,7 +657,7 @@ inline T *HashContainer<T, A>::erase(const key_type &key)
 template <typename T, typename A>
 inline void HashContainer<T, A>::clear()
 {
-    for (size_type b = 0; b < _rep.nbuckets; ++b)
+    for (bucket_count_type b = 0; b < _rep.nbuckets; ++b)
 	_rep.buckets[b] = 0;
     _rep.size = 0;
 }
@@ -655,9 +671,9 @@ inline void HashContainer<T, A>::swap(HashContainer<T, A> &o)
 }
 
 template <typename T, typename A>
-void HashContainer<T, A>::rehash(size_type n)
+void HashContainer<T, A>::rehash(bucket_count_type n)
 {
-    size_type new_nbuckets = 1;
+    bucket_count_type new_nbuckets = 1;
     while (new_nbuckets < n && new_nbuckets < max_bucket_count)
 	new_nbuckets = ((new_nbuckets + 1) << 1) - 1;
     click_hash_assert(new_nbuckets > 0 && new_nbuckets <= max_bucket_count);
@@ -665,19 +681,21 @@ void HashContainer<T, A>::rehash(size_type n)
 	return;
 
     T **new_buckets = (T **) CLICK_LALLOC(sizeof(T *) * new_nbuckets);
-    for (size_type b = 0; b < new_nbuckets; ++b)
+    for (bucket_count_type b = 0; b < new_nbuckets; ++b)
 	new_buckets[b] = 0;
 
-    size_type old_nbuckets = _rep.nbuckets;
+    bucket_count_type old_nbuckets = _rep.nbuckets;
     T **old_buckets = _rep.buckets;
     _rep.nbuckets = new_nbuckets;
     _rep.buckets = new_buckets;
     _rep.first_bucket = 0;
+    _rep.bucket_divider = libdivide_u32_gen(_rep.nbuckets);
+    click_hash_assert(_rep.nbuckets == libdivide_u32_recover(&_rep.bucket_divider));
 
     for (size_t b = 0; b < old_nbuckets; b++)
 	for (T *element = old_buckets[b]; element; ) {
 	    T *next = _rep.hashnext(element);
-	    size_type new_b = bucket(_rep.hashkey(element));
+	    bucket_count_type new_b = bucket(_rep.hashkey(element));
 	    _rep.hashnext(element) = new_buckets[new_b];
 	    new_buckets[new_b] = element;
 	    element = next;

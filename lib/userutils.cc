@@ -493,6 +493,14 @@ set_clickpath(const char* p)
 }
 
 
+static void
+path_check(String& fn_store, const String& fn)
+{
+    struct stat st;
+    if (!fn_store && stat(fn.c_str(), &st) == 0 && S_ISREG(st.st_mode))
+        fn_store = fn;
+}
+
 static bool
 path_find_file_2(const String &filename, const String &path,
 		 String default_path, String subdir,
@@ -521,17 +529,12 @@ path_find_file_2(const String &filename, const String &path,
 	    String fn;
 	    // look for 'dir/subdir/click/filename' and 'dir/subdir/filename'
 	    if (subdir) {
-		fn = dir + subdir + "click/" + filename;
-		if (access(fn.c_str(), F_OK) >= 0)
-		    goto found;
-		fn = dir + subdir + filename;
-		if (access(fn.c_str(), F_OK) >= 0)
-		    goto found;
+                path_check(fn, dir + subdir + "click/" + filename);
+                path_check(fn, dir + subdir + filename);
 	    }
 	    // look for 'dir/filename'
-	    fn = dir + filename;
-	    if (access(fn.c_str(), F_OK) >= 0) {
-	      found:
+            path_check(fn, dir + filename);
+            if (fn) {
 		results.push_back(fn);
 		if (exit_early)
 		    return true;

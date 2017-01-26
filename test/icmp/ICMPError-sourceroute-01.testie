@@ -6,7 +6,7 @@ FromIPSummaryDump(IN1, STOP true, ZERO true)
 	-> ICMPError(19.19.19.19, timeexceeded)
 	-> CheckIPHeader
 	-> CheckICMPHeader
-	-> ToIPSummaryDump(OUT1, CONTENTS src dst proto payload_len ip_opt)
+	-> ToIPSummaryDump(OUT1, FIELDS src dst proto payload_len ip_opt)
 "
 
 %file IN1

@@ -1,5 +1,13 @@
 #ifndef FASTUDPFLOWS_HH
 #define FASTUDPFLOWS_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/gaprate.hh>
+#include <click/packet.hh>
+#include <clicknet/ether.h>
+#include <clicknet/udp.h>
+
+CLICK_DECLS
 
 /*
  * =c
@@ -42,18 +50,11 @@
  *
  * =e
  *  FastUDPFlows(100000, 500000, 60,
- *               0:0:0:0:0:0, 1.0.0.1, 1234,
- *               1:1:1:1:1:1, 2.0.0.2, 1234,
+ *               0:0:0:0:0:0, 1.0.0.1,
+ *               1:1:1:1:1:1, 2.0.0.2,
  *               100, 10)
  *    -> ToDevice;
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
-#include <click/gaprate.hh>
-#include <click/packet.hh>
-#include <clicknet/ether.h>
-#include <clicknet/udp.h>
 
 class FastUDPFlows : public Element {
 
@@ -71,11 +72,19 @@ class FastUDPFlows : public Element {
 
   struct flow_t {
       Packet *packet;
-      int flow_count;
+      unsigned flow_count;
   };
   flow_t *_flows;
   void change_ports(int);
   Packet *get_packet();
+
+  void set_length(unsigned len) {
+      if (len < 60) {
+          click_chatter("warning: packet length < 60, defaulting to 60");
+          len = 60;
+      }
+      _len = len;
+  }
 
  public:
 
@@ -98,6 +107,9 @@ class FastUDPFlows : public Element {
   void cleanup(CleanupStage) CLICK_COLD;
   Packet *pull(int);
 
+  void cleanup_flows();
+  static int length_write_handler (const String &s, Element *e, void *, ErrorHandler *errh);
+
   void add_handlers() CLICK_COLD;
   void reset();
   unsigned count() { return _count; }
@@ -105,5 +117,5 @@ class FastUDPFlows : public Element {
   click_jiffies_t last() { return _last; }
 };
 
-
+CLICK_ENDDECLS
 #endif

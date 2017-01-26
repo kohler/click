@@ -85,13 +85,14 @@ $(LIBCLICKTOOL):
 
 click-install: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	@-mkdir -p ../../bin; ln -sf ../tools/click-install/$@ ../../bin/$@
 
 click-uninstall: Makefile $(UN_OBJS) ../lib/$(LIBCLICKTOOL)
 	$(call cxxlink,$(DL_LDFLAGS) $(UN_OBJS) ../lib/$(LIBCLICKTOOL) $(LIBS),LINK)
+	@-mkdir -p ../../bin; ln -sf ../tools/click-install/$@ ../../bin/$@
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)
@@ -107,7 +108,7 @@ uninstall:
 	/bin/rm -f $(DESTDIR)$(sbindir)/click-install $(DESTDIR)$(sbindir)/click-uninstall
 
 clean:
-	rm -f *.d *.o click-install click-uninstall
+	rm -f *.d *.o click-install click-uninstall ../../bin/click-install ../../bin/click-uninstall
 distclean: clean
 	-rm -f Makefile
 
