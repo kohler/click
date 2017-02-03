@@ -440,11 +440,11 @@ click_random_srandom()
 
 #if CLICK_USERLEVEL
 # ifdef O_NONBLOCK
-    int fd = open("/dev/random", O_RDONLY | O_NONBLOCK);
+    int fd = open("/dev/urandom", O_RDONLY | O_NONBLOCK);
 # elif defined(O_NDELAY)
-    int fd = open("/dev/random", O_RDONLY | O_NDELAY);
+    int fd = open("/dev/urandom", O_RDONLY | O_NDELAY);
 # else
-    int fd = open("/dev/random", O_RDONLY);
+    int fd = open("/dev/urandom", O_RDONLY);
 # endif
     if (fd >= 0) {
 	ssize_t amt = read(fd, buf.c + pos, bufsiz - pos);
