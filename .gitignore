@@ -1,6 +1,7 @@
+*.dSYM
 +*
-.dotest
 .*.cmd
+.dotest
 Makefile
 autom4te*
 bin
