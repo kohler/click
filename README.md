@@ -68,12 +68,12 @@ Subdirectory                  | Description
 Documentation
 -------------
 
-The `INSTALL` file in this directory contains installation instructions. User
+The `INSTALL.md` file in this directory contains installation instructions. User
 documentation is in the `doc` subdirectory, which contains manual pages for
 the Click language, the Linux kernel module, and several tools; it also has a
 script that generates manual pages for many of the elements distributed in
 this package. To install these manual pages so you can read them, follow the
-`INSTALL` instructions, but `make install-man` instead of `make install`.
+`INSTALL.md` instructions, but `make install-man` instead of `make install`.
 
 
 Running a Click Router
@@ -104,12 +104,12 @@ error. (You must run `make install` before `click-install` will work.)
 
 ### NS-3 Simulator
 
-See `INSTALL` for more information. Further information on NS-3 and Click is
+See `INSTALL.md` for more information. Further information on NS-3 and Click is
 available in [the NS-3 manual](http://www.nsnam.org/docs/models/html/click.html).
 
 ### NS-2 Simulator
 
-See `INSTALL` for more information.  Once a Click-enabled version of NS-2 is
+See `INSTALL.md` for more information.  Once a Click-enabled version of NS-2 is
 installed, the 'ns' command is able to run Click scripts as part of a normal
 NS-2 simulation.
 
