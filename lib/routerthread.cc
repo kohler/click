@@ -407,7 +407,7 @@ RouterThread::run_tasks(int ntasks)
         if (unlikely(t->_status.status != want_status.status)) {
             if (t->_status.home_thread_id != want_status.home_thread_id
                 || t->_status.is_strong_unscheduled == 2)
-                t->add_pending(0);
+                t->add_pending(false);
             t->remove_from_scheduled_list();
             continue;
         }
@@ -572,7 +572,7 @@ RouterThread::process_pending()
     _pending_lock.release(flags);
 
     // process the list
-    while (my_pending.x > 1) {
+    while (my_pending.x > 2) {
         Task *t = my_pending.t;
         my_pending = t->_pending_nextptr;
         t->process_pending(this);

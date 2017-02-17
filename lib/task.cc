@@ -103,8 +103,12 @@ CLICK_DECLS
 //   Furthermore, only _thread itself may change _thread
 //   (except that if _thread is quiescent, anyone may change _thread).
 //   To arrange for _thread to change, set _home_thread_id and add_pending().
-// - _pending_nextptr is protected by _thread->_pending_lock.
+// - _pending_nextptr may be set by another thread only if it is 0.
+//   It is protected by _thread->_pending_lock.
 //   But after acquiring this lock, verify that _thread has not changed.
+// - _pending_nextptr may be 0 (not on pending list), 1 (currently being
+//   processed by Task::process_pending: a temporary state), 2 (at end of
+//   list), >2 (in middle of list).
 
 bool
 Task::error_hook(Task *, void *)
@@ -184,15 +188,16 @@ Task::fast_schedule()
 
 
 void
-Task::add_pending(uintptr_t limit)
+Task::add_pending(bool always)
 {
-    // lock current thread
+    // lock current thread and wait for current process_pending to complete
+    // (indicated by _pending_nextptr.x == 1)
     RouterThread* thread;
     SpinlockIRQ::flags_t flags;
     while (1) {
         thread = _thread;
         flags = thread->_pending_lock.acquire();
-        if (thread == _thread)
+        if (thread == _thread && (_pending_nextptr.x != 1 || always))
             break;
         thread->_pending_lock.release(flags);
     }
@@ -203,6 +208,7 @@ Task::add_pending(uintptr_t limit)
         assert(!on_scheduled_list() && !on_pending_list());
         RouterThread* next_thread = thread->master()->thread(_status.home_thread_id);
         if (next_thread != thread) {
+            // No deadlock: lock order by thread_id()
             SpinlockIRQ::flags_t next_flags = next_thread->_pending_lock.acquire();
             _thread = next_thread;
             thread->_pending_lock.release(flags);
@@ -212,9 +218,9 @@ Task::add_pending(uintptr_t limit)
     }
 
     // add to list, unless the router is in the process of dying
-    if (_pending_nextptr.x <= limit) {
+    if (_pending_nextptr.x == 0 || always) {
         if (thread->thread_id() >= 0 && !router()->dying()) {
-            _pending_nextptr.x = 1;
+            _pending_nextptr.x = 2;
             thread->_pending_tail->t = this;
             thread->_pending_tail = &_pending_nextptr;
             thread->add_pending();
@@ -250,7 +256,7 @@ Task::initialize(Element *owner, bool schedule)
     _status.home_thread_id = _thread->thread_id();
     _status.is_scheduled = schedule;
     if (schedule)
-        add_pending(0);
+        add_pending(false);
 }
 
 void
@@ -297,7 +303,7 @@ Task::cleanup()
             SpinlockIRQ::flags_t flags = thread->_pending_lock.acquire();
             if (thread == _thread && on_pending_list()) {
                 Pending *tptr = &thread->_pending_head;
-                while (tptr->x > 1 && tptr->t != this)
+                while (tptr->x > 2 && tptr->t != this)
                     tptr = &tptr->t->_pending_nextptr;
                 // We'll usually have `tptr->t == this`; but if another
                 // thread's `Task::process_pending()` has just set
@@ -306,7 +312,7 @@ Task::cleanup()
                 // task is on the other thread's pending list still).
                 if (tptr->t == this) {
                     *tptr = _pending_nextptr;
-                    if (_pending_nextptr.x == 1) {
+                    if (_pending_nextptr.x == 2) {
                         thread->_pending_tail = tptr;
                         if (tptr == &thread->_pending_head)
                             tptr->x = 0;
@@ -327,14 +333,15 @@ void
 Task::reschedule()
 {
     _status.is_scheduled = true;
+    click_fence();
     RouterThread* thread = _thread;
     if (likely(thread != 0)) {
         if (thread->current_thread_is_running()
             && _owner->router()->_running >= Router::RUNNING_BACKGROUND) {
             if (!on_scheduled_list())
                 fast_schedule();
-        } else
-            add_pending(0);
+        } else if (_pending_nextptr.x < 2)
+            add_pending(false);
     }
 }
 
@@ -342,12 +349,14 @@ void
 Task::move_thread(int new_thread_id)
 {
     _status.home_thread_id = new_thread_id;
+    click_fence();
     Task::Status status(_status);
     if (likely(_thread != 0)
         && status.home_thread_id >= 0
         && status.is_scheduled
-        && !status.is_strong_unscheduled)
-        add_pending(0);
+        && !status.is_strong_unscheduled
+        && _pending_nextptr.x < 2)
+        add_pending(false);
 }
 
 void
@@ -358,6 +367,9 @@ Task::process_pending(RouterThread* thread)
     // router()->_running when necessary.  (Not necessary for add_pending()
     // since that function does it already.)
     assert(thread == _thread);
+    // Mark this task as being currently processed.
+    _pending_nextptr.x = 1;
+    click_fence();
 
     Task::Status status(_status);
     if (status.is_strong_unscheduled == 2) {
@@ -380,11 +392,13 @@ Task::process_pending(RouterThread* thread)
         if (_thread == thread && router()->running()) {
             fast_schedule();
             click_fence();
-            _pending_nextptr.x = 0;
-        } else
-            add_pending((uintptr_t) -1);
-    } else
-        _pending_nextptr.x = 0;
+        } else {
+            add_pending(true);
+            return;
+        }
+    }
+
+    _pending_nextptr.x = 0;
 }
 
 CLICK_ENDDECLS

@@ -353,7 +353,7 @@ class Task : private TaskLink { public:
  private:
 #endif
 
-    void add_pending(uintptr_t limit);
+    void add_pending(bool always);
     void process_pending(RouterThread *thread);
 
     void fast_schedule();
