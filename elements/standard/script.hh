@@ -235,12 +235,12 @@ handler.  For example, consider:
 
    s :: Script(TYPE PROXY,
           goto nota $(ne $0 a),
-	  returnq "you called 'a'",
-	  label nota,
-	  goto notb $(ne $0 b),
-	  returnq "you called 'b'",
-	  label notb,
-	  error bad handler);
+          returnq "you called 'a'",
+          label nota,
+          goto notb $(ne $0 b),
+          returnq "you called 'b'",
+          label notb,
+          error bad handler);
 
 Calling the read handler "s.a" will return "you called 'a'", calling "s.b"
 will return "you called 'b'", and anything else will produce a "bad handler"
@@ -276,20 +276,20 @@ handlers.
 
    s :: Script(set x 0,
                label begin_loop,
-	       print $x,
-	       set x $(s.add $x 1),
-	       goto begin_loop $(s.lt $x 5),
-	       stop);
+               print $x,
+               set x $(s.add $x 1),
+               goto begin_loop $(s.lt $x 5),
+               stop);
 
 This can be further shortened since local handler references do not require
 the element name.  Thus, "$(s.add ...)" can be written "$(add ...)", as below.
 
    Script(set x 0,
           label begin_loop,
-	  print $x,
-	  set x $(add $x 1),
-	  goto begin_loop $(lt $x 5),
-	  stop);
+          print $x,
+          set x $(add $x 1),
+          goto begin_loop $(lt $x 5),
+          stop);
 
 =h step write-only
 
@@ -448,9 +448,9 @@ class Script : public Element { public:
     static void static_initialize();
     static void static_cleanup();
 
-    const char *class_name() const	{ return "Script"; }
-    const char *port_count() const	{ return "-/-"; }
-    const char *processing() const	{ return "ah/ah"; }
+    const char *class_name() const      { return "Script"; }
+    const char *port_count() const      { return "-/-"; }
+    const char *processing() const      { return "ah/ah"; }
     int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     int initialize(ErrorHandler *) CLICK_COLD;
     void add_handlers() CLICK_COLD;
@@ -460,29 +460,29 @@ class Script : public Element { public:
     void run_timer(Timer *);
 
     enum Insn {
-	INSN_INITIAL, INSN_WAIT_STEP, INSN_WAIT_TIME,
-	INSN_PRINT, INSN_PRINTQ, INSN_PRINTN, INSN_PRINTNQ,
-	INSN_READ, INSN_READQ, INSN_WRITE, INSN_WRITEQ,
-	INSN_SET, insn_setq, insn_init, insn_initq, insn_export, insn_exportq,
+        INSN_INITIAL, INSN_WAIT_STEP, INSN_WAIT_TIME,
+        INSN_PRINT, INSN_PRINTQ, INSN_PRINTN, INSN_PRINTNQ,
+        INSN_READ, INSN_READQ, INSN_WRITE, INSN_WRITEQ,
+        INSN_SET, insn_setq, insn_init, insn_initq, insn_export, insn_exportq,
 #if CLICK_USERLEVEL
-	insn_save, insn_append,
+        insn_save, insn_append,
 #endif
-	INSN_LABEL, INSN_GOTO, INSN_RETURN, insn_returnq,
-	INSN_WAIT_PSEUDO, INSN_LOOP_PSEUDO,
-	// negative instructions are also valid label constants
-	insn_exit = -1, insn_end = -2, insn_stop = -3, insn_error = -4,
-	insn_errorq = -5
+        INSN_LABEL, INSN_GOTO, INSN_RETURN, insn_returnq,
+        INSN_WAIT_PSEUDO, INSN_LOOP_PSEUDO,
+        // negative instructions are also valid label constants
+        insn_exit = -1, insn_end = -2, insn_stop = -3, insn_error = -4,
+        insn_errorq = -5
     };
 
   private:
 
     enum Type {
-	type_active, type_driver, type_signal, type_passive, type_proxy,
-	type_push
+        type_active, type_driver, type_signal, type_passive, type_proxy,
+        type_push
     };
 
     enum {
-	max_jumps = 1000, STEP_NORMAL = 0, STEP_ROUTER, STEP_TIMER, STEP_JUMP
+        max_jumps = 1000, STEP_NORMAL = 0, STEP_ROUTER, STEP_TIMER, STEP_JUMP
     };
 
     Vector<int> _insns;
@@ -507,21 +507,21 @@ class Script : public Element { public:
     int *_cur_steps;
 
     class Expander : public VariableExpander { public:
-	Script *script;
-	ErrorHandler *errh;
-	int expand(const String &var, String &expansion, int vartype, int depth) const;
+        Script *script;
+        ErrorHandler *errh;
+        int expand(const String &var, String &expansion, int vartype, int depth) const;
     };
 
     enum {
-	ST_STEP = 0, ST_RUN, ST_GOTO,
-	ar_add = 0, ar_sub, ar_min, ar_max, ar_mul, ar_div, ar_idiv, ar_mod, ar_rem,
-	ar_neg, ar_abs,
-	AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
-	AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat, ar_catq,
-	ar_and, ar_or, ar_nand, ar_nor, ar_now, ar_if, ar_in,
-	ar_readable, ar_writable, ar_length, ar_unquote, ar_kill,
-	ar_htons, ar_htonl, ar_ntohs, ar_ntohl,
-	vh_get, vh_set, vh_shift
+        ST_STEP = 0, ST_RUN, ST_GOTO,
+        ar_add = 0, ar_sub, ar_min, ar_max, ar_mul, ar_div, ar_idiv, ar_mod, ar_rem,
+        ar_neg, ar_abs,
+        AR_LT, AR_EQ, AR_GT, AR_GE, AR_NE, AR_LE, // order is important
+        AR_FIRST, AR_NOT, AR_SPRINTF, ar_random, ar_cat, ar_catq,
+        ar_and, ar_or, ar_nand, ar_nor, ar_now, ar_if, ar_in,
+        ar_readable, ar_writable, ar_length, ar_unquote, ar_kill,
+        ar_htons, ar_htonl, ar_ntohs, ar_ntohl,
+        vh_get, vh_set, vh_shift
     };
 
     void add_insn(int, int, int = 0, const String & = String());
