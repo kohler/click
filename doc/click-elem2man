@@ -877,7 +877,9 @@ EOD;
         return;
     }
 
-    print OUT markdownize($text, $nover ? "    " x $nover : ""), $closer;
+    $text = markdownize($text, $nover ? "    " x $nover : "");
+    $closer = "\n" if $text =~ m{<br />\z};
+    print OUT $text, $closer;
 }
 
 sub markdown_elementlist ($@) {
