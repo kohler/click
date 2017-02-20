@@ -117,7 +117,7 @@ class RouterThread { public:
 
     // LOCAL STATE GROUP
     TaskLink _task_link;
-    volatile int _stop_flag;
+    volatile bool _stop_flag;
 #if HAVE_TASK_HEAP
     Vector<task_heap_element> _task_heap;
 #endif
@@ -478,9 +478,15 @@ RouterThread::stop_flag() const
 }
 
 inline void
+RouterThread::request_stop()
+{
+    _stop_flag = true;
+}
+
+inline void
 RouterThread::request_go()
 {
-    _stop_flag = 0;
+    _stop_flag = false;
 }
 
 inline void

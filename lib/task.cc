@@ -372,14 +372,6 @@ Task::process_pending(RouterThread* thread)
     click_fence();
 
     Task::Status status(_status);
-    if (status.is_strong_unscheduled == 2) {
-        // clean up is_strong_unscheduled values used for driver stop events
-        Task::Status new_status(status);
-        new_status.is_strong_unscheduled = false;
-        atomic_uint32_t::compare_swap(_status.status, status.status, new_status.status);
-        status = new_status;
-    }
-
     if (status.home_thread_id != thread->thread_id()) {
         SpinlockIRQ::flags_t flags = thread->_pending_lock.acquire();
         remove_from_scheduled_list();

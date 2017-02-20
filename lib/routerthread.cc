@@ -67,7 +67,7 @@ static unsigned long greedy_schedule_jiffies;
  */
 
 RouterThread::RouterThread(Master *master, int id)
-    : _stop_flag(0), _master(master), _id(id), _driver_entered(false)
+    : _stop_flag(false), _master(master), _id(id), _driver_entered(false)
 {
     _pending_head.x = 0;
     _pending_tail = &_pending_head;
@@ -176,27 +176,6 @@ RouterThread::scheduled_tasks(Router *router, Vector<Task *> &x)
         if (t->router() == router)
             x.push_back(t);
     unlock_tasks();
-}
-
-void
-RouterThread::request_stop()
-{
-    _stop_flag = 1;
-    if (current_thread_is_running()) {
-        // Set the current thread's tasks to "is_strong_unscheduled 2" so
-        // the driver loop will not run them. (We cannot call
-        // Task::remove_from_scheduled_list(), because run_tasks keeps the
-        // current task in limbo, so it must stay in the scheduled list.)
-        Task::Status want_status;
-        want_status.home_thread_id = thread_id();
-        want_status.is_scheduled = true;
-        want_status.is_strong_unscheduled = false;
-        Task::Status new_status(want_status);
-        new_status.is_strong_unscheduled = 2;
-
-        for (Task *t = task_begin(); t != task_end(); t = task_next(t))
-            atomic_uint32_t::compare_swap(t->_status.status, want_status.status, new_status.status);
-    }
 }
 
 
@@ -400,13 +379,12 @@ RouterThread::run_tasks(int ntasks)
 
     for (; ntasks >= 0; --ntasks) {
         t = task_begin();
-        if (t == task_end())
+        if (t == task_end() || _stop_flag)
             break;
         assert(t->_thread == this);
 
         if (unlikely(t->_status.status != want_status.status)) {
-            if (t->_status.home_thread_id != want_status.home_thread_id
-                || t->_status.is_strong_unscheduled == 2)
+            if (t->_status.home_thread_id != want_status.home_thread_id)
                 t->add_pending(false);
             t->remove_from_scheduled_list();
             continue;
@@ -622,7 +600,7 @@ RouterThread::driver()
 
 #if !BSD_NETISRSCHED
         // check to see if driver is stopped
-        if (_stop_flag > 0) {
+        if (_stop_flag) {
             driver_unlock_tasks();
             bool b = _master->check_driver();
             driver_lock_tasks();
