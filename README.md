@@ -184,13 +184,13 @@ are listed below.
 * `drivers/e1000*`, `etc/linux-*-patch`, `linuxmodule/proclikefs.c`: These
   portions of the Click software are derived from the Linux kernel, and are
   thus distributed under the GNU General Public License, version 2. The GNU
-  General Public License is available [via the Web](http://www.gnu.org/licenses/gpl.html) or
+  General Public License is available [via the Web](http://www.gnu.org/licenses/gpl.html) and
   in `etc/COPYING`.
 
 * `include/click/bigint.hh`: This portion of the Click software derives from
   the GNU Multiple Precision Arithmetic Library, and is thus distributed under
   the GNU Lesser General Public License, version 3. This license is available
-  [via the Web](http://www.gnu.org/licenses/lgpl.html) or in the `etc/COPYING.lgpl`.
+  [via the Web](http://www.gnu.org/licenses/lgpl.html) and in `etc/COPYING.lgpl`.
 
 Element code that uses only Click’s interfaces will *not* be derived from the
 Linux kernel. (For instance, those interfaces have multiple implementations,
