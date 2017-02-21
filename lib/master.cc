@@ -205,8 +205,6 @@ Master::kill_router(Router *router)
         return;
     }
 
-    // Fix stopper
-    request_stop();
 #if CLICK_LINUXMODULE
     preempt_disable();
 #endif
