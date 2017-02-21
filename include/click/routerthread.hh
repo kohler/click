@@ -218,8 +218,13 @@ class RouterThread { public:
 #endif
 
     // task running functions
-    inline void driver_lock_tasks();
-    inline void driver_unlock_tasks();
+    void driver_lock_tasks();
+    inline void driver_unlock_tasks() {
+        uint32_t val = _task_blocker.compare_swap((uint32_t) -1, 0);
+        (void) val;
+        assert(val == (uint32_t) -1);
+    }
+
     inline void run_tasks(int ntasks);
     inline void process_pending();
     inline void run_os();

@@ -79,9 +79,8 @@ class Master { public:
     inline void lock_master();
     inline void unlock_master();
 
-    inline void request_stop();
-    inline void request_go();
-    bool check_driver();
+    void request_stop();
+    bool verify_stop(RouterThread* t);
 
 #if CLICK_USERLEVEL
     // SIGNALS
@@ -177,13 +176,6 @@ Master::request_stop()
         (*t)->_stop_flag = true;
     // ensure that at least one thread is awake to handle the stop event
     wake_somebody();
-}
-
-inline void
-Master::request_go()
-{
-    for (RouterThread **t = _threads; t != _threads + _nthreads; ++t)
-        (*t)->_stop_flag = false;
 }
 
 inline void

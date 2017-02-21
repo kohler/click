@@ -280,14 +280,14 @@ Master::unregister_router(Router *router)
 }
 
 bool
-Master::check_driver()
+Master::verify_stop(RouterThread* t)
 {
 #if CLICK_LINUXMODULE
     assert(!in_interrupt());
 #endif
-
+    t->_stop_flag = false;
+    t->driver_unlock_tasks();
     lock_master();
-    request_go();
 
     for (Router *r = _routers; r; ) {
         Router *next_router = r->_next_router;
@@ -305,16 +305,13 @@ Master::check_driver()
         r = next_router;
     }
 
-    bool any_active = false;
-    for (Router *r = _routers; r; r = r->_next_router)
-        if (r->_running == Router::RUNNING_ACTIVE) {
-            any_active = true;
-            break;
-        }
-    if (!any_active)
-        request_stop();
+    bool all_inactive = true;
+    for (Router *r = _routers; r && all_inactive; r = r->_next_router)
+        all_inactive = r->_running != Router::RUNNING_ACTIVE;
+
     unlock_master();
-    return any_active;
+    t->driver_lock_tasks();
+    return all_inactive;
 }
 
 
