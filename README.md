@@ -1,5 +1,6 @@
 The Click Modular Router
 ========================
+[![TravisCI status](https://travis-ci.org/kohler/click.svg?branch=master)](https://travis-ci.org/kohler/click)
 
 Click is a modular router toolkit. To use it you'll need to know how to
 compile and install the software, how to write router configurations, and how
