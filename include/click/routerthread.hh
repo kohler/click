@@ -233,8 +233,6 @@ class RouterThread { public:
     static inline bool running_in_interrupt();
     inline bool current_thread_is_running() const;
     inline bool current_thread_is_running_cleanup() const;
-    void request_stop();
-    inline void request_go();
 
     friend class Task;
     friend class Master;
@@ -475,18 +473,6 @@ inline bool
 RouterThread::stop_flag() const
 {
     return _stop_flag;
-}
-
-inline void
-RouterThread::request_stop()
-{
-    _stop_flag = true;
-}
-
-inline void
-RouterThread::request_go()
-{
-    _stop_flag = false;
 }
 
 inline void

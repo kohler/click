@@ -174,7 +174,7 @@ inline void
 Master::request_stop()
 {
     for (RouterThread **t = _threads; t != _threads + _nthreads; ++t)
-        (*t)->request_stop();
+        (*t)->_stop_flag = true;
     // ensure that at least one thread is awake to handle the stop event
     wake_somebody();
 }
@@ -183,7 +183,7 @@ inline void
 Master::request_go()
 {
     for (RouterThread **t = _threads; t != _threads + _nthreads; ++t)
-        (*t)->request_go();
+        (*t)->_stop_flag = false;
 }
 
 inline void
