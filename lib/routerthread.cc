@@ -667,8 +667,10 @@ RouterThread::driver()
     click_current_thread_id = 0;
 # endif
 #endif
+
 #if CLICK_NS
     do {
+        // Set an NS timer for the next time to run Click
         Timestamp t = Timestamp::uninitialized_t();
         if (active()) {
             t = Timestamp::now();

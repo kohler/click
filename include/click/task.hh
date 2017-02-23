@@ -198,7 +198,12 @@ class Task : private TaskLink { public:
      * strong_unschedule()d.
      *
      * @sa unschedule, strong_reschedule */
-    void reschedule();
+    inline void reschedule() {
+        _status.is_scheduled = true;
+        click_fence();
+        if (_pending_nextptr.x < 2)
+            complete_schedule(0);
+    }
 
     /** @brief Reschedule a task from the task's callback function.
      *
@@ -354,9 +359,9 @@ class Task : private TaskLink { public:
 #endif
 
     void add_pending(bool always);
-    void process_pending(RouterThread *thread);
+    void process_pending(RouterThread* thread);
 
-    void fast_schedule();
+    void complete_schedule(RouterThread* process_pending_thread);
     inline void remove_from_scheduled_list();
 
     static bool error_hook(Task *task, void *user_data);
