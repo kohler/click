@@ -46,6 +46,18 @@ ThreadSafeQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
+ThreadSafeQueue::take_state(Element *e, ErrorHandler *errh)
+{
+    SimpleQueue *q = (SimpleQueue *)e->cast("SimpleQueue");
+    if (!q)
+        return;
+
+    SimpleQueue::take_state(e, errh);
+    _xhead = head();
+    _xtail = tail();
+}
+
+void
 ThreadSafeQueue::push(int, Packet *p)
 {
     // Code taken from SimpleQueue::push().

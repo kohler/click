@@ -59,6 +59,7 @@ class ThreadSafeQueue : public FullNoteQueue { public:
     void *cast(const char *);
 
     int live_reconfigure(Vector<String> &conf, ErrorHandler *errh);
+    void take_state(Element*, ErrorHandler*);
 
     void push(int port, Packet *);
     Packet *pull(int port);
