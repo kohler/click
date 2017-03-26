@@ -150,6 +150,11 @@ class Counter : public Element { public:
     static String read_handler(Element *, void *) CLICK_COLD;
     static int write_handler(const String&, Element*, void*, ErrorHandler*) CLICK_COLD;
 
+  public:
+
+    counter_t count() { return _count; }
+    counter_t byte_count() { return _byte_count; }
+
 };
 
 CLICK_ENDDECLS
