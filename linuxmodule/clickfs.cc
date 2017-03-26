@@ -525,6 +525,7 @@ static HandlerString* alloc_handler_string(const Handler* h) {
                 | (h->flags() & (HS_WRITE_UNLIMITED | HS_DIRECT));
         }
     }
+    hs->flags = -1;
     SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
     return hs;
 }
