@@ -59,6 +59,39 @@ struct click_ip6 {
 
 #define IP6_CHECK_V(hdr)	(((hdr).ip6_vfc & htonl(IP6_V_MASK)) == htonl(6 << IP6_V_SHIFT))
 
+/* Hop-by-Hop options header */
+struct click_ip6_hbh {
+    uint8_t  ip6h_nxt;        /* next header */
+    uint8_t  ip6h_len;        /* length in units of 8 octets */
+    /* followed by options */
+};
+
+/* Destination options header */
+struct click_ip6_dest {
+    uint8_t  ip6d_nxt;        /* next header */
+    uint8_t  ip6d_len;        /* length in units of 8 octets */
+    /* followed by options */
+};
+
+/* Routing header */
+struct click_ip6_rthdr {
+    uint8_t  ip6r_nxt;        /* next header */
+    uint8_t  ip6r_len;        /* length in units of 8 octets */
+    uint8_t  ip6r_type;       /* routing type */
+    uint8_t  ip6r_segleft;    /* segments left */
+    /* followed by routing type specific data */
+};
+
+  /* Type 0 Routing header */
+struct click_ip6_rthdr0 {
+    uint8_t  ip6r0_nxt;       /* next header */
+    uint8_t  ip6r0_len;       /* length in units of 8 octets */
+    uint8_t  ip6r0_type;      /* always zero */
+    uint8_t  ip6r0_segleft;   /* segments left */
+    uint32_t ip6r0_reserved;  /* reserved field */
+    /* followed by up to 127 struct in6_addr */
+};
+
 #ifndef IP6PROTO_FRAGMENT
 #define IP6PROTO_FRAGMENT 0x2c
 #endif
