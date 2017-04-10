@@ -1095,6 +1095,53 @@ inline bool operator!=(const HashTable_const_iterator<T> &a, const HashTable_con
     return a.get() != b.get();
 }
 
+/** @brief Helper to compare two HashTables for inequality
+
+    Putting this code here instead of inside operator!= allows both
+    HashTable<T> and HashTable<K,V> templates to share the same
+    implementation. */
+template <typename TABLE_T>
+bool hashtables_differ(const TABLE_T &foo, const TABLE_T &bar) {
+    if (foo.size() != bar.size())
+        return true;
+
+    typedef typename TABLE_T::const_iterator iter_t;
+    for (iter_t foo_iter = foo.begin() ; foo_iter ; ++foo_iter) {
+        iter_t bar_iter = bar.find(foo_iter.key());
+        if (!bar_iter || *foo_iter != *bar_iter)
+            return true;
+    }
+    return false;
+}
+
+/** @brief Compare two HashTables for equality */
+template <typename T>
+inline bool operator!=(const HashTable<T> &a, const HashTable<T> &b)
+{
+    return &a != &b && hashtables_differ(a, b);
+}
+
+/** @brief Compare two HashTables for inequality */
+template <typename T>
+inline bool operator==(const HashTable<T> &a, const HashTable<T> &b)
+{
+    return !(a != b);
+}
+
+/** @brief Compare two HashTables for equality */
+template <typename K, typename V>
+inline bool operator!=(const HashTable<K, V> &a, const HashTable<K, V> &b)
+{
+    return &a != &b && hashtables_differ(a, b);
+}
+
+/** @brief Compare two HashTables for inequality */
+template <typename K, typename V>
+inline bool operator==(const HashTable<K, V> &a, const HashTable<K, V> &b)
+{
+    return !(a != b);
+}
+
 
 template <typename K, typename V>
 inline void click_swap(HashTable<K, V> &a, HashTable<K, V> &b)
