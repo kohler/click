@@ -67,6 +67,6 @@ addons:
     packages:
       - libpcap-dev
       - time
-      - linux-headers-3.13.0-40-generic
+      - linux-headers-generic
 
 sudo: false
