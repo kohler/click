@@ -20,7 +20,8 @@ Script(write arpq.insert 1.0.0.1 2:1:0:0:1:f,
 	write d.active true)
 DriverManager(pause, wait 0.05s, 
 	read arpq.table,
-	write hotconfig $(cat CONFIG2))
+	write hotconfig $(cat CONFIG2),
+	pause)
 
 %file DUMP
 !data timestamp ip_dst ip_tos
