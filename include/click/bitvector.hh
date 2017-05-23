@@ -73,6 +73,8 @@ class Bitvector {
 
     void swap(Bitvector &x);
 
+    inline int weight();
+
     /** @cond never */
     typedef word_type data_word_type CLICK_DEPRECATED;
     enum { data_word_bits = wbits };
@@ -373,6 +375,15 @@ inline Bitvector::Bit &Bitvector::Bit::operator-=(bool x) {
     if (x)
 	_p &= ~_mask;
     return *this;
+}
+
+/** @brief Return the number of true bits */
+inline int Bitvector::weight() {
+	int w = 0;
+	for (int i = 0; i < size(); i++)
+		if ((*this)[i])
+			w++;
+	return w;
 }
 
 CLICK_ENDDECLS
