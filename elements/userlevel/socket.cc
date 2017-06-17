@@ -343,7 +343,7 @@ Socket::selected(int fd, int)
       fcntl(_active, F_SETFL, O_NONBLOCK);
       fcntl(_active, F_SETFD, FD_CLOEXEC);
 
-      add_select(_active, SELECT_READ | SELECT_WRITE);
+      add_select(_active, SELECT_READ);
     }
 
     // read data from socket
