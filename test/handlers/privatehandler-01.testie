@@ -6,16 +6,15 @@ msleep () {
    click -e "DriverManager(wait $1ms)"
 }
 
-(while [ ! -f PORT ]; do msleep 1; done && { cat CSIN; msleep 3; } | nc localhost `cat PORT` >CSOUT) &
+(while [ ! -f PORT ]; do msleep 1; done && cat CSIN | nc localhost `cat PORT` >CSOUT) &
 click -e 'cs :: ControlSocket(tcp, 41930+);
 s :: Script(print >PORT $(cs.port),
 	    print "SCARY => $(cat SCARY)",
-	    wait 3s, stop)'
+	    wait 1s, stop)'
 
 %file CSIN
 read s.add 1 1
 read s.cat SCARY
-write stop
 
 %file SCARY
 This is a scary file!
@@ -25,7 +24,6 @@ Click::ControlSocket/1.{{\d+}}
 200 Read handler{{.*}}
 DATA 1
 2511 No handler named 's.cat'
-200 Write handler 'stop' OK
 
 %expect stdout
 SCARY => This is a scary file!
