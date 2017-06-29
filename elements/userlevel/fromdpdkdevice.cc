@@ -92,6 +92,7 @@ bool FromDPDKDevice::run_task(Task * t)
                          rte_pktmbuf_headroom(pkts[i]),
                          rte_pktmbuf_tailroom(pkts[i]));
         p->set_packet_type_anno(Packet::HOST);
+        p->set_mac_header(data);
 
         output(0).push(p);
     }
