@@ -92,7 +92,6 @@ struct proclikefs_file_system {
 #define PROCLIKEFS_COUNT 2
 static struct proclikefs_file_system fs_array[PROCLIKEFS_COUNT];
 static struct mutex fslist_lock;
-extern struct mutex inode_lock;
 
 #if !HAVE_LINUX_SB_LOCK
 # define lock_sb()
