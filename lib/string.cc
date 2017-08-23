@@ -102,24 +102,24 @@ String::create_memo(char *space, int dirty, int capacity)
     assert(capacity > 0 && capacity >= dirty);
     memo_t *memo;
     if (space)
-	memo = reinterpret_cast<memo_t *>(space);
+        memo = reinterpret_cast<memo_t *>(space);
     else
-	memo = (memo_t *) CLICK_LALLOC(MEMO_SPACE + capacity);
+        memo = (memo_t *) CLICK_LALLOC(MEMO_SPACE + capacity);
     if (memo) {
-	memo->capacity = capacity;
-	memo->dirty = dirty;
-	memo->refcount = (space ? 0 : 1);
+        memo->capacity = capacity;
+        memo->dirty = dirty;
+        memo->refcount = (space ? 0 : 1);
 #if HAVE_STRING_PROFILING
-	int bucket = profile_memo_size_bucket(dirty, capacity);
-	++memo_sizes[bucket];
-	++live_memo_sizes[bucket];
-	live_memo_bytes[bucket] += capacity;
-	++live_memo_count;
+        int bucket = profile_memo_size_bucket(dirty, capacity);
+        ++memo_sizes[bucket];
+        ++live_memo_sizes[bucket];
+        live_memo_bytes[bucket] += capacity;
+        ++live_memo_count;
 # if HAVE_STRING_PROFILING > 1
-	memo->pprev = &live_memos[bucket];
-	if ((memo->next = *memo->pprev))
-	    memo->next->pprev = &memo->next;
-	*memo->pprev = memo;
+        memo->pprev = &live_memos[bucket];
+        if ((memo->next = *memo->pprev))
+            memo->next->pprev = &memo->next;
+        *memo->pprev = memo;
 # endif
 #endif
     }
@@ -139,7 +139,7 @@ String::delete_memo(memo_t *memo)
     --live_memo_count;
 # if HAVE_STRING_PROFILING > 1
     if ((*memo->pprev = memo->next))
-	memo->next->pprev = memo->pprev;
+        memo->next->pprev = memo->pprev;
 # endif
 #endif
     CLICK_LFREE(memo, MEMO_SPACE + memo->capacity);
@@ -151,29 +151,29 @@ void
 String::one_profile_report(StringAccum &sa, int i, int examples)
 {
     if (i <= 16)
-	sa << "memo_dirty_" << i;
+        sa << "memo_dirty_" << i;
     else if (i < 25) {
-	uint32_t s = (i - 17) * 2 + 17;
-	sa << "memo_cap_" << s << '_' << (s + 1);
+        uint32_t s = (i - 17) * 2 + 17;
+        sa << "memo_cap_" << s << '_' << (s + 1);
     } else if (i < 29) {
-	uint32_t s = (i - 25) * 8 + 33;
-	sa << "memo_cap_" << s << '_' << (s + 7);
+        uint32_t s = (i - 25) * 8 + 33;
+        sa << "memo_cap_" << s << '_' << (s + 7);
     } else {
-	uint32_t s1 = (1U << (i - 23)) + 1;
-	uint32_t s2 = (s1 - 1) << 1;
-	sa << "memo_cap_" << s1 << '_' << s2;
+        uint32_t s1 = (1U << (i - 23)) + 1;
+        uint32_t s2 = (s1 - 1) << 1;
+        sa << "memo_cap_" << s1 << '_' << s2;
     }
     sa << '\t' << live_memo_sizes[i] << '\t' << memo_sizes[i] << '\t' << live_memo_bytes[i] << '\n';
     if (examples) {
 # if HAVE_STRING_PROFILING > 1
-	for (memo_t *m = live_memos[i]; m; m = m->next) {
-	    sa << "    [" << m->dirty << "] ";
-	    uint32_t dirty = m->dirty;
-	    if (dirty > 0 && m->real_data[dirty - 1] == '\0')
-		--dirty;
-	    sa.append(m->real_data, dirty > 128 ? 128 : dirty);
-	    sa << '\n';
-	}
+        for (memo_t *m = live_memos[i]; m; m = m->next) {
+            sa << "    [" << m->dirty << "] ";
+            uint32_t dirty = m->dirty;
+            if (dirty > 0 && m->real_data[dirty - 1] == '\0')
+                --dirty;
+            sa.append(m->real_data, dirty > 128 ? 128 : dirty);
+            sa << '\n';
+        }
 # endif
     }
 }
@@ -183,11 +183,11 @@ String::profile_report(StringAccum &sa, int examples)
 {
     uint64_t all_live_sizes = 0, all_sizes = 0, all_live_bytes = 0;
     for (int i = 0; i < 55; ++i) {
-	if (memo_sizes[i])
-	    one_profile_report(sa, i, examples);
-	all_live_sizes += live_memo_sizes[i];
-	all_sizes += memo_sizes[i];
-	all_live_bytes += live_memo_bytes[i];
+        if (memo_sizes[i])
+            one_profile_report(sa, i, examples);
+        all_live_sizes += live_memo_sizes[i];
+        all_sizes += memo_sizes[i];
+        all_live_bytes += live_memo_bytes[i];
     }
     sa << "memo_total\t" << all_live_sizes << '\t' << all_sizes << '\t' << all_live_bytes << '\n';
 }
@@ -200,11 +200,11 @@ String::profile_report(StringAccum &sa, int examples)
 String::String(int x)
 {
     if (x >= 0 && x < 10)
-	assign_memo(int_data + 2 * x, 1, 0);
+        assign_memo(int_data + 2 * x, 1, 0);
     else {
-	char buf[128];
-	sprintf(buf, "%d", x);
-	assign(buf, -1, false);
+        char buf[128];
+        sprintf(buf, "%d", x);
+        assign(buf, -1, false);
     }
 }
 
@@ -212,11 +212,11 @@ String::String(int x)
 String::String(unsigned x)
 {
     if (x < 10)
-	assign_memo(int_data + 2 * x, 1, 0);
+        assign_memo(int_data + 2 * x, 1, 0);
     else {
-	char buf[128];
-	sprintf(buf, "%u", x);
-	assign(buf, -1, false);
+        char buf[128];
+        sprintf(buf, "%u", x);
+        assign(buf, -1, false);
     }
 }
 
@@ -224,11 +224,11 @@ String::String(unsigned x)
 String::String(long x)
 {
     if (x >= 0 && x < 10)
-	assign_memo(int_data + 2 * x, 1, 0);
+        assign_memo(int_data + 2 * x, 1, 0);
     else {
-	char buf[128];
-	sprintf(buf, "%ld", x);
-	assign(buf, -1, false);
+        char buf[128];
+        sprintf(buf, "%ld", x);
+        assign(buf, -1, false);
     }
 }
 
@@ -236,11 +236,11 @@ String::String(long x)
 String::String(unsigned long x)
 {
     if (x < 10)
-	assign_memo(int_data + 2 * x, 1, 0);
+        assign_memo(int_data + 2 * x, 1, 0);
     else {
-	char buf[128];
-	sprintf(buf, "%lu", x);
-	assign(buf, -1, false);
+        char buf[128];
+        sprintf(buf, "%lu", x);
+        assign(buf, -1, false);
     }
 }
 
@@ -252,11 +252,11 @@ String::String(unsigned long x)
 String::String(long long x)
 {
     if (x >= 0 && x < 10)
-	assign_memo(int_data + 2 * x, 1, 0);
+        assign_memo(int_data + 2 * x, 1, 0);
     else {
-	StringAccum sa;
-	sa << x;
-	assign(sa.take_string());
+        StringAccum sa;
+        sa << x;
+        assign(sa.take_string());
     }
 }
 
@@ -264,11 +264,11 @@ String::String(long long x)
 String::String(unsigned long long x)
 {
     if (x < 10)
-	assign_memo(int_data + 2 * x, 1, 0);
+        assign_memo(int_data + 2 * x, 1, 0);
     else {
-	StringAccum sa;
-	sa << x;
-	assign(sa.take_string());
+        StringAccum sa;
+        sa << x;
+        assign(sa.take_string());
     }
 }
 #endif
@@ -278,11 +278,11 @@ String::String(unsigned long long x)
 String::String(int64_t x)
 {
     if (x >= 0 && x < 10)
-	assign_memo(int_data + 2 * x, 1, 0);
+        assign_memo(int_data + 2 * x, 1, 0);
     else {
-	StringAccum sa;
-	sa << x;
-	assign(sa.take_string());
+        StringAccum sa;
+        sa << x;
+        assign(sa.take_string());
     }
 }
 
@@ -290,11 +290,11 @@ String::String(int64_t x)
 String::String(uint64_t x)
 {
     if (x < 10)
-	assign_memo(int_data + 2 * x, 1, 0);
+        assign_memo(int_data + 2 * x, 1, 0);
     else {
-	StringAccum sa;
-	sa << x;
-	assign(sa.take_string());
+        StringAccum sa;
+        sa << x;
+        assign(sa.take_string());
     }
 }
 #endif
@@ -314,7 +314,7 @@ String
 String::hard_make_stable(const char *s, int len)
 {
     if (len < 0)
-	len = strlen(s);
+        len = strlen(s);
     return String(s, len, 0);
 }
 
@@ -351,7 +351,7 @@ void
 String::assign_out_of_memory()
 {
     if (_r.memo)
-	deref();
+        deref();
     _r = oom_string_rep;
 }
 
@@ -359,38 +359,38 @@ void
 String::assign(const char *str, int len, bool need_deref)
 {
     if (!str) {
-	assert(len <= 0);
-	len = 0;
+        assert(len <= 0);
+        len = 0;
     } else if (len < 0)
-	len = strlen(str);
+        len = strlen(str);
 
     // need to start with dereference
     if (need_deref) {
-	if (unlikely(_r.memo
-		     && str >= _r.memo->real_data
-		     && str + len <= _r.memo->real_data + _r.memo->capacity)) {
-	    // Be careful about "String s = ...; s = s.c_str();"
-	    _r.data = str;
-	    _r.length = len;
-	    return;
-	} else
-	    deref();
+        if (unlikely(_r.memo
+                     && str >= _r.memo->real_data
+                     && str + len <= _r.memo->real_data + _r.memo->capacity)) {
+            // Be careful about "String s = ...; s = s.c_str();"
+            _r.data = str;
+            _r.length = len;
+            return;
+        } else
+            deref();
     }
 
     if (len == 0) {
-	_r.memo = 0;
-	_r.data = &null_data;
+        _r.memo = 0;
+        _r.data = &null_data;
 
     } else {
-	// Make the memo a multiple of 16 characters and bigger than 'len'.
-	int memo_capacity = (len + 15 + MEMO_SPACE) & ~15;
-	_r.memo = create_memo(0, len, memo_capacity - MEMO_SPACE);
-	if (!_r.memo) {
-	    assign_out_of_memory();
-	    return;
-	}
-	memcpy(_r.memo->real_data, str, len);
-	_r.data = _r.memo->real_data;
+        // Make the memo a multiple of 16 characters and bigger than 'len'.
+        int memo_capacity = (len + 15 + MEMO_SPACE) & ~15;
+        _r.memo = create_memo(0, len, memo_capacity - MEMO_SPACE);
+        if (!_r.memo) {
+            assign_out_of_memory();
+            return;
+        }
+        memcpy(_r.memo->real_data, str, len);
+        _r.data = _r.memo->real_data;
     }
 
     _r.length = len;
@@ -406,24 +406,24 @@ String::append_uninitialized(int len)
 {
     // Appending anything to "out of memory" leaves it as "out of memory"
     if (len <= 0 || out_of_memory())
-	return 0;
+        return 0;
 
     // If we can, append into unused space. First, we check that there's
     // enough unused space for 'len' characters to fit; then, we check
     // that the unused space immediately follows the data in '*this'.
     uint32_t dirty;
     if (_r.memo
-	&& ((dirty = _r.memo->dirty), _r.memo->capacity > dirty + len)) {
-	char *real_dirty = _r.memo->real_data + dirty;
-	if (real_dirty == _r.data + _r.length
-	    && atomic_uint32_t::compare_swap(_r.memo->dirty, dirty, dirty + len) == dirty) {
-	    _r.length += len;
-	    assert(_r.memo->dirty < _r.memo->capacity);
+        && ((dirty = _r.memo->dirty), _r.memo->capacity > dirty + len)) {
+        char *real_dirty = _r.memo->real_data + dirty;
+        if (real_dirty == _r.data + _r.length
+            && atomic_uint32_t::compare_swap(_r.memo->dirty, dirty, dirty + len) == dirty) {
+            _r.length += len;
+            assert(_r.memo->dirty < _r.memo->capacity);
 #if HAVE_STRING_PROFILING
-	    profile_update_memo_dirty(_r.memo, dirty, dirty + len, _r.memo->capacity);
+            profile_update_memo_dirty(_r.memo, dirty, dirty + len, _r.memo->capacity);
 #endif
-	    return real_dirty;
-	}
+            return real_dirty;
+        }
     }
 
     // Now we have to make new space. Make sure the memo is a multiple of 16
@@ -433,22 +433,22 @@ String::append_uninitialized(int len)
     int want_memo_len = _r.length + len + MEMO_SPACE;
     int memo_capacity;
     if (want_memo_len <= 1024)
-	memo_capacity = (want_memo_len + 15) & ~15;
+        memo_capacity = (want_memo_len + 15) & ~15;
     else
-	for (memo_capacity = 2048; memo_capacity < want_memo_len; )
-	    memo_capacity *= 2;
+        for (memo_capacity = 2048; memo_capacity < want_memo_len; )
+            memo_capacity *= 2;
 
 #if CLICK_DMALLOC
     // Keep total allocation a power of 2 by leaving extra space for the
     // DMALLOC Chunk.
     if (want_memo_len < memo_capacity - 32)
-	memo_capacity -= 32;
+        memo_capacity -= 32;
 #endif
 
     memo_t *new_memo = create_memo(0, _r.length + len, memo_capacity - MEMO_SPACE);
     if (!new_memo) {
-	assign_out_of_memory();
-	return 0;
+        assign_out_of_memory();
+        return 0;
     }
 
     char *new_data = new_memo->real_data;
@@ -456,7 +456,7 @@ String::append_uninitialized(int len)
 
     deref();
     _r.data = new_data;
-    new_data += _r.length;	// now new_data points to the garbage
+    new_data += _r.length;      // now new_data points to the garbage
     _r.length += len;
     _r.memo = new_memo;
     return new_data;
@@ -466,29 +466,29 @@ void
 String::append(const char *s, int len, memo_t *memo)
 {
     if (!s) {
-	assert(len <= 0);
-	len = 0;
+        assert(len <= 0);
+        len = 0;
     } else if (len < 0)
-	len = strlen(s);
+        len = strlen(s);
 
     if (unlikely(len == 0) || out_of_memory())
-	/* do nothing */;
+        /* do nothing */;
     else if (unlikely(s == out_of_memory_data()) && !memo)
-	// Appending "out of memory" to a regular string makes it "out of
-	// memory"
-	assign_out_of_memory();
+        // Appending "out of memory" to a regular string makes it "out of
+        // memory"
+        assign_out_of_memory();
     else if (_r.length == 0 && reinterpret_cast<uintptr_t>(memo) > 1) {
-	deref();
-	assign_memo(s, len, memo);
+        deref();
+        assign_memo(s, len, memo);
     } else if (likely(!(_r.memo
-			&& s >= _r.memo->real_data
-			&& s + len <= _r.memo->real_data + _r.memo->capacity))) {
-	if (char *space = append_uninitialized(len))
-	    memcpy(space, s, len);
+                        && s >= _r.memo->real_data
+                        && s + len <= _r.memo->real_data + _r.memo->capacity))) {
+        if (char *space = append_uninitialized(len))
+            memcpy(space, s, len);
     } else {
-	String preserve_s(*this);
-	if (char *space = append_uninitialized(len))
-	    memcpy(space, s, len);
+        String preserve_s(*this);
+        if (char *space = append_uninitialized(len))
+            memcpy(space, s, len);
     }
 }
 
@@ -498,7 +498,7 @@ String::append_fill(int c, int len)
 {
     assert(len >= 0);
     if (char *space = append_uninitialized(len))
-	memset(space, c, len);
+        memset(space, c, len);
 }
 
 /** @brief Ensure the string's data is unshared and return a mutable
@@ -509,7 +509,7 @@ String::mutable_data()
     // If _memo has a capacity (it's not one of the special strings) and it's
     // uniquely referenced, return _data right away.
     if (_r.memo && _r.memo->refcount == 1)
-	return const_cast<char *>(_r.data);
+        return const_cast<char *>(_r.data);
 
     // Otherwise, make a copy of it. Rely on: deref() doesn't change _data or
     // _length; and if _capacity == 0, then deref() doesn't free _real_data.
@@ -531,11 +531,11 @@ String::hard_c_str() const
     // exists. Otherwise must check that _data[_length] exists.
     const char *end_data = _r.data + _r.length;
     if ((_r.memo && end_data >= _r.memo->real_data + _r.memo->dirty)
-	|| *end_data != '\0') {
-	if (char *x = const_cast<String *>(this)->append_uninitialized(1)) {
-	    *x = '\0';
-	    --_r.length;
-	}
+        || *end_data != '\0') {
+        if (char *x = const_cast<String *>(this)->append_uninitialized(1)) {
+            *x = '\0';
+            --_r.length;
+        }
     }
     return _r.data;
 }
@@ -569,25 +569,25 @@ String
 String::substring(int pos, int len) const
 {
     if (pos < 0)
-	pos += _r.length;
+        pos += _r.length;
 
     int pos2;
     if (len < 0)
-	pos2 = _r.length + len;
+        pos2 = _r.length + len;
     else if (pos >= 0 && len >= _r.length) // avoid integer overflow
-	pos2 = _r.length;
+        pos2 = _r.length;
     else
-	pos2 = pos + len;
+        pos2 = pos + len;
 
     if (pos < 0)
-	pos = 0;
+        pos = 0;
     if (pos2 > _r.length)
-	pos2 = _r.length;
+        pos2 = _r.length;
 
     if (pos >= pos2)
-	return String();
+        return String();
     else
-	return String(_r.data + pos, pos2 - pos, _r.memo);
+        return String(_r.data + pos, pos2 - pos, _r.memo);
 }
 
 /** @brief Search for a character in a string.
@@ -601,12 +601,12 @@ int
 String::find_left(char c, int start) const
 {
     if (start < 0)
-	start = 0;
+        start = 0;
     if (start < _r.length) {
-	const char *x = (const char *)
-	    memchr(_r.data + start, c, _r.length - start);
-	if (x)
-	    return x - _r.data;
+        const char *x = (const char *)
+            memchr(_r.data + start, c, _r.length - start);
+        if (x)
+            return x - _r.data;
     }
     return -1;
 }
@@ -622,21 +622,21 @@ int
 String::find_left(const String &x, int start) const
 {
     if (start < 0)
-	start = 0;
+        start = 0;
     if (x.length() == 0 && start <= length())
-	return start;
+        return start;
     if (start + x.length() > length())
-	return -1;
+        return -1;
     const char *pos = _r.data + start;
     const char *end_pos = _r.data + length() - x.length() + 1;
     char first_c = (unsigned char) x[0];
     while (pos < end_pos) {
-	pos = (const char *) memchr(pos, first_c, end_pos - pos);
-	if (!pos)
-	    break;
-	if (memcmp(pos + 1, x.data() + 1, x.length() - 1) == 0)
-	    return pos - _r.data;
-	++pos;
+        pos = (const char *) memchr(pos, first_c, end_pos - pos);
+        if (!pos)
+            break;
+        if (memcmp(pos + 1, x.data() + 1, x.length() - 1) == 0)
+            return pos - _r.data;
+        ++pos;
     }
     return -1;
 }
@@ -653,10 +653,10 @@ int
 String::find_right(char c, int start) const
 {
     if (start >= _r.length)
-	start = _r.length - 1;
+        start = _r.length - 1;
     for (int i = start; i >= 0; i--)
-	if (_r.data[i] == c)
-	    return i;
+        if (_r.data[i] == c)
+            return i;
     return -1;
 }
 
@@ -667,7 +667,7 @@ hard_lower(const String &s, int pos)
     char *x = const_cast<char *>(new_s.data()); // know it's mutable
     int len = s.length();
     for (; pos < len; pos++)
-	x[pos] = tolower((unsigned char) x[pos]);
+        x[pos] = tolower((unsigned char) x[pos]);
     return new_s;
 }
 
@@ -680,9 +680,9 @@ String::lower() const
 {
     // avoid copies
     if (!out_of_memory())
-	for (int i = 0; i < _r.length; i++)
-	    if (_r.data[i] >= 'A' && _r.data[i] <= 'Z')
-		return hard_lower(*this, i);
+        for (int i = 0; i < _r.length; i++)
+            if (_r.data[i] >= 'A' && _r.data[i] <= 'Z')
+                return hard_lower(*this, i);
     return *this;
 }
 
@@ -693,7 +693,7 @@ hard_upper(const String &s, int pos)
     char *x = const_cast<char *>(new_s.data()); // know it's mutable
     int len = s.length();
     for (; pos < len; pos++)
-	x[pos] = toupper((unsigned char) x[pos]);
+        x[pos] = toupper((unsigned char) x[pos]);
     return new_s;
 }
 
@@ -706,8 +706,8 @@ String::upper() const
 {
     // avoid copies
     for (int i = 0; i < _r.length; i++)
-	if (_r.data[i] >= 'a' && _r.data[i] <= 'z')
-	    return hard_upper(*this, i);
+        if (_r.data[i] >= 'a' && _r.data[i] <= 'z')
+            return hard_upper(*this, i);
     return *this;
 }
 
@@ -719,12 +719,12 @@ hard_printable(const String &s, int pos)
     const unsigned char *x = reinterpret_cast<const unsigned char *>(s.data());
     int len = s.length();
     for (; pos < len; pos++) {
-	if (x[pos] >= 32 && x[pos] < 127)
-	    sa << x[pos];
-	else if (x[pos] < 32)
-	    sa << '^' << (unsigned char)(x[pos] + 64);
-	else if (char *buf = sa.extend(4, 1))
-	    sprintf(buf, "\\%03o", x[pos]);
+        if (x[pos] >= 32 && x[pos] < 127)
+            sa << x[pos];
+        else if (x[pos] < 32)
+            sa << '^' << (unsigned char)(x[pos] + 64);
+        else if (char *buf = sa.extend(4, 1))
+            sprintf(buf, "\\%03o", x[pos]);
     }
     return sa.take_string();
 }
@@ -739,9 +739,9 @@ String::printable() const
 {
     // avoid copies
     if (!out_of_memory())
-	for (int i = 0; i < _r.length; i++)
-	    if (_r.data[i] < 32 || _r.data[i] > 126)
-		return hard_printable(*this, i);
+        for (int i = 0; i < _r.length; i++)
+            if (_r.data[i] < 32 || _r.data[i] > 126)
+                return hard_printable(*this, i);
     return *this;
 }
 
@@ -757,56 +757,56 @@ String::encode_json() const
     StringAccum sa;
     const char *last = begin(), *end = this->end();
     for (const char *s = last; s != end; ++s) {
-	int c = (unsigned char) *s;
+        int c = (unsigned char) *s;
 
-	// U+2028 and U+2029 can't appear in Javascript strings! (Though
-	// they are legal in JSON strings, according to the JSON
-	// definition.)
-	if (unlikely(c == 0xE2)
-	    && s + 2 < end && (unsigned char) s[1] == 0x80
-	    && (unsigned char) (s[2] | 1) == 0xA9)
-	    c = 0x2028 + (s[2] & 1);
-	else if (likely(c >= 32 && c != '\\' && c != '\"' && c != '/'))
-	    continue;
+        // U+2028 and U+2029 can't appear in Javascript strings! (Though
+        // they are legal in JSON strings, according to the JSON
+        // definition.)
+        if (unlikely(c == 0xE2)
+            && s + 2 < end && (unsigned char) s[1] == 0x80
+            && (unsigned char) (s[2] | 1) == 0xA9)
+            c = 0x2028 + (s[2] & 1);
+        else if (likely(c >= 32 && c != '\\' && c != '\"' && c != '/'))
+            continue;
 
-	if (!sa.length())
-	    sa.reserve(length() + 16);
-	sa.append(last, s);
-	sa << '\\';
-	switch (c) {
-	case '\b':
-	    sa << 'b';
-	    break;
-	case '\f':
-	    sa << 'f';
-	    break;
-	case '\n':
-	    sa << 'n';
-	    break;
-	case '\r':
-	    sa << 'r';
-	    break;
-	case '\t':
-	    sa << 't';
-	    break;
-	case '\\':
-	case '\"':
-	case '/':
-	    sa.append((char) c);
-	    break;
-	default: // c is a control character, 0x2028, or 0x2029
-	    sa.snprintf(5, "u%04X", c);
-	    if (c > 255)	// skip rest of encoding of U+202[89]
-		s += 2;
-	    break;
-	}
-	last = s + 1;
+        if (!sa.length())
+            sa.reserve(length() + 16);
+        sa.append(last, s);
+        sa << '\\';
+        switch (c) {
+        case '\b':
+            sa << 'b';
+            break;
+        case '\f':
+            sa << 'f';
+            break;
+        case '\n':
+            sa << 'n';
+            break;
+        case '\r':
+            sa << 'r';
+            break;
+        case '\t':
+            sa << 't';
+            break;
+        case '\\':
+        case '\"':
+        case '/':
+            sa.append((char) c);
+            break;
+        default: // c is a control character, 0x2028, or 0x2029
+            sa.snprintf(5, "u%04X", c);
+            if (c > 255)        // skip rest of encoding of U+202[89]
+                s += 2;
+            break;
+        }
+        last = s + 1;
     }
     if (sa.length()) {
-	sa.append(last, end);
-	return sa.take_string();
+        sa.append(last, end);
+        return sa.take_string();
     } else
-	return *this;
+        return *this;
 }
 
 /** @brief Return a substring with spaces trimmed from the end. */
@@ -814,8 +814,8 @@ String
 String::trim_space() const
 {
     for (int i = _r.length - 1; i >= 0; i--)
-	if (!isspace((unsigned char) _r.data[i]))
-	    return substring(0, i + 1);
+        if (!isspace((unsigned char) _r.data[i]))
+            return substring(0, i + 1);
     return String();
 }
 
@@ -829,13 +829,13 @@ String::quoted_hex() const
     StringAccum sa;
     char *buf;
     if (out_of_memory() || !(buf = sa.extend(length() * 2 + 3)))
-	return make_out_of_memory();
+        return make_out_of_memory();
     *buf++ = '\\';
     *buf++ = '<';
     const uint8_t *e = reinterpret_cast<const uint8_t*>(end());
     for (const uint8_t *x = reinterpret_cast<const uint8_t*>(begin()); x < e; x++) {
-	*buf++ = hex_digits[(*x >> 4) & 0xF];
-	*buf++ = hex_digits[*x & 0xF];
+        *buf++ = hex_digits[(*x >> 4) & 0xF];
+        *buf++ = hex_digits[*x & 0xF];
     }
     *buf++ = '>';
     return sa.take_string();
@@ -854,7 +854,7 @@ uint32_t
 String::hashcode(const char *first, const char *last)
 {
     if (last <= first)
-	return 0;
+        return 0;
 
     uint32_t hash = last - first;
     int rem = hash & 3;
@@ -865,16 +865,16 @@ String::hashcode(const char *first, const char *last)
     if (!(reinterpret_cast<uintptr_t>(first) & 1)) {
 #endif
 #define get16(p) (*reinterpret_cast<const uint16_t *>((p)))
-	for (; first != last; first += 4) {
-	    hash += get16(first);
-	    uint32_t tmp = (get16(first + 2) << 11) ^ hash;
-	    hash = (hash << 16) ^ tmp;
-	    hash += hash >> 11;
-	}
-	if (rem >= 2) {
-	    last16 = get16(first);
-	    goto rem2;
-	}
+        for (; first != last; first += 4) {
+            hash += get16(first);
+            uint32_t tmp = (get16(first + 2) << 11) ^ hash;
+            hash = (hash << 16) ^ tmp;
+            hash += hash >> 11;
+        }
+        if (rem >= 2) {
+            last16 = get16(first);
+            goto rem2;
+        }
 #undef get16
 #if !HAVE_INDIFFERENT_ALIGNMENT
     } else {
@@ -885,38 +885,38 @@ String::hashcode(const char *first, const char *last)
 # else
 #  error "unknown CLICK_BYTE_ORDER"
 # endif
-	// should be exactly the same as the code above
-	for (; first != last; first += 4) {
-	    hash += get16(first);
-	    uint32_t tmp = (get16(first + 2) << 11) ^ hash;
-	    hash = (hash << 16) ^ tmp;
-	    hash += hash >> 11;
-	}
-	if (rem >= 2) {
-	    last16 = get16(first);
-	    goto rem2;
-	}
+        // should be exactly the same as the code above
+        for (; first != last; first += 4) {
+            hash += get16(first);
+            uint32_t tmp = (get16(first + 2) << 11) ^ hash;
+            hash = (hash << 16) ^ tmp;
+            hash += hash >> 11;
+        }
+        if (rem >= 2) {
+            last16 = get16(first);
+            goto rem2;
+        }
 # undef get16
     }
 #endif
 
     /* Handle end cases */
-    if (0) {			// weird organization avoids uninitialized
-      rem2:			// variable warnings
-	if (rem == 3) {
-	    hash += last16;
-	    hash ^= hash << 16;
-	    hash ^= ((unsigned char) first[2]) << 18;
-	    hash += hash >> 11;
-	} else {
-	    hash += last16;
-	    hash ^= hash << 11;
-	    hash += hash >> 17;
-	}
+    if (0) {                    // weird organization avoids uninitialized
+      rem2:                     // variable warnings
+        if (rem == 3) {
+            hash += last16;
+            hash ^= hash << 16;
+            hash ^= ((unsigned char) first[2]) << 18;
+            hash += hash >> 11;
+        } else {
+            hash += last16;
+            hash ^= hash << 11;
+            hash += hash >> 17;
+        }
     } else if (rem == 1) {
-	hash += (unsigned char) *first;
-	hash ^= hash << 10;
-	hash += hash >> 1;
+        hash += (unsigned char) *first;
+        hash ^= hash << 10;
+        hash += hash >> 1;
     }
 
     /* Force "avalanching" of final 127 bits */
@@ -938,7 +938,7 @@ String::hard_equals(const char *s, int len) const
     // used as (for example) keys in hashtables. Instead, "out-of-memory"
     // strings compare unequal to other null strings, but equal to each other.
     if (len < 0)
-	len = strlen(s);
+        len = strlen(s);
     return length() == len && (data() == s || memcmp(data(), s, len) == 0);
 }
 
@@ -954,7 +954,7 @@ String::starts_with(const char *s, int len) const
 {
     // See note on equals() re: "out-of-memory" strings.
     if (len < 0)
-	len = strlen(s);
+        len = strlen(s);
     return length() >= len && (data() == s || memcmp(data(), s, len) == 0);
 }
 
@@ -970,12 +970,12 @@ int
 String::compare(const char *s, int len) const
 {
     if (len < 0)
-	len = strlen(s);
+        len = strlen(s);
     int lencmp = length() - len, cmp;
     if (unlikely(data() == s))
-	cmp = 0;
+        cmp = 0;
     else
-	cmp = memcmp(data(), s, lencmp < 0 ? length() : len);
+        cmp = memcmp(data(), s, lencmp < 0 ? length() : len);
     return cmp ? cmp : lencmp;
 }
 
@@ -998,74 +998,74 @@ String::glob_match(const String& pattern) const
 
     // quick common-case check for suffix matches
     while (pattern.begin() < pend && this->begin() < send
-	   && pend[-1] != '*' && pend[-1] != '?' && pend[-1] != ']'
-	   && (pattern.begin() + 1 == pend || pend[-2] != '\\'))
-	if (pend[-1] == send[-1])
-	    --pend, --send;
-	else
-	    return false;
+           && pend[-1] != '*' && pend[-1] != '?' && pend[-1] != ']'
+           && (pattern.begin() + 1 == pend || pend[-2] != '\\'))
+        if (pend[-1] == send[-1])
+            --pend, --send;
+        else
+            return false;
 
     Vector<const char*> state, nextstate;
     state.push_back(pattern.data());
 
     for (const char *s = this->data(); s != send && state.size(); ++s) {
-	nextstate.clear();
-	for (const char **pp = state.begin(); pp != state.end(); ++pp)
-	    if (*pp != pend) {
-	      reswitch:
-		switch (**pp) {
-		  case '?':
-		    nextstate.push_back(*pp + 1);
-		    break;
-		  case '*':
-		    if (*pp + 1 == pend)
-			return true;
-		    if (nextstate.empty() || nextstate.back() != *pp)
-			nextstate.push_back(*pp);
-		    ++*pp;
-		    goto reswitch;
-		  case '\\':
-		    if (*pp + 1 != pend)
-			++*pp;
-		    goto normal_char;
-		  case '[': {
-		      const char *ec = *pp + 1;
-		      bool negated;
-		      if (ec != pend && *ec == '^') {
-			  negated = true;
-			  ++ec;
-		      } else
-			  negated = false;
-		      if (ec == pend)
-			  goto normal_char;
+        nextstate.clear();
+        for (const char **pp = state.begin(); pp != state.end(); ++pp)
+            if (*pp != pend) {
+            reswitch:
+                switch (**pp) {
+                case '?':
+                    nextstate.push_back(*pp + 1);
+                    break;
+                case '*':
+                    if (*pp + 1 == pend)
+                        return true;
+                    if (nextstate.empty() || nextstate.back() != *pp)
+                        nextstate.push_back(*pp);
+                    ++*pp;
+                    goto reswitch;
+                case '\\':
+                    if (*pp + 1 != pend)
+                        ++*pp;
+                    goto normal_char;
+                case '[': {
+                    const char *ec = *pp + 1;
+                    bool negated;
+                    if (ec != pend && *ec == '^') {
+                        negated = true;
+                        ++ec;
+                    } else
+                        negated = false;
+                    if (ec == pend)
+                        goto normal_char;
 
-		      bool found = false;
-		      do {
-			  if (*++ec == *s)
-			      found = true;
-		      } while (ec != pend && *ec != ']');
-		      if (ec == pend)
-			  goto normal_char;
+                    bool found = false;
+                    do {
+                        if (*++ec == *s)
+                            found = true;
+                    } while (ec != pend && *ec != ']');
+                    if (ec == pend)
+                        goto normal_char;
 
-		      if (found == !negated)
-			  nextstate.push_back(ec + 1);
-		      break;
-		  }
-		  normal_char:
-		  default:
-		    if (**pp == *s)
-			nextstate.push_back(*pp + 1);
-		    break;
-		}
-	    }
-	state.swap(nextstate);
+                    if (found == !negated)
+                        nextstate.push_back(ec + 1);
+                    break;
+                }
+                normal_char:
+                default:
+                    if (**pp == *s)
+                        nextstate.push_back(*pp + 1);
+                    break;
+                }
+            }
+        state.swap(nextstate);
     }
 
     for (const char **pp = state.begin(); pp != state.end(); ++pp) {
-	while (*pp != pend && **pp == '*')
-	    ++*pp;
-	if (*pp == pend)
-	    return true;
+        while (*pp != pend && **pp == '*')
+            ++*pp;
+        if (*pp == pend)
+            return true;
     }
     return false;
 }
@@ -1081,23 +1081,23 @@ String::skip_utf8_char(const unsigned char *first, const unsigned char *last)
     if (c > 0 && c < 0x80)
         return first + 1;
     else if (c < 0xC2)
-	/* zero, or bad/overlong encoding */;
-    else if (c < 0xE0) {	// 2 bytes: U+80-U+7FF
+        /* zero, or bad/overlong encoding */;
+    else if (c < 0xE0) {        // 2 bytes: U+80-U+7FF
         if (likely(first + 1 < last
                    && first[1] >= 0x80 && first[1] < 0xC0))
             return first + 2;
-    } else if (c < 0xF0) {	// 3 bytes: U+800-U+FFFF
+    } else if (c < 0xF0) {      // 3 bytes: U+800-U+FFFF
         if (likely(first + 2 < last
                    && first[1] >= 0x80 && first[1] < 0xC0
-		   && first[2] >= 0x80 && first[2] < 0xC0
+                   && first[2] >= 0x80 && first[2] < 0xC0
                    && (c != 0xE0 || first[1] >= 0xA0) /* not overlong encoding */
                    && (c != 0xED || first[1] < 0xA0) /* not surrogate */))
             return first + 3;
-    } else if (c < 0xF5) {	// 4 bytes: U+10000-U+10FFFF
+    } else if (c < 0xF5) {      // 4 bytes: U+10000-U+10FFFF
         if (likely(first + 3 < last
                    && first[1] >= 0x80 && first[1] < 0xC0
-		   && first[2] >= 0x80 && first[2] < 0xC0
-		   && first[3] >= 0x80 && first[3] < 0xC0
+                   && first[2] >= 0x80 && first[2] < 0xC0
+                   && first[3] >= 0x80 && first[3] < 0xC0
                    && (c != 0xF0 || first[1] >= 0x90) /* not overlong encoding */
                    && (c != 0xF4 || first[1] < 0x90) /* not >U+10FFFF */))
             return first + 4;
