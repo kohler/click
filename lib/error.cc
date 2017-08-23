@@ -591,6 +591,7 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 	case 'd':
 	case 'i':
 	    flags |= cf_signed;
+            /* fallthrough */
 	case 'u':
 	number: {
 	    // protect numbuf from overflow
@@ -673,6 +674,7 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 
 	case 'X':
 	    flags |= cf_uppercase;
+            /* fallthrough */
 	case 'x':
 	    base = 16;
 	    goto number;
