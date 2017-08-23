@@ -1005,69 +1005,79 @@ String::glob_match(const String& pattern) const
         else
             return false;
 
-    Vector<const char*> state, nextstate;
-    state.push_back(pattern.data());
+    const char* s = this->data();
+    const char* p = pattern.data();
+    const char* backtrack_p = p;
+    const char* backtrack_s = send;
 
-    for (const char *s = this->data(); s != send && state.size(); ++s) {
-        nextstate.clear();
-        for (const char **pp = state.begin(); pp != state.end(); ++pp)
-            if (*pp != pend) {
-            reswitch:
-                switch (**pp) {
-                case '?':
-                    nextstate.push_back(*pp + 1);
-                    break;
-                case '*':
-                    if (*pp + 1 == pend)
-                        return true;
-                    if (nextstate.empty() || nextstate.back() != *pp)
-                        nextstate.push_back(*pp);
-                    ++*pp;
-                    goto reswitch;
-                case '\\':
-                    if (*pp + 1 != pend)
-                        ++*pp;
+    while (s < send || p < pend) {
+        if (p < pend) {
+            switch (*p) {
+            case '?':
+                if (s == send)
+                    goto fail;
+                ++p;
+                ++s;
+                continue;
+            case '*':
+                ++p;
+                backtrack_p = p;
+                backtrack_s = s;
+                if (p == pend)
+                    return true;
+                continue;
+            case '[': {
+                if (s == send)
+                    goto fail;
+
+                const char* ec = p + 1;
+                bool negated;
+                if (ec != pend && *ec == '^') {
+                    negated = true;
+                    ++ec;
+                } else
+                    negated = false;
+                if (ec == pend)
                     goto normal_char;
-                case '[': {
-                    const char *ec = *pp + 1;
-                    bool negated;
-                    if (ec != pend && *ec == '^') {
-                        negated = true;
-                        ++ec;
-                    } else
-                        negated = false;
-                    if (ec == pend)
-                        goto normal_char;
 
-                    bool found = false;
-                    do {
-                        if (*++ec == *s)
-                            found = true;
-                    } while (ec != pend && *ec != ']');
-                    if (ec == pend)
-                        goto normal_char;
+                bool found = false;
+                do {
+                    if (*++ec == *s)
+                        found = true;
+                } while (ec != pend && *ec != ']');
+                if (ec == pend)
+                    goto normal_char;
 
-                    if (found == !negated)
-                        nextstate.push_back(ec + 1);
-                    break;
-                }
-                normal_char:
-                default:
-                    if (**pp == *s)
-                        nextstate.push_back(*pp + 1);
-                    break;
-                }
+                if (found != !negated)
+                    goto fail;
+
+                p = ec + 1;
+                ++s;
+                continue;
             }
-        state.swap(nextstate);
+            case '\\':
+                if (p + 1 != pend)
+                    ++p;
+                goto normal_char;
+            default:
+            normal_char:
+                if (s == send || *s != *p)
+                    goto fail;
+                ++p;
+                ++s;
+                continue;
+            }
+        }
+    fail:
+        if (backtrack_s < send) {
+            p = backtrack_p;
+            s = backtrack_s = backtrack_s + 1;
+            continue;
+        }
+        return false;
     }
 
-    for (const char **pp = state.begin(); pp != state.end(); ++pp) {
-        while (*pp != pend && **pp == '*')
-            ++*pp;
-        if (*pp == pend)
-            return true;
-    }
-    return false;
+    return true;
 }
 
 /** @brief Return a pointer to the next character in UTF-8 encoding.
