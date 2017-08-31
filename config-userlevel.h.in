@@ -223,6 +223,9 @@
 /* Define if you have the <valgrind/memcheck.h> header file. */
 #undef HAVE_VALGRIND_MEMCHECK_H
 
+/* Define to 1 to enable poisoning of freed HashAllocator blocks. */
+#undef HAVE_HASH_ALLOCATOR_POISONING
+
 /* Define if you have the vsnprintf function. */
 #undef HAVE_VSNPRINTF
 
