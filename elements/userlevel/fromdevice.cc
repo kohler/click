@@ -285,7 +285,7 @@ FromDevice::open_pcap(String ifname, int snaplen, bool promisc,
     if (r < 0) {
         errh->error("%s: %s", ifname.c_str(), fetch_pcap_error(p, 0));
         pcap_close(p);
-        p = 0;
+        return 0;
     } else if (r > 0)
         errh->warning("%s: %s", ifname.c_str(), fetch_pcap_error(p, 0));
 
