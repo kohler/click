@@ -858,7 +858,7 @@ Json::parse_primitive(const String &str, const char *begin, const char *end)
 	    ++s;
 	    if (s != end && (*s == '+' || *s == '-'))
 		++s;
-	    if (s == end || s[1] < '0' || s[1] > '9')
+	    if (s == end || s[0] < '0' || s[0] > '9')
 		return 0;
 	    for (++s; s != end && isdigit((unsigned char) *s); )
 		++s;
