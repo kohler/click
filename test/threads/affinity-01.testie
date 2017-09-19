@@ -2,9 +2,15 @@
 Test affinity parameters
 
 %require
-taskset -V
+#Click needs multi-threading to support MT affinity...
 click-buildtool provides umultithread
+#Check the number of CPU is bigger than 1
 test "$(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1)" -gt 1
+#Check for affinity support (some container environment forbid tasksetting)
+taskset -c 1 sleep 0.2 >/dev/null 2>/dev/null &
+pid=$!
+sleep 0.1
+[ $(taskset -p $pid | rev | cut -d' ' -f1) -eq 2 ]
 
 %script
 #Affinity to core 0
