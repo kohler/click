@@ -42,8 +42,11 @@ dnl support for cross compiling
 AC_CANONICAL_SYSTEM
 
 dnl This is wrong!!
-AC_CHECK_TOOL(CC, gcc)
-AC_CHECK_TOOL(CXX, g++)
+using_clang=`$CXX --version | grep ^clang | cut -f1 -d' '`
+if test -z "$using_clang"; then
+    AC_CHECK_TOOL(CC, gcc)
+    AC_CHECK_TOOL(CXX, g++)
+fi
 
 CLICK_PROG_CC
 AC_PROG_CPP
