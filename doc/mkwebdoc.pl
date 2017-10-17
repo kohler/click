@@ -295,7 +295,7 @@ sub elist_file ($) {
 		    print OUT eli($esubj[$i]);
 		}
 	    }
-	
+
 	    1 while (defined($_ = <IN>) && !/^<!-- \/clickdoc/);
 	    print OUT;
 	} else {
