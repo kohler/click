@@ -7,7 +7,7 @@ $pp_pos = 0;
 
 sub pp_open ($$$) {
   local($o, $f, $c) = @_;
-  
+
   if ($pp_pos > 0) {
     $pp_pos++;
     print STDERR ' ';
@@ -16,10 +16,10 @@ sub pp_open ($$$) {
       $pp_pos = 0;
     }
   }
-  
+
   $pp_pos += length($o.$f.$c);
   print STDERR $o, $f;
-  
+
   push(@pp_closers, $c);
 }
 
@@ -42,7 +42,7 @@ Try `man2html --help' for more information.\n";
 
 sub help () {
   print STDERR <<'EOD;';
-`Man2html' translates UNIX manual pages into HTML.
+'Man2html' translates UNIX manual pages into HTML.
 
 Usage: man2html [-l] [-t TEMPLATE] [MANFILE] [HTMLFILE]
        man2html -d DIR [-l] [-t TEMPLATE] MANFILES...
@@ -54,9 +54,11 @@ Options:
                           output file.
   -d, --directory DIR     Place generated HTML files in directory DIR.
   -l, --link              Make hyperlinks for manual page crossreferences.
-  -m, --marker A@B        Hyperlinks to current manual page `<a>text</a>'
-                          replaced with `AtextB'.
+  -o, --output OUTFILE
+  -m, --marker A@B        Hyperlinks to current manual page `<a>text</a>`
+                          replaced with `AtextB`.
       --no-recursive      Do not search subdirectories.
+      --markdown          Generate Markdown output.
   -f, --force             Ignore file errors.
   -h, --help              Print this message and exit.
 
@@ -65,107 +67,125 @@ EOD;
   exit 0;
 }
 
-undef $directory;
-undef $template;
-undef $output_file;
-$self_link_marker = "";
-$self_link_post_marker = "";
+my($directory, $template, $ouptut_file);
+my $self_link_marker = "";
+my $self_link_post_marker = "";
+my $replace = 0;
+my %hyperlink_man;
 @files = ();
 $links = 0;
 $recursive = 1;
 $force = 0;
+my $markdown = 0;
 $QUOTES = 0;
 while (@ARGV) {
-  $_ = shift;
-  if (/^-/) {
-    if (/^-$/) {
-      push @files, "";
-    } elsif (/^-d$/ || /^--directory$/) {
-      die if defined $directory || @ARGV == 0;
-      $directory = shift;
-    } elsif (/^-d(.*)$/ || /^--directory=(.*)$/) {
-      die if defined $directory;
-      $directory = $1;
-    } elsif (/^--no-recursive$/) {
-      $recursive = 0;
-    } elsif (/^-f$/ || /^--force$/) {
-      $force = 1;
-    } elsif (/^-t$/ || /^--template$/) {
-      die if defined $template || @ARGV == 0;
-      $template = shift;
-    } elsif (/^-t(.*)$/ || /^--template=(.*)$/) {
-      die if defined $template;
-      $template = $1;
-    } elsif (/^-r$/ || /^--replace$/) {
-      die if defined $template || @ARGV == 0;
-      $template = $output_file = shift;
-    } elsif (/^-r(.*)$/ || /^--replace=(.*)$/) {
-      die if defined $template;
-      $template = $output_file = $1;
-    } elsif (/^-l$/ || /^--links$/) {
-      $links = 1;
-    } elsif (/^-h$/ || /^--help$/) {
-      help;
-    } elsif (/^-m$/ || /^--marker$/) {
-      die if $self_link_marker || @ARGV == 0;
-      $self_link_marker = shift;
-    } elsif (/^-m(.*)$/ || /^--marker=(.*)$/) {
-      die if $self_link_marker;
-      $self_link_marker = $1;
+    $_ = shift;
+    if (/^-/) {
+        if (/^-$/) {
+            push @files, "";
+        } elsif (/^-d$/ || /^--directory$/) {
+            die if defined $directory || @ARGV == 0;
+            $directory = shift;
+        } elsif (/^-d(.*)$/ || /^--directory=(.*)$/) {
+            die if defined $directory;
+            $directory = $1;
+        } elsif (/^--no-recursive$/) {
+            $recursive = 0;
+        } elsif (/^-f$/ || /^--force$/) {
+            $force = 1;
+        } elsif (/^-t$/ || /^--template$/) {
+            die if defined $template || @ARGV == 0;
+            $template = shift;
+        } elsif (/^-t(.*)$/ || /^--template=(.*)$/) {
+            die if defined $template;
+            $template = $1;
+        } elsif (/^-r$/ || /^--replace$/) {
+            die if defined $template || @ARGV == 0;
+            $template = $output_file = shift;
+        } elsif (/^-r(.*)$/ || /^--replace=(.*)$/) {
+            die if defined $template;
+            $template = $output_file = $1;
+        } elsif (/^-l$/ || /^--links$/) {
+            $links = 1;
+        } elsif (/^-h$/ || /^--help$/) {
+            help;
+        } elsif (/^--(?:markd|markdo|markdow|markdown)$/) {
+            $markdown = 1;
+        } elsif (/^-m$/ || /^--marker$/) {
+            die if $self_link_marker || @ARGV == 0;
+            $self_link_marker = shift;
+        } elsif (/^-m(.*)$/ || /^--marker=(.*)$/) {
+            die if $self_link_marker;
+            $self_link_marker = $1;
+        } elsif (/^--xlink$/) {
+            die if @ARGV == 0 || $ARGV[0] !~ /\A(\S+)=(.*)/;
+            $hyperlink_man{$1} = "$2.html";
+            shift;
+        } elsif (/^--xlink=(\S+)=(.*)$/) {
+            $hyperlink_man{$1} = "$2.html";
+        } elsif (/^-o$/ || /^--output$/) {
+            die if $output_file || @ARGV == 0;
+            $output_file = shift;
+        } elsif (/^-o(.*)$/ || /^--output=(.*)$/) {
+            die if $output_file;
+            $output_file = $1;
+        } else {
+            print STDERR "man2html: unrecognized option `$_'\n";
+            usage;
+        }
     } else {
-      print STDERR "man2html: unrecognized option `$_'\n";
-      usage;
+        push @files, $_;
     }
-  } else {
-    push @files, $_;
-  }
 }
 
 if (@files > 2 && !defined $directory) {
-  die "more than one file and no \`--directory'";
+    die "more than one file and no \`--directory'";
 }
 if (@files != 1 && defined $output_file) {
-  die "--replace requires exactly one input file";
+    die "--replace/--output requires exactly one input file";
 }
 if (@files == 0) {
   push @files, '';
 }
 @ffiles = @files; @files = ();
 foreach $dir (@ffiles) {
-  if ($dir ne '' && -d $dir && $recursive) {
-    if (opendir(DIR, $dir)) {
-      push @files, map { "$dir/$_" } grep(/[^.].*.[1-9ln]/, readdir DIR);
-      closedir DIR;
+    if ($dir ne '' && -d $dir && $recursive) {
+        if (opendir(DIR, $dir)) {
+            push @files, map { "$dir/$_" } grep(/[^.].*.[1-9ln]/, readdir DIR);
+            closedir DIR;
+        } else {
+            print "$dir: $!\n";
+        }
     } else {
-      print "$dir: $!\n";
+        push @files, $dir;
     }
-  } else {
-    push @files, $dir;
-  }
 }
 
 $output_dir = $directory if defined($directory);
 $output_dir = $1 if !defined($output_dir) && defined($output_file) && $output_file =~ m|^(.*)/[^/]*$|;
+my $linksuffix = $markdown ? "md" : "html";
 if (defined $output_dir) {
-  opendir(DIR, $output_dir) || die "$output_dir: $!\n";
-  foreach $i (grep { /^([^.].*\..*)\.html$/ } readdir(DIR)) {
-    $hyperlink_man{substr($i, 0, -5)} = 1;
-  }
+    opendir(DIR, $output_dir) || die "$output_dir: $!\n";
+    foreach $i (grep { /^([^.].*(?:\.[1-9n])?)\.$linksuffix$/ } readdir(DIR)) {
+        my($f) = $i;
+        $f =~ s{\.(?:html|md)}{};
+        $hyperlink_man{$f} = $f . ".html";
+    }
 }
 foreach $i (@files) {
-  $i =~ m{([^/]*)$}s;
-  $hyperlink_man{$1} = 1;
+    $i =~ m{([^/]*)$}s;
+    $hyperlink_man{$1} = $i . ".html";
 }
 
 if (defined $template) {
-  open T, $template || die "$template: $!\n";
-  undef $/;
-  $template = <T>;
-  close T;
-  $/ = "\n";
+    open T, $template || die "$template: $!\n";
+    undef $/;
+    $template = <T>;
+    close T;
+    $/ = "\n";
 }
 if ($self_link_marker =~ /^(.*)\@(.*)$/) {
-  ($self_link_marker, $self_link_post_marker) = ($1, $2);
+    ($self_link_marker, $self_link_post_marker) = ($1, $2);
 }
 
 
@@ -176,50 +196,55 @@ sub error {
 
 sub get_line () {
     if (@pushed_lines) {
-	$_ = shift @pushed_lines;
-	return defined($_);
+        $_ = shift @pushed_lines;
+        return defined($_);
     } else {
-	$_ = <IN>;
-	return 1 if /^\.\\\"/;
-	return 0 if !defined($_);
-	s/\\\\/\300/g;
-	s/\\[|&]/\377/g;
-	s/&/&amp;/g;
-	s/</&lt;/g;
-	s/>/&gt;/g;
-	s/\\e/&backsl;/g;
-	s/\\([-+])/\1/g;
-	s{\\%( *)}{"<tt>&nbsp;</tt>" x length($1)}eg;
-	s/\\\(em/&sp;--&sp;/g;
-	s/\\\(bu/*/g;
-	s/\\~/&nbsp;/g;
-	s#\\f\(CW#<T>#gx;
-	s#\\f\(BI#<Q>#gx;
-	s#\\f([RPIB])#<\1>#gx;
-	s#\\s-1#<SMALL>#gx;
-	s#\\s0#<NORMAL>#gx;
-	s#\\ #&nbsp;#g;
-	s/\\\*\((..)/$STR{$1}/eg;
-	s/\\\*(.)/$STR{$1}/eg;
-	s/\\".*//;
-	tr/\300/\\/;
-	return 1;
+        $_ = <IN>;
+        return 1 if /^\.\\\"/;
+        return 0 if !defined($_);
+        s/\\\\/\300/g;
+        s/\\[|&]/\377/g;
+        s/&/&amp;/g;
+        s/</&lt;/g;
+        s/>/&gt;/g;
+        s/\\e/&backsl;/g;
+        s/\\([-+])/\1/g;
+        s{\\%( *)}{"<tt>&nbsp;</tt>" x length($1)}eg;
+        s/\\\(em/—/g;
+        s/\\\(bu/*/g;
+        s/\\\(lq/“/g;
+        s/\\\(rq/”/g;
+        s/\\\(oq/‘/g;
+        s/\\\(cq/’/g;
+        s/\\\(co/©/g;
+        s/\\~/&nbsp;/g;
+        s#\\f\(CW#<T>#gx;
+        s#\\f\(BI#<Q>#gx;
+        s#\\f([RPIB])#<\1>#gx;
+        s#\\s-1#<SMALL>#gx;
+        s#\\s0#<NORMAL>#gx;
+        s#\\ #&nbsp;#g;
+        s/\\\*\((..)/$STR{$1}/eg;
+        s/\\\*(.)/$STR{$1}/eg;
+        s/\\".*//;
+        tr/\300/\\/;
+        return 1;
     }
 }
 
 sub get_args () {
     @args = (undef);
     while (/\S/) {
-	if (/\A\s*"((?:[^"]|"")*)(?:"|\z)(.*)/) {
-	    my($x) = $1;
-	    $_ = $2;
-	    $x =~ s/\"\"/\"/g;
-	    $x =~ s{(  +)}{'<tt>&nbsp;</tt>' x length($1)}eg;
-	    push @args, $x;
-	} elsif (/^\s*(\S+)(.*)/) {
-	    push @args, $1;
-	    $_ = $2;
-	}
+        if (/\A\s*"((?:[^"]|"")*)(?:"|\z)(.*)/) {
+            my($x) = $1;
+            $_ = $2;
+            $x =~ s/\"\"/\"/g;
+            $x =~ s{(  +)}{'<tt>&nbsp;</tt>' x length($1)}eg;
+            push @args, $x;
+        } elsif (/^\s*(\S+)(.*)/) {
+            push @args, $1;
+            $_ = $2;
+        }
     }
 }
 
@@ -235,19 +260,19 @@ sub call ($$) {
     my($n, $t) = @_;
     $_ = $t;
     if ($n =~ /^[A-Za-z_0-9]+$/) {
-	eval "&dot_$n();";
+        eval "&dot_$n();";
     } elsif ($n =~ /^\\\"/) {
-	'';
+        '';
     }
 }
 
 sub o ($) {
     my($x) = $_[0];
     if ($QUOTES) {
-	$x =~ s/``/&#8220;/g;
-	$x =~ s/''/&#8221;/g;
-	$x =~ s/\`/&#8216;/g;
-	$x =~ s/\'/&#8217;/g;
+        $x =~ s/``/“/g;
+        $x =~ s/''/”/g;
+        $x =~ s/\`/‘/g;
+        $x =~ s/\'/’/g;
     }
     $T .= $x;
 }
@@ -255,13 +280,13 @@ sub o ($) {
 sub line ($) {
     $_ = $_[0];
     if (/^[\.\']\s*(\w\S?)\s*(.*)/) {
-	call($1, $2);
+        call($1, $2);
     } elsif (/^\.\\\"html\s+(.*)/) {
-	$T .= $1 . "\n";
-	$no_prologue = 1 if /DOCTYPE/;
+        $T .= $1 . "\n";
+        $no_prologue = 1 if /DOCTYPE/;
     } elsif (/^[.\']\s*$/ || /^[.\']\\\"/) {
     } else {
-	o($_);
+        o($_);
     }
 }
 
@@ -282,14 +307,14 @@ sub dot_de {
     my($subname, $sub, $save);
     ($subname) = /^(..?)/;
     while (get_line) {
-	last if /^\.\./;
-	push @$save, $_;
+        last if /^\.\./;
+        push @$save, $_;
     }
     return if $NO_OVERRIDE{$subname};
     $DEFS{$subname} = $save;
     eval "sub dot_$subname {
-	get_args;
-	unshift \@pushed_lines, map(&expand_args(\$_), \@{\$DEFS{'$subname'}});
+        get_args;
+        unshift \@pushed_lines, map(&expand_args(\$_), \@{\$DEFS{'$subname'}});
     }";
 }
 
@@ -297,15 +322,15 @@ sub dot_if {
     my($test, $what);
     my($X) = $_;
     get_line, $X .= $_ if $X =~ /\\$/;
-    if ($X =~ /\\{/) {
-	get_line, $X .= $_ while $X !~ /\\}/;
-	($test, $what) = ($X =~ /^(\S+)\s+\\{\\?(.*)\\}/s);
-	$what .= "\n";
+    if ($X =~ /\\\{/) {
+        get_line, $X .= $_ while $X !~ /\\}/;
+        ($test, $what) = ($X =~ /^(\S+)\s+\\\{\\?(.*)\\\}/s);
+        $what .= "\n";
     } else {
-	($test, $what) = ($X =~ /^(\S+)\s+(.*)/s);
+        ($test, $what) = ($X =~ /^(\S+)\s+(.*)/s);
     }
     if (defined($test) && $test ne 'n') {
-	unshift @pushed_lines, split(/\n/, $what);
+        unshift @pushed_lines, split(/\n/, $what);
     }
 }
 
@@ -313,20 +338,20 @@ sub dot_ie {
     my($test, $what);
     my($X) = $_;
     get_line, $X .= $_ if $X =~ /\\$/;
-    if ($X =~ /\\{/) {
-	get_line, $X .= $_ while $X !~ /\\}/;
-	($test, $what) = ($X =~ /^(\S+)\s+\\{\\?(.*)\\}/s);
-	$what .= "\n";
+    if ($X =~ /\\\{/) {
+        get_line, $X .= $_ while $X !~ /\\}/;
+        ($test, $what) = ($X =~ /^(\S+)\s+\\\{\\?(.*)\\}/s);
+        $what .= "\n";
     } else {
-	($test, $what) = ($X =~ /^(\S+)\s+(.*)/s);
+        ($test, $what) = ($X =~ /^(\S+)\s+(.*)/s);
     }
     if (defined($test) && $test ne 'n') {
-	o("<sup>ie succ</sup>");
-	unshift @pushed_lines, split(/\n/, $what);
+        o("<sup>ie succ</sup>");
+        unshift @pushed_lines, split(/\n/, $what);
     } else {
-	get_line;
-	s/^([.\']\s*)el/$1if t /;
-	unshift @pushed_lines, $_;
+        get_line;
+        s/^([.\']\s*)el/$1if t /;
+        unshift @pushed_lines, $_;
     }
 }
 
@@ -335,16 +360,16 @@ sub dot_br {
 }
 
 my(%dot_TS_aligns) = ( 'c' => "center",
-		       'r' => "right",
-		       'l' => "left" );	# XXX
+                       'r' => "right",
+                       'l' => "left" ); # XXX
 
 sub dot_TS {
     my(@lines);
     while (get_line) {
-	last if /^\.TE/;
-	push @lines, $_;
+        last if /^\.TE/;
+        push @lines, $_;
     }
-    
+
     my($gopt) = '';
     $gopt = shift @lines if @lines && $lines[0] =~ /;\s*$/;
 
@@ -354,47 +379,47 @@ sub dot_TS {
     # parse templates from beginning of tbl specification
     my(@t);
   TEMPLATE: while (@lines) {
-	my($t) = lc(shift @lines);
-	while ($t =~ /^(.*?)\s*([,.])\s*(.*)$/) {
-	    push @t, [split($tab, $1)];
-	    last TEMPLATE if $2 eq '.';
-	    $t = $3;
-	}
+        my($t) = lc(shift @lines);
+        while ($t =~ /^(.*?)\s*([,.])\s*(.*)$/) {
+            push @t, [split($tab, $1)];
+            last TEMPLATE if $2 eq '.';
+            $t = $3;
+        }
     }
 
     # count spans
     for (my $i = 0; $i < @t; $i++) {
-	my($t) = $t[$i];
-	for (my $j = 0; $j < @$t; $j++) {
-	    my($colspan) = 1;
-	    $colspan++ while $j + $colspan < @$t && $t->[$j + $colspan] =~ /^s/;
-	    $t->[$j] .= "\@" . $colspan if $colspan > 1;
-	    my($rowspan) = 1;
-	    $rowspan++ while $i + $rowspan < @t && $t[$i + $rowspan]->[$j] && $t[$i + $rowspan]->[$j] =~ /^\^/;
-	    $t->[$j] .= "\$" . $rowspan if $rowspan > 1;
-	}
+        my($t) = $t[$i];
+        for (my $j = 0; $j < @$t; $j++) {
+            my($colspan) = 1;
+            $colspan++ while $j + $colspan < @$t && $t->[$j + $colspan] =~ /^s/;
+            $t->[$j] .= "\@" . $colspan if $colspan > 1;
+            my($rowspan) = 1;
+            $rowspan++ while $i + $rowspan < @t && $t[$i + $rowspan]->[$j] && $t[$i + $rowspan]->[$j] =~ /^\^/;
+            $t->[$j] .= "\$" . $rowspan if $rowspan > 1;
+        }
     }
-    
+
     o("\n<table" . ($center ? " align='center'" : "") . ">");
 
     my($t) = undef;
     while (@lines) {
-	$t = shift @t if @t;
-	my(@f) = split($tab, shift @lines);
-	o("\n<tr>");
-	for (my $i = 0; $i < @$t && $i < @f; $i++) {
-	    next if $t->[$i] =~ /^[s^]/;
-	    o("\n<td");
-	    o(" colspan='$1'") if $t->[$i] =~ /\@(\d+)/;
-	    o(" rowspan='$1'") if $t->[$i] =~ /\$(\d+)/;
-	    o(" align='" . $dot_TS_aligns{$1} . "'") if $t->[$i] =~ /^([lcrn])/;
-	    o(">");
-	    o("<" . uc($1) . ">") if $t->[$i] =~ /([bi])/;
-	    o($f[$i]);
-	    o("<R>") if $t->[$i] =~ /b/ || $t->[$i] =~ /i/;
-	    o("&nbsp;&nbsp;</td>");
-	}
-	o("\n</tr>");
+        $t = shift @t if @t;
+        my(@f) = split($tab, shift @lines);
+        o("\n<tr>");
+        for (my $i = 0; $i < @$t && $i < @f; $i++) {
+            next if $t->[$i] =~ /^[s^]/;
+            o("\n<td");
+            o(" colspan='$1'") if $t->[$i] =~ /\@(\d+)/;
+            o(" rowspan='$1'") if $t->[$i] =~ /\$(\d+)/;
+            o(" align='" . $dot_TS_aligns{$1} . "'") if $t->[$i] =~ /^([lcrn])/;
+            o(">");
+            o("<" . uc($1) . ">") if $t->[$i] =~ /([bi])/;
+            o($f[$i]);
+            o("<R>") if $t->[$i] =~ /b/ || $t->[$i] =~ /i/;
+            o("&nbsp;&nbsp;</td>");
+        }
+        o("\n</tr>");
     }
 
     o("\n</table>\n");
@@ -413,7 +438,7 @@ sub combine_args (&) {
     &get_args;
     shift @args;
     while (@args) {
-	&$sub;
+        &$sub;
     }
 }
 
@@ -535,23 +560,26 @@ sub dot_Ix {
 if ($links) {
     $NO_OVERRIDE{'M'} = $NO_OVERRIDE{'RM'} = 1;
     sub dot_M {
-	&get_args;
-	if ($hyperlink_man{"$args[1].$args[2]"}) {
-	    o("<a href=\"$args[1].$args[2].html\"><B>$args[1]<R>($args[2])</a>" .
-	      $args[3] . " ");
-	} else {
-	    o("<B>$args[1]<R>($args[2])$args[3] ");
-	}
+        &get_args;
+        my($x) = $hyperlink_man{$args[1]};
+        $x = $hyperlink_man{"$args[1].$args[2]"} if !defined($x);
+        if (defined($x)) {
+            o("<a href=\"$x\"><B>$args[1]<R>($args[2])</a>" . $args[3] . " ");
+        } else {
+            o("<B>$args[1]<R>($args[2])$args[3] ");
+        }
     }
     sub dot_RM {
-	&get_args;
-	if ($hyperlink_man{"$args[2].$args[3]"}) {
-	    o($args[1] .
-	      "<a href=\"$args[2].$args[3].html\"><B>$args[2]<R>($args[3])</a>" .
-	      $args[4] . " ");
-	} else {
-	    o("$args[1]<B>$args[2]<R>($args[3])$args[4] ");
-	}
+        &get_args;
+        my($x) = $hyperlink_man{$args[2]};
+        $x = $hyperlink_man{"$args[2].$args[3]"} if !defined($x);
+        if (defined($x)) {
+            o($args[1] .
+              "<a href=\"$x\"><B>$args[2]<R>($args[3])</a>" .
+              $args[4] . " ");
+        } else {
+            o("$args[1]<B>$args[2]<R>($args[3])$args[4] ");
+        }
     }
 }
 
@@ -564,7 +592,7 @@ sub argline {
     unshift @pushed_lines, undef;
     line($_);
     while (get_line()) {
-	line($_);
+        line($_);
     }
 
     my($X) = $T;
@@ -606,8 +634,8 @@ sub finish_text ($) {
       $t .= "<R></p>" if $in_par;
       $t .= "<R></td></tr></table>" if $inside eq '<_TABLE>';
       if ($inside ne '<_DT>') {
-	$cur_dl = $ndl++;
-	$t .= "\n<dl$cur_dl>";
+        $cur_dl = $ndl++;
+        $t .= "\n<dl$cur_dl>";
       }
       $t .= "<R></dd$cur_dl>\n" if $inside eq '<_DT>';
       $t .= "<dt$cur_dl>";
@@ -627,7 +655,7 @@ sub finish_text ($) {
     } elsif ($f eq '<_EBQ>') {
       $t .= "</p>" if $in_par;
       $t .= "<R><E></dd$cur_dl></dl$cur_dl>\n"
-	  if $inside eq '<_DT>' && $relative[-2] ne '<_DT>';
+          if $inside eq '<_DT>' && $relative[-2] ne '<_DT>';
       $cur_dl = pop @relative;
       $inside = pop @relative;
       $t .= "</blockquote>" if $inside ne '<_DT>';
@@ -653,14 +681,14 @@ sub finish_text ($) {
       $f = $a[$i+1];
       $f = $prev if ($a[$i+1] eq '<P>');
       if ($cur ne $f) {
-	  $t .= "</\L$1\E>" if $cur =~ /^<([BIT])>$/s;
-	  $t .= "</i></b>" if $cur eq "<Q>";
-	  $prev = $cur;
-	  $cur = $f;
-	  $t .= "<\L$1\E>" if $cur =~ /^<([BIT])>$/s;
-	  $t .= "<b><i>" if $cur eq "<Q>";
+          $t .= "</\L$1\E>" if $cur =~ /^<([BIT])>$/s;
+          $t .= "</i></b>" if $cur eq "<Q>";
+          $prev = $cur;
+          $cur = $f;
+          $t .= "<\L$1\E>" if $cur =~ /^<([BIT])>$/s;
+          $t .= "<b><i>" if $cur eq "<Q>";
       } else {
-	  $prev = $cur;
+          $prev = $cur;
       }
   }
 
@@ -714,13 +742,11 @@ sub finish_text ($) {
 
   # first headline
   $t =~ s{<h2><a name="NAME">NAME</a></h2>[\s\n]*<p>(.*?) - (.*?)</p>}
-	{<h1 class='NAME'><a name="NAME">$1</a></h1><p>$2</p>}s;
+        {<h1 class='NAME'><a name="NAME">$1</a></h1><p>$2</p>}s;
 
-  # http: URLs, and obscure email addresses
+  # http: URLs
   $t =~ s{ (http://[^\s"&)<]+) (?=[\s")&<]|$) }
-	{<a href="\1">\1</a>}gx;
-  $t =~ s{([\s;(]|^) ([-\w.,]+\@[-\w.]+\.[A-Za-z]+) (?=[\s)<&.,;:!?]|$) }
-	{$1 . obscure_email($2)}egx;
+        {<a href="\1">\1</a>}gx;
   $t =~ s{ ([.,])</a> }{</a>$1}gx;
   $t =~ s{<a\s*href="([^"]*)[.,]">}{<a href="$1">}g;
 
@@ -730,12 +756,76 @@ sub finish_text ($) {
 
 my($RUNTIME) = scalar(localtime);
 
+sub cap_first_letters ($) {
+    my($t) = @_;
+    if ($t =~ /[aeiouy]/i) {
+        $t = ucfirst(lc($t));
+    }
+    $t;
+}
+
+sub markdown_heading ($$) {
+    my($t, $h) = @_;
+    $t =~ s{\b([A-Z]+)\b}{cap_first_letters($1)}ge;
+    if ($h eq "-" || $h eq "=") {
+        $t . "\n" . ($h x length($t)) . "\n\n";
+    } else {
+        $h . " " . $t . "\n\n";
+    }
+}
+
+sub markdown_dd ($) {
+    my($t) = @_;
+    if ($t =~ /\S/) {
+        $t =~ s{^}{    }mg;
+        $t =~ s{(?:<br>|<br ?/>|\s)*\z}{\n\n};
+    }
+    $t;
+}
+
+sub markdown_blockquote ($) {
+    my($t) = @_;
+    if ($t =~ /\S/) {
+        $t =~ s{\s+\z}{};
+        $t =~ s{^}{> }mg;
+    }
+    $t;
+}
+
+my $markdown_litem = "*";
+sub markdown_litem ($) {
+    my($t) = @_;
+    if ($markdown_litem eq "*") {
+        $t = "* " . $t;
+    } else {
+        $t = $markdown_litem . ". " . $t;
+        $markdown_litem += 1;
+    }
+    if ($t =~ m{\A(.*?)\n\n(.*)\z}s) {
+        my($t1, $t2) = ($1, $2);
+        $t2 =~ s{^}{    }mg;
+        $t = $t1 . $t2;
+    }
+    $t . "\n\n";
+}
+
+sub markdown_list ($$) {
+    my($t, $type) = @_;
+    if ($t =~ /\S/ && $type) {
+        $markdown_litem = "*";
+    } elsif ($t =~ /\S/) {
+        $markdown_litem = 1;
+    }
+    $t =~ s{\s*<li>(.*?)</li>\s*}{markdown_litem($1)}seg;
+    "\n\n" . $t . "\n\n";
+}
+
 foreach $file (@files) {
     if (!open(IN, ($file eq '' ? "<&STDIN" : $file))) {
-	next if $force;
-	die "$file: $!\n";
+        next if $force;
+        die "$file: $!\n";
     }
-    pp_open('[', $file, ']') if $directory;
+    pp_open('[', $file, ']') if $directory && @files > 1;
 
     @pushed_lines = ();
     $inlevel = '';
@@ -743,9 +833,9 @@ foreach $file (@files) {
     $TT = '';
     $QUOTES = 1;
     while (get_line()) {
-	$T = '';
-	line($_);
-	$TT .= $T;
+        $T = '';
+        line($_);
+        $TT .= $T;
     }
 
     close IN if $file;
@@ -753,11 +843,13 @@ foreach $file (@files) {
     $TT = finish_text($TT);
     $TTT = '';
     if (defined $template) {
-	$TTT = $template;
-	$TTT =~ s{<!-- man2html.*?-->.*?<!-- /man2html -->}
-	{<!-- man2html: automatically generated at $RUNTIME -->$TT<!-- /man2html -->}s;
+        $TTT = $template;
+        $TTT =~ s{<!-- man2html.*?-->.*?<!-- /man2html -->}
+        {<!-- man2html: automatically generated at $RUNTIME -->$TT<!-- /man2html -->}s;
+    } elsif ($markdown) {
+        $TTT = $TT;
     } else {
-	$TTT = <<"EOF;" if !$no_prologue;
+        $TTT = <<"EOF;" if !$no_prologue;
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <html><head><title>&mantitle;</title></head>
 
@@ -765,53 +857,87 @@ foreach $file (@files) {
 
 <!-- man2html: automatically generated at $RUNTIME -->
 EOF;
-	$TTT .= $TT . "\n<!-- /man2html -->\n</body>\n</html>\n";
+        $TTT .= $TT . "\n<!-- /man2html -->\n</body>\n</html>\n";
     }
 
     if ($TTT =~ m{<h1 class='NAME'>(.*?)</h1>}s) {
-	$t = $1;
-	$t =~ s{</?a.*?>}{}g;
-	$TTT =~ s{&mantitle;}{$t}g;
+        $t = $1;
+        $t =~ s{</?a.*?>}{}g;
+        $TTT =~ s{&mantitle;}{$t}g;
     }
+
+    # cleanup
+    $TTT =~ s{<(i|b|code|tt)> +}{ <$1>}g;
+    $TTT =~ s{ +</(i|b|code|tt)>}{</$1> }g;
+    $TTT =~ s{ +$}{}mg;
+    $TTT =~ s{\s+</(p|dt|dd)>}{</$1>}sg;
+    $TTT =~ s{<i></i>|<b></b>|<code></code>|<tt></tt>}{}g;
+    $TTT =~ s{([^\n])<p>}{$1\n<p>}g;
 
     # figure out where to write this file
     my($this_output_file);
-    if ($directory && $file) {
-	$file =~ m|([^/]*)$|s;
-	$this_output_file = "$directory/$1.html";
+    if ($directory && $file && !$output_file) {
+        $file =~ m|([^/]*)$|s;
+        $this_output_file = "$directory/$1.html";
     } else {
-	$this_output_file = $output_file;
+        $this_output_file = $output_file;
     }
 
     # get rid of self-links
     if (defined $this_output_file) {
-	my($link_text) = m|([^/]*)$|s;
-	$TTT =~ s{<a href="$link_text">(.*?)</a>}
-	{$self_link_marker$1$self_link_post_marker}g;
+        my($link_text) = m|([^/]*)$|s;
+        $TTT =~ s{<a href="$link_text">(.*?)</a>}
+        {$self_link_marker$1$self_link_post_marker}g;
+    }
+
+    # Markdownify
+    if ($TTT && $markdown) {
+        my($markdown_sensitive_char) = "[\\\\\\[\\]#*_~`]";
+        $TTT =~ s{($markdown_sensitive_char)}{"&#" . ord($1) . ";"}ge;
+        $TTT =~ s{<a name=".*?">(.*?)</a>}{$1}g;
+        $TTT =~ s{<h1.*?>(.*)</h1>\s*}{markdown_heading($1, "=")}ge;
+        $TTT =~ s{<h2.*?>(.*)</h2>\s*}{markdown_heading($1, "-")}ge;
+        $TTT =~ s{<h3.*?>(.*)</h3>\s*}{markdown_heading($1, "###")}ge;
+        $TTT =~ s{<dt>(.*?)</dt>\s*}{\n* $1\n\n}gs;
+        1 while $TTT =~ s{\n<dd>(.*?)</dd>\s*}{"\n" . markdown_dd($1)}se;
+        $TTT =~ s{(\S)\n *<p>}{$1\n\n<p>}g;
+        $TTT =~ s{</?(?:dl|p)>}{}g;
+        $TTT =~ s{</(b|i|tt)><\1>}{}g;
+        $TTT =~ s{\s*<br ?/?>\s*\n}{  \n}g;
+        $TTT =~ s{\s*<blockquote>(.*?)</blockquote>}{"\n\n" . markdown_blockquote($1)}sge;
+        $TTT =~ s{\s*<ol>(.*?)</ol>\s*}{markdown_list($1, 1)}sge;
+        $TTT =~ s{\s*<ul>(.*?)</ul>\s*}{markdown_list($1, 0)}sge;
+        $TTT =~ s{(?<=\s)<i>([-.A-Za-z0-9\s]+?)</i>([\s(,.’;])}{_$1_$2}g;
+        $TTT =~ s{(?<=\s)<b>([-.A-Za-z0-9\s]+?)</b>([\s(,.’;])}{**$1**$2}g;
+        $TTT =~ s{<tt>((?:&nbsp;)*)</tt>}{$1}g;
+        $TTT =~ s{<a href="([^:/]*)\.html">(.*?)(?:\([1-9n]\))?</a>}{[$2]($1)}g;
+        $TTT =~ s{:(?=[-+_a-z0-9]+:)}{\\:}gi;
+        $TTT =~ s{\n\n\n+}{\n\n\n}g;
+        $TTT =~ s{\A\s+}{};
     }
 
     # skip this file if nothing has changed except possibly the datestamp
     if (-r $this_output_file) {
-	open TRY, $this_output_file || die;
-	local($/) = undef;
-	my($old_TTT) = <TRY>;
-	close TRY;
-	$old_TTT =~ s{<!-- man2html: automatically generated at .*? -->}
-	{<!-- man2html: automatically generated at $RUNTIME -->}s;
-	if ($old_TTT eq $TTT) {
-	    pp_close;
-	    next;
-	}
+        open TRY, $this_output_file || die;
+        local($/) = undef;
+        my($old_TTT) = <TRY>;
+        close TRY;
+        $old_TTT =~ s{<!-- man2html: automatically generated at .*? -->}
+        {<!-- man2html: automatically generated at $RUNTIME -->}s;
+        if ($old_TTT eq $TTT) {
+            pp_close;
+            next;
+        }
     }
 
     # write result
     if (defined $this_output_file) {
-	open OUT, ">$this_output_file" || die "$this_output_file: $!\n";
-	select OUT;
+        open OUT, ">$this_output_file" || die "$this_output_file: $!\n";
+        select OUT;
     }
     print $TTT;
     close OUT if ($file && $directory) || $output_file;
-    pp_close if $directory;
+    pp_close if $directory && @files > 1;
 }
 
-pp_end if $directory;
+pp_end if $directory && @files > 1;
