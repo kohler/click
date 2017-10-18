@@ -89,6 +89,22 @@ doxygen:
 		-e "s#^GENERATE_LATEX.*#GENERATE_LATEX = NO#" \
 		< $(srcdir)/Doxyfile | (cd $(top_srcdir); doxygen -)
 
+MAN2MARKDOWN_ARGS = --xlink click.1=Userlevel --xlink click.o.8=Linuxmodule --xlink click.5=Language \
+	--xlink elements.n=Elements
+MARKDOWN_PROVISIONS = userlevel linuxmodule ns @all_element_groups@ experimental \
+	smpclick int64 dpdk linux netmap pcap umultithread
+
+markdowndir:
+	@if test -z "$(O)"; then echo 1>&2; echo "Run 'make markdowndir O=OUTPUTDIRECTORY'" 1>&2; echo 1>&2; false; fi
+	for i in click-align click-combine click-devirtualize click-fastclassifier click-flatten click-install click-mkmindriver click-pretty click-uncombine click-undead click-uninstall click-xform; do \
+	    $(PERL) $(srcdir)/man2html --markdown -l $(MAN2MARKDOWN_ARGS) $(srcdir)/$$i.1 -d $(O) -o $(O)/$$i.md; \
+	done
+	$(PERL) $(srcdir)/man2html --markdown $(MAN2MARKDOWN_ARGS) -l $(srcdir)/click.1 -d $(O) -o $(O)/Userlevel.md
+	$(PERL) $(srcdir)/man2html --markdown $(MAN2MARKDOWN_ARGS) -l $(srcdir)/click.5 -d $(O) -o $(O)/Language.md
+	$(PERL) $(srcdir)/man2html --markdown $(MAN2MARKDOWN_ARGS) -l $(srcdir)/click.o.8 -d $(O) -o $(O)/Linuxmodule.md
+	$(PERL) $(srcdir)/man2html --markdown $(MAN2MARKDOWN_ARGS) -l $(srcdir)/elementdoc.7 -d $(O) -o $(O)/Elementdoc.md
+	echo $(MARKDOWN_PROVISIONS) | $(top_builddir)/bin/click-buildtool findelem -r "$(MARKDOWN_PROVISIONS)" -p $(top_srcdir) | $(PERL) $(top_srcdir)/click-mkelemmap -r "$(PROVISIONS)" -t "userlevel linuxmodule ns" -p "$(top_srcdir)" -Iinclude -s "`cd $(top_srcdir) && pwd`" | $(PERL) $(srcdir)/click-elem2man -d $(O) --markdown -l -p $(top_srcdir) -
+
 always:
 	@:
 
@@ -99,4 +115,4 @@ distclean: clean
 
 .PHONY: all clean distclean always \
 	install install-man uninstall uninstall-man \
-	doxygen
+	doxygen markdowndir

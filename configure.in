@@ -502,11 +502,14 @@ ELEMENTS_ARG_ENABLE(wifi, [include wifi elements and support], NO)
 AC_ARG_ENABLE(experimental, [AS_HELP_STRING([--enable-experimental], [enable experimental elements in normal groups])], :, enable_experimental=no)
 AC_ARG_ENABLE(skip-elements, [AS_HELP_STRING([--enable-skip-elements=ELTS], [disable comma-separated elements])], :, enable_skip_elements=no)
 
-for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^bsdmodule$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d;/^minios$/d')`; do
+all_element_groups=
+for i in `(cd $srcdir/elements; ls | sed '/^CVS$/d;/^\.git/d;/^bsdmodule$/d;/^linuxmodule$/d;/^ns$/d;/^userlevel$/d;/^minios$/d')`; do
     enableval=`eval 'echo $'"enable_$i"`
     test "x$enable_all_elements" = xyes -a "x$enableval" '!=' xno && enableval=yes
     test -d "$srcdir/elements/$i" -a "$enableval" = "yes" && element_groups="$element_groups $i"
+    test -d "$srcdir/elements/$i" && all_element_groups="$all_element_groups$i "
 done
+AC_SUBST([all_element_groups])
 
 FINDELEMFLAGS=
 if test "x$enable_skip_elements" != xno -a "x$enable_skip_elements" != xyes; then
