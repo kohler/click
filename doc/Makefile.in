@@ -94,8 +94,8 @@ MAN2MARKDOWN_ARGS = --xlink click.1=Userlevel --xlink click.o.8=Linuxmodule --xl
 MARKDOWN_PROVISIONS = userlevel linuxmodule ns @all_element_groups@ experimental \
 	smpclick int64 dpdk linux netmap pcap umultithread
 
-markdowndir:
-	@if test -z "$(O)"; then echo 1>&2; echo "Run 'make markdowndir O=OUTPUTDIRECTORY'" 1>&2; echo 1>&2; false; fi
+install-man-markdown:
+	@if test -z "$(O)"; then echo 1>&2; echo "Run 'make install-man-markdown O=OUTPUTDIRECTORY'" 1>&2; echo 1>&2; false; fi
 	for i in click-align click-combine click-devirtualize click-fastclassifier click-flatten click-install click-mkmindriver click-pretty click-uncombine click-undead click-uninstall click-xform; do \
 	    $(PERL) $(srcdir)/man2html --markdown -l $(MAN2MARKDOWN_ARGS) $(srcdir)/$$i.1 -d $(O) -o $(O)/$$i.md; \
 	done
@@ -115,4 +115,4 @@ distclean: clean
 
 .PHONY: all clean distclean always \
 	install install-man uninstall uninstall-man \
-	doxygen markdowndir
+	doxygen install-man-markdown
