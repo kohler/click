@@ -554,5 +554,5 @@ FromDevice::add_handlers()
 }
 
 #undef CLICK_FROMDEVICE_USE_BRIDGE
-ELEMENT_REQUIRES(AnyDevice linuxmodule false)
+ELEMENT_REQUIRES(AnyDevice linuxmodule)
 EXPORT_ELEMENT(FromDevice)
