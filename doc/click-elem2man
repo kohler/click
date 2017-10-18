@@ -750,8 +750,9 @@ sub markdownize_text ($$) {
     # remove self references
     $t =~ s{\[$PrimaryElement\]\($PrimaryElement\)}{$PrimaryElement}g;
 
-    # quote colons that look like emoji escapes
+    # quote colons that look like emoji escapes, and numbers that look like lists
     $t =~ s{:(?=[-+_a-z0-9]+:)}{\\:}ig;
+    $t =~ s{^(\d+)\. }{$1\\. }mg;
 
     $t;
 }
