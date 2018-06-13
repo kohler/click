@@ -134,7 +134,7 @@ CheckIP6Header::simple_action(Packet *p)
 
   // shorten packet according to IP6 payload length field
   if(ntohs(ip->ip6_plen) < (plen-40))
-    p->take(plen - 40 - ip->ip6_plen);
+    p->take(plen - 40 - ntohs(ip->ip6_plen));
   return(p);
 
  bad:
