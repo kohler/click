@@ -181,7 +181,7 @@ public:
     const char *port_count() const { return PORTS_0_1; }
     const char *processing() const { return PUSH; }
     int configure_phase() const {
-        return CONFIGURE_PHASE_PRIVILEGED;
+        return CONFIGURE_PHASE_PRIVILEGED - 5;
     }
     bool can_live_reconfigure() const { return false; }
 
@@ -212,7 +212,7 @@ private:
     };
 
     DPDKDevice* _dev;
-    int _queue_id;
+    unsigned _queue_id;
     bool _promisc;
     unsigned int _burst_size;
     unsigned long _count;

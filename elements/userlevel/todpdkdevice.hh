@@ -134,16 +134,16 @@ public:
     }
     bool can_live_reconfigure() const { return false; }
 
-    int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
-    int initialize(ErrorHandler *) CLICK_COLD;
+    int configure(Vector<String> &, ErrorHandler *) override CLICK_COLD;
+    int initialize(ErrorHandler *) override CLICK_COLD;
 
-    void cleanup(CleanupStage stage) CLICK_COLD;
+    void cleanup(CleanupStage stage) override CLICK_COLD;
 
     static String statistics_handler(Element *e, void * thunk) CLICK_COLD;
-    void add_handlers() CLICK_COLD;
+    void add_handlers() override CLICK_COLD;
 
-    void run_timer(Timer *);
-    void push(int port, Packet *p);
+    void run_timer(Timer *) override;
+    void push(int port, Packet *p) override;
 
 private:
 
@@ -179,7 +179,7 @@ private:
     Vector<InternalQueue> _iqueues;
 
     DPDKDevice* _dev;
-    int _queue_id;
+    unsigned _queue_id;
     bool _blocking;
     Spinlock _lock;
     unsigned int _iqueue_size;

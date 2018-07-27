@@ -52,12 +52,15 @@ public:
 
     DPDKDevice() CLICK_COLD;
     DPDKDevice(portid_t port_id) CLICK_COLD;
+    int add_rx_queue(
+        unsigned &queue_id, bool promisc,
+        unsigned n_desc, ErrorHandler *errh
+    ) CLICK_COLD;
 
-    int add_rx_queue(int &queue_id, bool promisc,
-                             unsigned n_desc, ErrorHandler *errh) CLICK_COLD;
-
-    int add_tx_queue(int &queue_id, unsigned n_desc,
-                             ErrorHandler *errh) CLICK_COLD;
+    int add_tx_queue(
+        unsigned &queue_id, unsigned n_desc,
+        ErrorHandler *errh
+    ) CLICK_COLD;
 
     EtherAddress get_mac();
     void set_init_mac(EtherAddress mac);
@@ -125,8 +128,8 @@ private:
         bool promisc;
         unsigned n_rx_descs;
         unsigned n_tx_descs;
-        uint16_t init_mtu;
         EtherAddress init_mac;
+        uint16_t init_mtu;
     };
 
     DevInfo info;
@@ -134,11 +137,11 @@ private:
     static bool _is_initialized;
     static HashTable<portid_t, DPDKDevice> _devs;
     static struct rte_mempool** _pktmbuf_pools;
-    static int _nr_pktmbuf_pools;
+    static unsigned _nr_pktmbuf_pools;
     static bool no_more_buffer_msg_printed;
 
     int initialize_device(ErrorHandler *errh) CLICK_COLD;
-    int add_queue(Dir dir, int &queue_id, bool promisc,
+    int add_queue(Dir dir, unsigned &queue_id, bool promisc,
                    unsigned n_desc, ErrorHandler *errh) CLICK_COLD;
 
     static bool alloc_pktmbufs() CLICK_COLD;
