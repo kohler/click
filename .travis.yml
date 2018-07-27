@@ -1,33 +1,34 @@
 cache:
   apt: true
   directories:
-    - dpdk-1.8.0
     - dpdk-2.2.0
     - dpdk-16.07
+    - dpdk-18.05
     - tcpdump-4.7.4
     - netmap-11.1
+
 language: c++
+
 compiler:
   - gcc
   - clang
+
 matrix:
   exclude:
     - compiler: clang
-      env: FRAMEWORK=dpdk VERSION=1.8.0
-    - compiler: clang
       env: FRAMEWORK=dpdk VERSION=2.2.0
-    - compiler: clang
-      env: FRAMEWORK=dpdk VERSION=16.07
 env:
   global:
     - FLAGS="--enable-ip6 --enable-json --disable-linuxmodule"
+    - CXXFLAGS="-std=gnu++11"
+    - GCC_VERSION="4.8"
   matrix:
     - FRAMEWORK=vanilla
     - FRAMEWORK=umultithread
     - FRAMEWORK=netmap VERSION=11.1
-    - FRAMEWORK=dpdk VERSION=1.8.0
     - FRAMEWORK=dpdk VERSION=2.2.0
     - FRAMEWORK=dpdk VERSION=16.07
+    - FRAMEWORK=dpdk VERSION=18.05
 
 script:
   - if [ $FRAMEWORK = "netmap" ]; then
@@ -39,12 +40,13 @@ script:
       export RTE_SDK=`pwd`/dpdk-$VERSION;
       export RTE_TARGET=x86_64-native-linuxapp-gcc;
       if [ ! -e "$RTE_SDK/$RTE_TARGET/include/rte_version.h" -o ! -e "$RTE_SDK/$RTE_TARGET/build/lib/librte_eal/linuxapp/eal/librte_eal.a" ]; then
-      wget http://fast.dpdk.org/rel/dpdk-$VERSION.tar.gz &&
+            wget http://fast.dpdk.org/rel/dpdk-$VERSION.tar.gz &&
             tar -zxf dpdk-$VERSION.tar.gz &&
             cd dpdk-$VERSION &&
             sed -i "s/CONFIG_RTE_KNI_KMOD=.*/CONFIG_RTE_KNI_KMOD=n/g" config/common_linuxapp &&
             sed -i "s/CONFIG_RTE_LIBRTE_KNI=.*/CONFIG_RTE_LIBRTE_KNI=n/g" config/common_linuxapp &&
             sed -i "s/CONFIG_RTE_EAL_IGB_UIO=.*/CONFIG_RTE_EAL_IGB_UIO=n/g" config/common_linuxapp &&
+            sed -i "s/CONFIG_RTE_LIBRTE_VIRTIO_PMD=.*/CONFIG_RTE_LIBRTE_VIRTIO_PMD=n/g" config/common_base ;
             make config T=$RTE_TARGET &&
             make install T=$RTE_TARGET &&
             cd ..;
@@ -55,18 +57,29 @@ script:
       FRAMEWORK_FLAGS="--enable-user-multithread";
     fi
 
-  - ./configure $FLAGS $FRAMEWORK_FLAGS && make
+  - ./configure $CONFIG $FLAGS $FRAMEWORK_FLAGS && make
   - make check
 
 install:
   - export PATH=$PATH:`pwd`/tcpdump-4.7.4/sbin/ && if [ ! -e "tcpdump-4.7.4/sbin/tcpdump" ] ; then wget http://www.tcpdump.org/release/tcpdump-4.7.4.tar.gz && tar -zxf tcpdump-4.7.4.tar.gz && cd tcpdump-4.7.4 && ./configure --prefix=`pwd` && make && make install && cd .. ; fi
   - if [ $FRAMEWORK = "netmap" -a ! -e "netmap-11.1/sys/net/netmap.h" ] ; then wget https://github.com/luigirizzo/netmap/archive/v11.1.tar.gz && tar -xvf v11.1.tar.gz ; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 
 addons:
   apt:
+    sources:
+        - ubuntu-toolchain-r-test
     packages:
-      - libpcap-dev
-      - time
-      - linux-headers-generic
+        - libpcap-dev
+        - time
+        - linux-headers-generic
+        - libnuma-dev
+        - gcc-4.8
+        - libstdc++-4.8-dev
+        - g++-4.8
+    config:
+        retries: true
 
 sudo: false
+
+dist: trusty
