@@ -45,6 +45,10 @@ int FromDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     int n_desc = -1;
     String dev;
     bool allow_nonexistent = false;
+    EtherAddress mac;
+    uint16_t mtu = 0;
+    bool has_mac = false;
+    bool has_mtu = false;
 
     if (Args(conf, this, errh)
         .read_mp("PORT", dev)
@@ -52,6 +56,8 @@ int FromDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
         .read("PROMISC", _promisc)
         .read("BURST", _burst_size)
         .read("NDESC", n_desc)
+        .read("MAC", mac).read_status(has_mac)
+        .read("MTU", mtu).read_status(has_mtu)
         .read("ALLOW_NONEXISTENT", allow_nonexistent)
         .read("ACTIVE", _active)
         .complete() < 0)
@@ -64,8 +70,15 @@ int FromDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
             return errh->error("%s : Unknown or invalid PORT", dev.c_str());
     }
 
+    if (has_mac)
+        _dev->set_init_mac(mac);
+
+    if (has_mtu)
+        _dev->set_init_mtu(mtu);
+
     return _dev->add_rx_queue(_queue_id, _promisc, (n_desc > 0) ?
-                n_desc : DPDKDevice::DEF_DEV_RXDESC, errh);
+                                n_desc : DPDKDevice::DEF_DEV_RXDESC,
+                                errh);
 }
 
 int FromDPDKDevice::initialize(ErrorHandler *errh)

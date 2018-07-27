@@ -169,6 +169,12 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
                 "Cannot initialize TX queue %u of port %u on node %u",
                 i, port_id, numa_node);
 
+    if (info.init_mtu != 0) {
+        if (rte_eth_dev_set_mtu(port_id, info.init_mtu) != 0) {
+            return errh->error("Could not set MTU %d",info.init_mtu);
+        }
+    }
+
     int err = rte_eth_dev_start(port_id);
     if (err < 0)
         return errh->error(
@@ -177,7 +183,25 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
     if (info.promisc)
         rte_eth_promiscuous_enable(port_id);
 
+    if (info.init_mac != EtherAddress()) {
+        struct ether_addr addr;
+        memcpy(&addr,info.init_mac.data(),sizeof(struct ether_addr));
+        if (rte_eth_dev_default_mac_addr_set(port_id, &addr) != 0) {
+            return errh->error("Could not set default MAC address");
+        }
+    }
+
     return 0;
+}
+
+void DPDKDevice::set_init_mac(EtherAddress mac) {
+    assert(!_is_initialized);
+    info.init_mac = mac;
+}
+
+void DPDKDevice::set_init_mtu(uint16_t mtu) {
+    assert(!_is_initialized);
+    info.init_mtu = mtu;
 }
 
 EtherAddress DPDKDevice::get_mac() {
