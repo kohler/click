@@ -97,6 +97,12 @@ public:
     static int TX_PTHRESH;
     static int TX_HTHRESH;
     static int TX_WTHRESH;
+    static String MEMPOOL_PREFIX;
+
+    static unsigned DEF_DEV_RXDESC;
+    static unsigned DEF_DEV_TXDESC;
+
+    static unsigned DEF_BURST_SIZE;
 
 private:
 

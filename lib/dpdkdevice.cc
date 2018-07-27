@@ -379,9 +379,13 @@ DPDKDeviceArg::parse(
 }
 
 int DPDKDevice::NB_MBUF = 65536;
-int DPDKDevice::MBUF_DATA_SIZE = 2048;
+#ifdef RTE_MBUF_DEFAULT_BUF_SIZE
+int DPDKDevice::MBUF_DATA_SIZE = RTE_MBUF_DEFAULT_BUF_SIZE;
+#else
+int DPDKDevice::MBUF_DATA_SIZE = 2048 + RTE_PKTMBUF_HEADROOM;
+#endif
 int DPDKDevice::MBUF_SIZE = MBUF_DATA_SIZE
-                          + sizeof (struct rte_mbuf) + RTE_PKTMBUF_HEADROOM;
+                          + sizeof (struct rte_mbuf);
 int DPDKDevice::MBUF_CACHE_SIZE = 256;
 int DPDKDevice::RX_PTHRESH = 8;
 int DPDKDevice::RX_HTHRESH = 8;
@@ -389,6 +393,12 @@ int DPDKDevice::RX_WTHRESH = 4;
 int DPDKDevice::TX_PTHRESH = 36;
 int DPDKDevice::TX_HTHRESH = 0;
 int DPDKDevice::TX_WTHRESH = 0;
+String DPDKDevice::MEMPOOL_PREFIX = "click_mempool_";
+
+unsigned DPDKDevice::DEF_DEV_RXDESC = 256;
+unsigned DPDKDevice::DEF_DEV_TXDESC = 256;
+
+unsigned DPDKDevice::DEF_BURST_SIZE = 32;
 
 bool DPDKDevice::_is_initialized = false;
 HashTable<portid_t, DPDKDevice> DPDKDevice::_devs;

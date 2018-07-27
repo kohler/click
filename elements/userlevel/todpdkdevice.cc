@@ -27,9 +27,10 @@ CLICK_DECLS
 
 ToDPDKDevice::ToDPDKDevice() :
     _iqueues(), _dev(0), _queue_id(0), _blocking(false),
-    _iqueue_size(1024), _burst_size(32), _timeout(0), _count(0),
+    _iqueue_size(1024), _timeout(0), _count(0),
     _dropped(0), _congestion_warning_printed(false)
 {
+    _burst_size = DPDKDevice::DEF_BURST_SIZE;
 }
 
 ToDPDKDevice::~ToDPDKDevice()
@@ -68,7 +69,7 @@ int ToDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
             return errh->error("%s : Unknown or invalid PORT", dev.c_str());
     }
 
-    return _dev->add_tx_queue(_queue_id, (n_desc > 0) ? n_desc : 1024, errh);
+    return _dev->add_tx_queue(_queue_id, (n_desc > 0) ? n_desc : DPDKDevice::DEF_DEV_TXDESC, errh);
 }
 
 int ToDPDKDevice::initialize(ErrorHandler *errh)

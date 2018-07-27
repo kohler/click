@@ -28,12 +28,12 @@ Keyword arguments:
 
 =item NB_MBUF
 
-Integer.  Number of message buffers to allocate. Defaults to 524288.
+Integer.  Number of message buffers to allocate. Defaults to 65536.
 
 =item MBUF_SIZE
 
 Integer.  Size of a message buffer in bytes. Defaults to 2048 +
-RTE_PKTMBUF_HEADROOM + sizeof (struct rte_mbuf).
+RTE_PKTMBUF_HEADROOM.
 
 =item MBUF_CACHE_SIZE
 
@@ -63,6 +63,16 @@ Integer.  TX host threshold. Defaults to 0.
 =item TX_WTHRESH
 
 Integer.  TX write-back threshold. Defaults to 0.
+
+=item MEMPOOL_PREFIX
+
+String. Prefix for the mempool name. Use this to get a predictable
+  mempool name and attach secondary processes.
+
+=item DEF_BURST_SIZE
+
+Integer.  Number of frames to read/write from/to a DPDK device.
+Defaults to 32.
 
 =back
 
