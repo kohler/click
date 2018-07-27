@@ -36,7 +36,7 @@ you can pin to different thread using StaticThreadSched.
 
 Arguments:
 
-=over 8
+=over 9
 
 =item PORT
 
@@ -61,6 +61,14 @@ The default is 32.
 =item NDESC
 
 Integer.  Number of descriptors per ring. The default is 256.
+
+=item MAC
+
+Colon-separated string. The device's MAC address.
+
+=item MTU
+
+Integer. The maximum transfer unit of the device.
 
 =item ALLOW_NONEXISTENT
 

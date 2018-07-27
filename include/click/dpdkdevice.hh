@@ -59,11 +59,14 @@ public:
     int add_tx_queue(int &queue_id, unsigned n_desc,
                              ErrorHandler *errh) CLICK_COLD;
 
+    EtherAddress get_mac();
+    void set_init_mac(EtherAddress mac);
+    void set_init_mtu(uint16_t mtu);
+
     unsigned int get_nb_txdesc();
     int nbRXQueues();
     int nbTXQueues();
     const char *get_device_driver();
-    EtherAddress get_mac();
 
     static unsigned int dev_count() {
 #if RTE_VERSION >= RTE_VERSION_NUM(18,05,0,0)
@@ -111,7 +114,7 @@ private:
     struct DevInfo {
         inline DevInfo() :
             rx_queues(0,false), tx_queues(0,false), promisc(false), n_rx_descs(0),
-            n_tx_descs(0) {
+            n_tx_descs(0), init_mac(), init_mtu(0) {
             rx_queues.reserve(128);
             tx_queues.reserve(128);
         }
@@ -122,6 +125,8 @@ private:
         bool promisc;
         unsigned n_rx_descs;
         unsigned n_tx_descs;
+        uint16_t init_mtu;
+        EtherAddress init_mac;
     };
 
     DevInfo info;
