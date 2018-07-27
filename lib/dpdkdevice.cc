@@ -28,6 +28,18 @@ DPDKDevice::DPDKDevice() : port_id(-1), info() {
 DPDKDevice::DPDKDevice(portid_t port_id) : port_id(port_id) {
 };
 
+int DPDKDevice::nbRXQueues() {
+    return info.rx_queues.size();
+};
+
+int DPDKDevice::nbTXQueues() {
+    return info.tx_queues.size();
+};
+
+const char *DPDKDevice::get_device_driver()
+{
+    return info.driver;
+}
 
 /* Wraps rte_eth_dev_socket_id(), which may return -1 for valid ports when NUMA
  * is not well supported. This function will return 0 instead in that case. */
@@ -58,8 +70,9 @@ bool DPDKDevice::alloc_pktmbufs()
         return false;
 
     // Allocate pktmbuf_pool array
+    _nr_pktmbuf_pools = max_socket + 1;
     typedef struct rte_mempool *rte_mempool_p;
-    _pktmbuf_pools = new rte_mempool_p[max_socket + 1];
+    _pktmbuf_pools = new rte_mempool_p[_nr_pktmbuf_pools];
     if (!_pktmbuf_pools)
         return false;
     memset(_pktmbuf_pools, 0, (max_socket + 1) * sizeof(rte_mempool_p));
@@ -96,6 +109,8 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
     memset(&dev_conf, 0, sizeof dev_conf);
 
     rte_eth_dev_info_get(port_id, &dev_info);
+
+    info.driver = dev_info.driver_name;
 
     dev_conf.rxmode.mq_mode = ETH_MQ_RX_RSS;
     dev_conf.rx_adv_conf.rss_conf.rss_key = NULL;
@@ -163,6 +178,13 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
         rte_eth_promiscuous_enable(port_id);
 
     return 0;
+}
+
+EtherAddress DPDKDevice::get_mac() {
+    assert(_is_initialized);
+    struct ether_addr addr;
+    rte_eth_macaddr_get(port_id,&addr);
+    return EtherAddress((unsigned char*)&addr);
 }
 
 /**
@@ -371,6 +393,7 @@ int DPDKDevice::TX_WTHRESH = 0;
 bool DPDKDevice::_is_initialized = false;
 HashTable<portid_t, DPDKDevice> DPDKDevice::_devs;
 struct rte_mempool** DPDKDevice::_pktmbuf_pools;
+int DPDKDevice::_nr_pktmbuf_pools;
 bool DPDKDevice::no_more_buffer_msg_printed = false;
 
 CLICK_ENDDECLS

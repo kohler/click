@@ -27,6 +27,7 @@
 #include <click/hashtable.hh>
 #include <click/vector.hh>
 #include <click/args.hh>
+#include <click/etheraddress.hh>
 
 /**
  * Unified type for DPDK port IDs.
@@ -59,8 +60,10 @@ public:
                              ErrorHandler *errh) CLICK_COLD;
 
     unsigned int get_nb_txdesc();
-
+    int nbRXQueues();
+    int nbTXQueues();
     const char *get_device_driver();
+    EtherAddress get_mac();
 
     static unsigned int dev_count() {
 #if RTE_VERSION >= RTE_VERSION_NUM(18,05,0,0)
@@ -107,6 +110,7 @@ private:
             tx_queues.reserve(128);
         }
 
+        const char* driver;
         Vector<bool> rx_queues;
         Vector<bool> tx_queues;
         bool promisc;
@@ -119,6 +123,7 @@ private:
     static bool _is_initialized;
     static HashTable<portid_t, DPDKDevice> _devs;
     static struct rte_mempool** _pktmbuf_pools;
+    static int _nr_pktmbuf_pools;
     static bool no_more_buffer_msg_printed;
 
     int initialize_device(ErrorHandler *errh) CLICK_COLD;
@@ -151,6 +156,7 @@ private:
 #endif
 
     friend class DPDKDeviceArg;
+    friend class DPDKInfo;
 };
 
 inline rte_mbuf* DPDKDevice::get_pkt(unsigned numa_node) {

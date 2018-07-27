@@ -84,6 +84,10 @@ public:
 
     int configure(Vector<String> &conf, ErrorHandler *errh);
 
+    enum {h_pool_count};
+    static String read_handler(Element *e, void * thunk);
+    void add_handlers() override;
+
     static DPDKInfo *instance;
 };
 
