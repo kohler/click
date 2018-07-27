@@ -1,7 +1,11 @@
 #ifndef CLICK_DPDKDEVICE_HH
 #define CLICK_DPDKDEVICE_HH
 
-//Prevent bug under some configurations (like travis-ci's one) where these macros get undefined
+/**
+ * Prevent bug under some configurations
+ * (like travis-ci's one) where these
+ * macros get undefined.
+ */
 #ifndef UINT8_MAX
 #define UINT8_MAX 255
 #endif
@@ -24,6 +28,17 @@
 #include <click/vector.hh>
 #include <click/args.hh>
 
+/**
+ * Unified type for DPDK port IDs.
+ * Until DPDK v17.05 was uint8_t
+ * After DPDK v17.05 has been uint16_t
+ */
+#if RTE_VERSION >= RTE_VERSION_NUM(17,05,0,0)
+    typedef uint16_t portid_t;
+#else
+    typedef uint8_t portid_t;
+#endif
+
 CLICK_DECLS
 class DPDKDeviceArg;
 
@@ -32,13 +47,10 @@ extern bool dpdk_enabled;
 class DPDKDevice {
 public:
 
-    unsigned port_id;
+    portid_t port_id;
 
-    DPDKDevice() : port_id(-1), info() {
-    }
-
-    DPDKDevice(unsigned port_id) : port_id(port_id) {
-    } CLICK_COLD;
+    DPDKDevice() CLICK_COLD;
+    DPDKDevice(portid_t port_id) CLICK_COLD;
 
     int add_rx_queue(int &queue_id, bool promisc,
                              unsigned n_desc, ErrorHandler *errh) CLICK_COLD;
@@ -48,9 +60,19 @@ public:
 
     unsigned int get_nb_txdesc();
 
+    const char *get_device_driver();
+
+    static unsigned int dev_count() {
+#if RTE_VERSION >= RTE_VERSION_NUM(18,05,0,0)
+        return rte_eth_dev_count_avail();
+#else
+        return rte_eth_dev_count();
+#endif
+    }
+
     static struct rte_mempool *get_mpool(unsigned int);
 
-    static int get_port_numa_node(unsigned port_id);
+    static int get_port_numa_node(portid_t port_id);
 
     static int initialize(ErrorHandler *errh);
 
@@ -95,7 +117,7 @@ private:
     DevInfo info;
 
     static bool _is_initialized;
-    static HashTable<unsigned, DPDKDevice> _devs;
+    static HashTable<portid_t, DPDKDevice> _devs;
     static struct rte_mempool** _pktmbuf_pools;
     static bool no_more_buffer_msg_printed;
 
@@ -105,13 +127,17 @@ private:
 
     static bool alloc_pktmbufs() CLICK_COLD;
 
-    static DPDKDevice* get_device(unsigned port_id) {
-       return &(_devs.find_insert(port_id, DPDKDevice(port_id)).value());
+    static DPDKDevice* get_device(const portid_t &port_id) {
+        return &(_devs.find_insert(port_id, DPDKDevice(port_id)).value());
     }
 
-    static int get_port_from_pci(uint16_t domain, uint8_t bus, uint8_t dev_id, uint8_t function) {
+
+#if RTE_VERSION < RTE_VERSION_NUM(18,05,0,0)
+    static int get_port_from_pci(uint32_t domain, uint8_t bus, uint8_t dev_id, uint8_t function) {
        struct rte_eth_dev_info dev_info;
-       for (uint8_t port_id = 0 ; port_id < rte_eth_dev_count(); ++port_id) {
+
+       uint16_t count = rte_eth_dev_count();
+       for (portid_t port_id = 0 ; port_id < count; ++port_id) {
           rte_eth_dev_info_get(port_id, &dev_info);
           struct rte_pci_addr addr = dev_info.pci_dev->addr;
           if (addr.domain   == domain &&
@@ -122,6 +148,7 @@ private:
        }
        return -1;
     }
+#endif
 
     friend class DPDKDeviceArg;
 };
@@ -152,7 +179,6 @@ class DPDKDeviceArg { public:
 };
 
 template<> struct DefaultArg<DPDKDevice*> : public DPDKDeviceArg {};
-
 
 CLICK_ENDDECLS
 
