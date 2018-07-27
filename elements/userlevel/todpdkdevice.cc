@@ -27,8 +27,8 @@ CLICK_DECLS
 
 ToDPDKDevice::ToDPDKDevice() :
     _iqueues(), _dev(0), _queue_id(0), _blocking(false),
-    _iqueue_size(1024), _burst_size(32), _timeout(0), _n_sent(0),
-    _n_dropped(0), _congestion_warning_printed(false)
+    _iqueue_size(1024), _burst_size(32), _timeout(0), _count(0),
+    _dropped(0), _congestion_warning_printed(false)
 {
 }
 
@@ -95,33 +95,50 @@ void ToDPDKDevice::cleanup(CleanupStage)
         delete[] _iqueues[i].pkts;
 }
 
-String ToDPDKDevice::n_sent_handler(Element *e, void *)
-{
-    ToDPDKDevice *tdd = static_cast<ToDPDKDevice *>(e);
-    return String(tdd->_n_sent);
-}
-
-String ToDPDKDevice::n_dropped_handler(Element *e, void *)
-{
-    ToDPDKDevice *tdd = static_cast<ToDPDKDevice *>(e);
-    return String(tdd->_n_dropped);
-}
-
 int ToDPDKDevice::reset_counts_handler(const String &, Element *e, void *,
                                        ErrorHandler *)
 {
     ToDPDKDevice *tdd = static_cast<ToDPDKDevice *>(e);
-    tdd->_n_sent = 0;
-    tdd->_n_dropped = 0;
+    tdd->_count = 0;
+    tdd->_dropped = 0;
+    return 0;
+}
+
+String ToDPDKDevice::statistics_handler(Element *e, void * thunk)
+{
+    ToDPDKDevice *td = static_cast<ToDPDKDevice *>(e);
+    struct rte_eth_stats stats;
+    if (!td->_dev)
+        return "0";
+
+    if (rte_eth_stats_get(td->_dev->port_id, &stats))
+        return String::make_empty();
+
+    switch((uintptr_t) thunk) {
+        case h_opackets:
+            return String(stats.opackets);
+        case h_obytes:
+            return String(stats.obytes);
+        case h_oerrors:
+            return String(stats.oerrors);
+        case h_count:
+             return String(td->_count);
+        case h_dropped:
+            return String(td->_dropped);
+    }
+
     return 0;
 }
 
 void ToDPDKDevice::add_handlers()
 {
-    add_read_handler("n_sent", n_sent_handler, 0);
-    add_read_handler("n_dropped", n_dropped_handler, 0);
-    add_write_handler("reset_counts", reset_counts_handler, 0,
-                      Handler::BUTTON);
+    add_read_handler("count", statistics_handler, h_count);
+    add_read_handler("dropped", statistics_handler, h_dropped);
+    add_write_handler("reset_counts", reset_counts_handler, 0, Handler::BUTTON);
+
+    add_read_handler("hw_count",statistics_handler, h_opackets);
+    add_read_handler("hw_bytes",statistics_handler, h_obytes);
+    add_read_handler("hw_errors",statistics_handler, h_oerrors);
 }
 
 /* Return the rte_mbuf pointer for a packet. If the buffer of the packet is
@@ -193,7 +210,7 @@ void ToDPDKDevice::flush_internal_queue(InternalQueue &iqueue) {
         sent += r;
     } while (r == sub_burst && iqueue.nr_pending > 0);
 
-    _n_sent += sent;
+    _count += sent;
 
     _lock.release();
 
@@ -219,9 +236,9 @@ void ToDPDKDevice::push(int, Packet *p)
              * we'll loop, else we'll drop this packet.*/
             congestioned = true;
             if (!_blocking) {
-                if (_n_dropped < 5)
+                if (_dropped < 5)
                     click_chatter("%s: packet dropped", name().c_str());
-                _n_dropped++;
+                _dropped++;
             } else {
                 if (!_congestion_warning_printed)
                     click_chatter("%s: congestion warning", name().c_str());

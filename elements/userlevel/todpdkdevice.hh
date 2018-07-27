@@ -94,17 +94,29 @@ This element is only available at user level, when compiled with DPDK support.
 
   ... -> ToDPDKDevice(2, QUEUE 0, BLOCKING true)
 
-=h n_sent read-only
+=h count read-only
 
 Returns the number of packets sent by the device.
 
-=h n_dropped read-only
+=h dropped read-only
 
 Returns the number of packets dropped by the device.
 
 =h reset_counts write-only
 
 Resets n_send and n_dropped counts to zero.
+
+=h hw_count read-only
+
+Returns the amount of packets sent by the whole device.
+
+=h hw_bytes read-only
+
+Returns the amount of bytes sent by the whole device.
+
+=h hw_errors read-only
+
+Returns the amount of packets not sent because of error by the device.
 
 =a DPDKInfo, FromDPDKDevice */
 
@@ -127,6 +139,7 @@ public:
 
     void cleanup(CleanupStage stage) CLICK_COLD;
 
+    static String statistics_handler(Element *e, void * thunk) CLICK_COLD;
     void add_handlers() CLICK_COLD;
 
     void run_timer(Timer *);
@@ -154,12 +167,14 @@ private:
         Timer timeout;
     } __attribute__((aligned(64)));
 
-    static String n_sent_handler(Element *, void *) CLICK_COLD;
-    static String n_dropped_handler(Element *, void *) CLICK_COLD;
     static int reset_counts_handler(const String &, Element *, void *,
                                     ErrorHandler *) CLICK_COLD;
 
     void flush_internal_queue(InternalQueue &);
+
+    enum {
+        h_count, h_dropped, h_opackets, h_obytes, h_oerrors
+    };
 
     Vector<InternalQueue> _iqueues;
 
@@ -170,8 +185,8 @@ private:
     unsigned int _iqueue_size;
     unsigned int _burst_size;
     int _timeout;
-    unsigned long _n_sent;
-    unsigned long _n_dropped;
+    unsigned long _count;
+    unsigned long _dropped;
     bool _congestion_warning_printed;
 };
 
