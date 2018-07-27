@@ -30,9 +30,10 @@
 CLICK_DECLS
 
 FromDPDKDevice::FromDPDKDevice() :
-    _dev(0), _queue_id(0), _promisc(true), _burst_size(32),
+    _dev(0), _queue_id(0), _promisc(true),
     _count(0), _active(true), _task(this)
 {
+    _burst_size = DPDKDevice::DEF_BURST_SIZE;
 }
 
 FromDPDKDevice::~FromDPDKDevice()
@@ -63,7 +64,8 @@ int FromDPDKDevice::configure(Vector<String> &conf, ErrorHandler *errh)
             return errh->error("%s : Unknown or invalid PORT", dev.c_str());
     }
 
-    return _dev->add_rx_queue(_queue_id, _promisc, (n_desc > 0) ? n_desc : 256, errh);
+    return _dev->add_rx_queue(_queue_id, _promisc, (n_desc > 0) ?
+                n_desc : DPDKDevice::DEF_DEV_RXDESC, errh);
 }
 
 int FromDPDKDevice::initialize(ErrorHandler *errh)

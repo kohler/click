@@ -31,7 +31,7 @@ int DPDKInfo::configure(Vector<String> &conf, ErrorHandler *errh) {
     instance = this;
     if (Args(conf, this, errh)
         .read_p("NB_MBUF", DPDKDevice::NB_MBUF)
-        .read("MBUF_SIZE", DPDKDevice::MBUF_SIZE)
+        .read("MBUF_SIZE", DPDKDevice::MBUF_DATA_SIZE)
         .read("MBUF_CACHE_SIZE", DPDKDevice::MBUF_CACHE_SIZE)
         .read("RX_PTHRESH", DPDKDevice::RX_PTHRESH)
         .read("RX_HTHRESH", DPDKDevice::RX_HTHRESH)
@@ -39,6 +39,8 @@ int DPDKInfo::configure(Vector<String> &conf, ErrorHandler *errh) {
         .read("TX_PTHRESH", DPDKDevice::TX_PTHRESH)
         .read("TX_HTHRESH", DPDKDevice::TX_HTHRESH)
         .read("TX_WTHRESH", DPDKDevice::TX_WTHRESH)
+        .read("MEMPOOL_PREFIX", DPDKDevice::MEMPOOL_PREFIX)
+        .read("DEF_BURST_SIZE", DPDKDevice::DEF_BURST_SIZE)
         .complete() < 0)
         return -1;
 
