@@ -164,8 +164,8 @@ class Lexer::Compound : public Element { public:
     String signature() const;
     static String signature(const String &name, const Vector<String> *formal_types, int nargs, int ninputs, int noutputs);
 
-    Compound & get() { ++_refcount; return *this; }
-    bool put() { return 0 == --_refcount; }
+    void use()                          { ++_refcount; }
+    void unuse()                        { if (--_refcount == 0) delete this; }
 
   private:
 
@@ -545,7 +545,7 @@ Lexer::~Lexer()
   for (int t = 0; t < _element_types.size(); t++)
     if (_element_types[t].factory == compound_element_factory) {
       Lexer::Compound *compound = (Lexer::Compound *) _element_types[t].thunk;
-      if (compound && compound->put()) delete compound;
+      compound->unuse();
     }
 }
 
@@ -577,7 +577,7 @@ Lexer::end_parse(int cookie)
     }
   _tunnels.clear();
 
-  if (_c && _c->put()) delete _c;
+  _c->unuse();
   _c = 0;
   delete _ps;
   _ps = 0;
@@ -1034,7 +1034,7 @@ Lexer::remove_element_type(int removed, int *prev_hint)
   // remove stuff
   if (_element_types[removed].factory == compound_element_factory) {
     Lexer::Compound *compound = (Lexer::Compound *) _element_types[removed].thunk;
-    if (compound && compound->put()) delete compound;
+    compound->unuse();
   }
   _element_types[removed].factory = 0;
   _element_types[removed].name = String();
@@ -1665,7 +1665,7 @@ Lexer::yelementclass()
     // define synonym type
     int t = force_element_type(tnext.string());
     if (_element_types[t].factory == compound_element_factory && _element_types[t].thunk)
-      ((Lexer::Compound *)_element_types[t].thunk)->get();
+      ((Lexer::Compound*) _element_types[t].thunk)->use();
     ADD_ELEMENT_TYPE(name, _element_types[t].factory, _element_types[t].thunk, true);
 
   } else {
