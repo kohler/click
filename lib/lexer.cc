@@ -416,7 +416,7 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, VariableEnvironment &ve)
 
     // now copy hookups
     for (const Connection *cp = _conn.begin(); cp != _conn.end(); ++cp)
-        if (eidx_map[(*cp)[0].idx] >= 0 && eidx_map[(*cp)[0].idx] >= 0)
+        if (eidx_map[(*cp)[0].idx] >= 0 && eidx_map[(*cp)[1].idx] >= 0)
             lexer->_c->connect(eidx_map[(*cp)[1].idx], (*cp)[1].port,
                                eidx_map[(*cp)[0].idx], (*cp)[0].port);
 
