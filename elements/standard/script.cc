@@ -339,7 +339,7 @@ Script::initialize(ErrorHandler *errh)
             _vars[_args[i] + 1] = cp_unquote(cp_expand(_args3[i], expander));
 
     int insn = _insns[_insn_pos];
-    assert(insn == INSN_INITIAL || insn == INSN_WAIT_STEP || INSN_WAIT_TIME);
+    assert(insn == INSN_INITIAL || insn == INSN_WAIT_STEP || insn == INSN_WAIT_TIME);
     if (_type == type_signal || _type == type_passive || _type == type_push
         || _type == type_proxy)
         /* passive, do nothing */;
