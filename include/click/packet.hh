@@ -725,12 +725,9 @@ class Packet { public:
 	unsigned char *nh;
 	unsigned char *h;
 	PacketType pkt_type;
-	Timestamp timestamp;
+	char timestamp[sizeof(Timestamp)];
 	Packet *next;
 	Packet *prev;
-	AllAnno()
-	    : timestamp(Timestamp::uninitialized_t()) {
-	}
     };
 #endif
     /** @endcond never */
@@ -1254,31 +1251,31 @@ Packet::transport_length() const
     return end_data() - transport_header();
 }
 
-inline const Timestamp &
+inline const Timestamp&
 Packet::timestamp_anno() const
 {
 #if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 13)
-    return *reinterpret_cast<const Timestamp *>(&skb()->stamp);
+    return *reinterpret_cast<const Timestamp*>(&skb()->stamp);
 # else
-    return *reinterpret_cast<const Timestamp *>(&skb()->tstamp);
+    return *reinterpret_cast<const Timestamp*>(&skb()->tstamp);
 # endif
 #else
-    return _aa.timestamp;
+    return *reinterpret_cast<const Timestamp*>(&_aa.timestamp);
 #endif
 }
 
-inline Timestamp &
+inline Timestamp&
 Packet::timestamp_anno()
 {
 #if CLICK_LINUXMODULE
 # if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 13)
-    return *reinterpret_cast<Timestamp *>(&skb()->stamp);
+    return *reinterpret_cast<Timestamp*>(&skb()->stamp);
 # else
-    return *reinterpret_cast<Timestamp *>(&skb()->tstamp);
+    return *reinterpret_cast<Timestamp*>(&skb()->tstamp);
 # endif
 #else
-    return _aa.timestamp;
+    return *reinterpret_cast<Timestamp*>(&_aa.timestamp);
 #endif
 }
 
