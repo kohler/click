@@ -249,8 +249,8 @@ dnl
 AC_DEFUN([CLICK_CHECK_DYNAMIC_LINKING], [
     DL_LIBS=
     AC_CHECK_HEADERS_ONCE([dlfcn.h])
-    AC_CHECK_FUNC(dlopen, ac_have_dlopen=yes,
-        [AC_CHECK_LIB(dl, dlopen, [ac_have_dlopen=yes; DL_LIBS="-ldl"], ac_have_dlopen=no)])
+    AC_CHECK_LIB(dl, dlopen, [ac_have_dlopen=yes; DL_LIBS="-ldl"],
+        [AC_CHECK_FUNC(dlopen, ac_have_dlopen=yes, ac_have_dlopen=no)])
     if test "x$ac_have_dlopen" = xyes -a "x$ac_cv_header_dlfcn_h" = xyes; then
         AC_DEFINE([HAVE_DYNAMIC_LINKING], [1], [Define if dynamic linking is possible.])
         ac_have_dynamic_linking=yes
