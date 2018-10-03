@@ -24,13 +24,16 @@ template <size_t s> class sized_array_memory { public:
 	memcpy(a, x, s);
     }
     static void copy(void *dst, const void *src, size_t n) {
-	memcpy(dst, src, n * s);
+        if (n)
+            memcpy(dst, src, n * s);
     }
     static void move(void *dst, const void *src, size_t n) {
-	memmove(dst, src, n * s);
+        if (n)
+            memmove(dst, src, n * s);
     }
     static void move_onto(void *dst, const void *src, size_t n) {
-	memmove(dst, src, n * s);
+        if (n)
+            memmove(dst, src, n * s);
     }
     static void destroy(void *a, size_t n) {
 	(void) a, (void) n;

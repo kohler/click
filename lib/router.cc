@@ -1504,7 +1504,8 @@ Router::store_local_handler(int eindex, Handler &to_store)
             for (int i = 0; i < HANDLER_BUFSIZ - 1; i++)
                 new_handler_buf[i]._next_by_name = _nhandlers_bufs + i + 1;
             _free_handler = _nhandlers_bufs;
-            memcpy(new_handler_bufs, _handler_bufs, sizeof(Handler*) * n_handler_bufs);
+            if (n_handler_bufs)
+                memcpy(new_handler_bufs, _handler_bufs, sizeof(Handler*) * n_handler_bufs);
             new_handler_bufs[n_handler_bufs] = new_handler_buf;
             delete[] _handler_bufs;
             _handler_bufs = new_handler_bufs;
