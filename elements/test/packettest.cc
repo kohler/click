@@ -34,7 +34,7 @@ PacketTest::PacketTest()
 int
 PacketTest::initialize(ErrorHandler *errh)
 {
-    const unsigned char *lowers = (const unsigned char *)"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
+    const unsigned char *lowers = (const unsigned char *)"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
     IPAddress addr(String("1.2.3.4"));
 
     Packet *p = Packet::make(10, lowers, 20, 30);
