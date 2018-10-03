@@ -120,6 +120,7 @@ class Lexer::TunnelEnd {
 class Lexer::Compound : public Element { public:
 
   Compound(const String &, const String &, VariableEnvironment *parent);
+  ~Compound() { assert(!_refcount); }
 
   const String &name() const            { return _name; }
   const char *printable_name_c_str();
@@ -163,6 +164,9 @@ class Lexer::Compound : public Element { public:
     String signature() const;
     static String signature(const String &name, const Vector<String> *formal_types, int nargs, int ninputs, int noutputs);
 
+    Compound & get() { ++_refcount; return *this; }
+    bool put() { return 0 == --_refcount; }
+
   private:
 
     String _name;
@@ -184,6 +188,8 @@ class Lexer::Compound : public Element { public:
     Vector<int> _element_nports[2];
     int _anonymous_offset;
 
+    unsigned _refcount;
+
     Vector<Router::Connection> _conn;
 
     friend class Lexer;
@@ -194,7 +200,7 @@ Lexer::Compound::Compound(const String &name, const String &lm, VariableEnvironm
     : _name(name), _landmark(lm), _overload_type(-1),
       _scope(parent),
       _nformals(0), _ninputs(0), _noutputs(0), _scope_order_error(false),
-      _element_map(-1), _anonymous_offset(0)
+      _element_map(-1), _anonymous_offset(0), _refcount(1)
 {
 }
 
@@ -539,7 +545,7 @@ Lexer::~Lexer()
   for (int t = 0; t < _element_types.size(); t++)
     if (_element_types[t].factory == compound_element_factory) {
       Lexer::Compound *compound = (Lexer::Compound *) _element_types[t].thunk;
-      delete compound;
+      if (compound && compound->put()) delete compound;
     }
 }
 
@@ -571,7 +577,7 @@ Lexer::end_parse(int cookie)
     }
   _tunnels.clear();
 
-  delete _c;
+  if (_c && _c->put()) delete _c;
   _c = 0;
   delete _ps;
   _ps = 0;
@@ -949,6 +955,7 @@ Lexer::add_element_type(const String &name, ElementFactory factory, uintptr_t th
     tid = _free_element_type;
     _free_element_type = _element_types[tid].next;
   }
+
   _element_types[tid].factory = factory;
   _element_types[tid].thunk = thunk;
 #ifdef CLICK_LINUXMODULE
@@ -1027,7 +1034,7 @@ Lexer::remove_element_type(int removed, int *prev_hint)
   // remove stuff
   if (_element_types[removed].factory == compound_element_factory) {
     Lexer::Compound *compound = (Lexer::Compound *) _element_types[removed].thunk;
-    delete compound;
+    if (compound && compound->put()) delete compound;
   }
   _element_types[removed].factory = 0;
   _element_types[removed].name = String();
@@ -1657,6 +1664,8 @@ Lexer::yelementclass()
   } else if (tnext.is(lexIdent)) {
     // define synonym type
     int t = force_element_type(tnext.string());
+    if (_element_types[t].factory == compound_element_factory && _element_types[t].thunk)
+      ((Lexer::Compound *)_element_types[t].thunk)->get();
     ADD_ELEMENT_TYPE(name, _element_types[t].factory, _element_types[t].thunk, true);
 
   } else {
