@@ -69,8 +69,8 @@ error_element_factory(uintptr_t)
   return new ErrorElement;
 }
 
-static Element *
-compound_element_factory(uintptr_t)
+Element*
+Lexer::compound_element_factory(uintptr_t)
 {
   assert(0);
   return 0;
@@ -543,10 +543,8 @@ Lexer::~Lexer()
 
   // get rid of nonscoped element types
   for (int t = 0; t < _element_types.size(); t++)
-    if (_element_types[t].factory == compound_element_factory) {
-      Lexer::Compound *compound = (Lexer::Compound *) _element_types[t].thunk;
-      compound->unuse();
-    }
+      if (Compound* c = _element_types[t].compound())
+          c->unuse();
 }
 
 int
@@ -577,7 +575,8 @@ Lexer::end_parse(int cookie)
     }
   _tunnels.clear();
 
-  _c->unuse();
+  if (_c)
+      _c->unuse();
   _c = 0;
   delete _ps;
   _ps = 0;
@@ -1032,10 +1031,8 @@ Lexer::remove_element_type(int removed, int *prev_hint)
   }
 
   // remove stuff
-  if (_element_types[removed].factory == compound_element_factory) {
-    Lexer::Compound *compound = (Lexer::Compound *) _element_types[removed].thunk;
-    compound->unuse();
-  }
+  if (Lexer::Compound* c = _element_types[removed].compound())
+      c->unuse();
   _element_types[removed].factory = 0;
   _element_types[removed].name = String();
   _element_types[removed].next = _free_element_type;
