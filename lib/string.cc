@@ -861,44 +861,25 @@ String::hashcode(const char *first, const char *last)
     last -= rem;
     uint32_t last16;
 
-#if !HAVE_INDIFFERENT_ALIGNMENT
-    if (!(reinterpret_cast<uintptr_t>(first) & 1)) {
+#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+# define get16(p) (((unsigned char) (p)[0] << 8) + (unsigned char) (p)[1])
+#elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
+# define get16(p) ((unsigned char) (p)[0] + ((unsigned char) (p)[1] << 8))
+#else
+# error "unknown CLICK_BYTE_ORDER"
 #endif
-#define get16(p) (*reinterpret_cast<const uint16_t *>((p)))
-        for (; first != last; first += 4) {
-            hash += get16(first);
-            uint32_t tmp = (get16(first + 2) << 11) ^ hash;
-            hash = (hash << 16) ^ tmp;
-            hash += hash >> 11;
-        }
-        if (rem >= 2) {
-            last16 = get16(first);
-            goto rem2;
-        }
-#undef get16
-#if !HAVE_INDIFFERENT_ALIGNMENT
-    } else {
-# if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-#  define get16(p) (((unsigned char) (p)[0] << 8) + (unsigned char) (p)[1])
-# elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-#  define get16(p) ((unsigned char) (p)[0] + ((unsigned char) (p)[1] << 8))
-# else
-#  error "unknown CLICK_BYTE_ORDER"
-# endif
-        // should be exactly the same as the code above
-        for (; first != last; first += 4) {
-            hash += get16(first);
-            uint32_t tmp = (get16(first + 2) << 11) ^ hash;
-            hash = (hash << 16) ^ tmp;
-            hash += hash >> 11;
-        }
-        if (rem >= 2) {
-            last16 = get16(first);
-            goto rem2;
-        }
-# undef get16
+    // should be exactly the same as the code above
+    for (; first != last; first += 4) {
+        hash += get16(first);
+        uint32_t tmp = (get16(first + 2) << 11) ^ hash;
+        hash = (hash << 16) ^ tmp;
+        hash += hash >> 11;
     }
-#endif
+    if (rem >= 2) {
+        last16 = get16(first);
+        goto rem2;
+    }
+#undef get16
 
     /* Handle end cases */
     if (0) {                    // weird organization avoids uninitialized
