@@ -431,9 +431,9 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
             String word = cp_shift_spacevec(_args3[ipos]);
             String file = (_args3[ipos] ? _args3[ipos] : "-");
             _args3[ipos] = (&">>"[insn == insn_save]) + file + " " + word;
-            /* FALLTHRU */
         }
 #endif
+        /* fallthru */
         case INSN_PRINT:
         case INSN_PRINTQ:
         case INSN_PRINTN:
@@ -552,8 +552,8 @@ Script::step(int nsteps, int step_type, int njumps, ErrorHandler *errh)
                 msg = cp_unquote(msg);
             if (msg)
                 errh->error("%.*s", msg.length(), msg.data());
-            /* fallthru */
         }
+        /* fallthru */
         case insn_end:
         case insn_exit:
         insn_finish:
