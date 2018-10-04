@@ -1087,6 +1087,14 @@ if test $enable_dmalloc = yes; then
 fi
 
 
+dnl debug by forcing expensive operations
+
+AC_ARG_ENABLE([force-expensive], [AS_HELP_STRING([--enable-force-expensive], [force expensive packet operations])], :, enable_force_expensive=no)
+if test $enable_force_expensive = yes; then
+    AC_DEFINE([CLICK_FORCE_EXPENSIVE], [1], [Define for forcing expensive packet operations])
+fi
+
+
 dnl valgrind debugging support
 
 AC_ARG_ENABLE([valgrind], [AS_HELP_STRING([--enable-valgrind], [extra support for debugging with valgrind])], :, enable_valgrind=no)
