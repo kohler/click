@@ -318,7 +318,7 @@ IPReassembler::simple_action(Packet *p)
 	q->set_anno_u16(_mtu_anno, p->network_length());
 
     // extend the packet if necessary
-    if (p_lastoff > q->transport_length()) {
+    if (p_lastoff + 8 > q->transport_length()) {
 	// error if packet already completed
 	if (!(q->ip_header()->ip_off & htons(IP_MF))) {
 	    p->kill();
