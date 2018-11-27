@@ -70,8 +70,12 @@ ConfParseTest::initialize(ErrorHandler *errh)
     CHECK(cp_unquote("\"\\n\" abc /* 123 */ '/* def */'") == "\n abc /* def */");
 
     // cp_eat_space
-    CHECK(cp_eat_space("       ") == false);
-    CHECK(cp_eat_space("  a  b  ") == "a  b  ");
+    String eat_space = "       ";
+    CHECK(cp_eat_space(eat_space) == false);
+    CHECK(eat_space == "");
+    eat_space = "  a  b  ";
+    CHECK(cp_eat_space(eat_space) == true);
+    CHECK(eat_space == "a  b  ");
 
     Vector<String> v;
     cp_argvec("a, b, c", v);
