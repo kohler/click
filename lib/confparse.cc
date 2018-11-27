@@ -229,7 +229,7 @@ cp_eat_space(String &str)
     const char *begin = str.begin(), *end = str.end();
     const char *space = cp_skip_space(begin, end);
     str = str.substring(space, end);
-    return space != begin;
+    return space != end;
 }
 
 /** @brief  Test whether @a str is a valid "word".
