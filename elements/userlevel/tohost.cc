@@ -38,8 +38,7 @@
 
 CLICK_DECLS
 
-ToHost::ToHost()
-    : _fd(-1), _drops(0)
+ToHost::ToHost(): _fd(-1), _drops(0)
 {
 }
 
@@ -55,16 +54,17 @@ ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 	.complete();
 }
 
-int
-ToHost::initialize(ErrorHandler *errh)
+int ToHost::find_fromhost(ErrorHandler *errh)
 {
+    int ei;
+    FromHost *s;
+    Element *e;
+
   //find a FromHost and reuse its socket
-    for (int ei = 0; ei < router()->nelements() && _fd < 0; ei++) {
-	Element *e = router()->element(ei);
-	FromHost *s = (FromHost *)e->cast("FromHost");
-	if (s &&
-	    s->dev_name() == _dev_name &&
-	    s->fd() > 0) {
+    for (ei = 0; ei < router()->nelements() && _fd < 0; ei++) {
+        e = router()->element(ei);
+        s = (FromHost *)e->cast("FromHost");
+        if (s && s->dev_name() == _dev_name && s->fd() > 0) {
 	    _fd = s->fd();
 	    return 0;
 	}
@@ -72,6 +72,33 @@ ToHost::initialize(ErrorHandler *errh)
 
     return errh->error("ToHost(%s) requires an initialized FromHost with the same dev_name",
 		       _dev_name.c_str());
+}
+
+int
+ToHost::initialize(ErrorHandler *errh)
+{
+    if (hotswap_element()) {
+        return 0;
+    }
+
+    return find_fromhost(errh);
+}
+
+ToHost *
+ToHost::hotswap_element() const
+{
+    if (Element *e = Element::hotswap_element())
+        if (ToHost *th = static_cast<ToHost *>(e->cast("ToHost")))
+            if (th->_dev_name == _dev_name)
+                return th;
+    return 0;
+}
+
+void
+ToHost::take_state(Element *e, ErrorHandler *errh)
+{
+    (void)e;
+    find_fromhost(errh);
 }
 
 void
@@ -97,8 +124,9 @@ ToHost::push(int, Packet *p)
 	    click_chatter("ToHost(%s): write failed: %s", _dev_name.c_str(), strerror(errno));
 	}
 	q->kill();
-    } else
+    } else {
 	click_chatter("%p{element}: out of memory", this);
+}
 }
 
 void
