@@ -70,7 +70,7 @@ should be preferred for almost all purposes.
      SortedIPLookup |  12500  |  224K   |  38s  |   29 KB
 
 A Click script containing the 167000-route dump is available at
-http://www.read.cs.ucla.edu/click/routetabletest-167k.click.gz
+https://github.com/kohler/click/wiki/files/routetabletest-167k.click.gz
 
 =head1 INTERFACE
 
