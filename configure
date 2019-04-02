@@ -703,11 +703,13 @@ minios_dir
 xen_dir
 INCLUDE_KSYMS
 LINUXMODULE_FIXINCLUDES
+DPDK_INCLUDES
 USE_DPDK
 RTE_VER_MONTH
 RTE_VER_YEAR
 RTE_VER_MINOR
 RTE_VER_MAJOR
+RTE_SDK_BIN
 RTE_TARGET
 RTE_SDK
 PTHREAD_LIBS
@@ -1492,7 +1494,7 @@ Optional Features:
     --disable-select      do not use select()
     --disable-poll        do not use poll()
     --disable-kqueue      do not use kqueue()
-    --enable-dpdk         use Intel DPDK
+    --enable-dpdk         use DPDK
   --disable-linuxmodule   disable Linux kernel driver
     --disable-fixincludes do not patch Linux kernel headers for C++
     --enable-multithread  support kernel multithreading
@@ -6551,8 +6553,17 @@ else
 fi
 
 
-if test "x$enable_dpdk" = xyes; then
-    if test "x$enable_user_multithread" != xyes; then
+if test "x$enable_dpdk" = "xyes"; then
+
+    if test -z "$RTE_SDK_BIN"; then
+        RTE_SDK_BIN=$RTE_SDK/$RTE_TARGET
+    fi
+
+    if test -z "$RTE_LIBNAME"; then
+        RTE_LIBNAME=dpdk
+    fi
+
+    if test "x$enable_user_multithread" != "xyes"; then
         as_fn_error $? "
 =========================================
 
@@ -6560,28 +6571,20 @@ if test "x$enable_dpdk" = xyes; then
 
 =========================================" "$LINENO" 5
     fi
-    if test ! -f "$RTE_SDK/$RTE_TARGET/include/rte_eal.h"; then
+    if test ! -f "$RTE_SDK_BIN/include/rte_eal.h"; then
         as_fn_error $? "
 =========================================
 
-Cannot find \$RTE_SDK/\$RTE_TARGET/include/rte_eal.h for Intel DPDK.
-Define \$RTE_SDK and \$RTE_TARGET as per Intel DPDK documentation.
+Cannot find \$RTE_SDK_BIN/include/rte_eal.h for DPDK.
+Define \$RTE_SDK and \$RTE_TARGET as per DPDK documentation.
 
 =========================================" "$LINENO" 5
     fi
-    if test ! -f "$RTE_SDK/$RTE_TARGET/lib/librte_eal.a"; then
-        as_fn_error $? "
-=========================================
+    rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
+    rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
+    rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
+    rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
 
-Cannot find \$RTE_SDK/\$RTE_TARGET/lib/librte_eal.a for Intel DPDK.
-Define \$RTE_SDK and \$RTE_TARGET as per Intel DPDK documentation.
-
-=========================================" "$LINENO" 5
-    fi
-    rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
-    rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
-    rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
-    rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_SDK/$RTE_TARGET/include/rte_version.h" | head -n 1 | awk '{print $3}'`
 
 
 
@@ -6595,7 +6598,10 @@ Define \$RTE_SDK and \$RTE_TARGET as per Intel DPDK documentation.
 
     $as_echo "#define HAVE_DPDK 1" >>confdefs.h
 
+
     USE_DPDK=yes
+
+    DPDK_INCLUDES=-I${RTE_SDK_BIN}/include/
 
 fi
 
@@ -9680,6 +9686,8 @@ main ()
     if (*(data + i) != *(data3 + i))
       return 14;
   close (fd);
+  free (data);
+  free (data3);
   return 0;
 }
 _ACEOF
@@ -10773,6 +10781,7 @@ $as_echo "$ac_cv_working_net_netmap_h" >&6; }
 $as_echo "#define HAVE_NET_NETMAP_H 1" >>confdefs.h
 
     fi
+
 
 
     if test "$HAVE_PCAP" != yes -a "$HAVE_NETMAP" != yes -a "$ac_cv_under_linux" != yes; then
