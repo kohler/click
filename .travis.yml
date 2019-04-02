@@ -1,7 +1,6 @@
 cache:
   apt: true
   directories:
-    - dpdk-2.2.0
     - dpdk-16.07
     - dpdk-18.05
     - tcpdump-4.7.4
@@ -13,10 +12,6 @@ compiler:
   - gcc
   - clang
 
-matrix:
-  exclude:
-    - compiler: clang
-      env: FRAMEWORK=dpdk VERSION=2.2.0
 env:
   global:
     - FLAGS="--enable-ip6 --enable-json --disable-linuxmodule"
@@ -26,7 +21,6 @@ env:
     - FRAMEWORK=vanilla
     - FRAMEWORK=umultithread
     - FRAMEWORK=netmap VERSION=11.1
-    - FRAMEWORK=dpdk VERSION=2.2.0
     - FRAMEWORK=dpdk VERSION=16.07
     - FRAMEWORK=dpdk VERSION=18.05
 
