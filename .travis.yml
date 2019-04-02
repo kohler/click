@@ -43,6 +43,7 @@ script:
             wget http://fast.dpdk.org/rel/dpdk-$VERSION.tar.gz &&
             tar -zxf dpdk-$VERSION.tar.gz &&
             cd dpdk-$VERSION &&
+            sed -i "s/CONFIG_RTE_ENABLE_AVX=.*/CONFIG_RTE_ENABLE_AVX=n/g" config/common_base &&
             sed -i "s/CONFIG_RTE_KNI_KMOD=.*/CONFIG_RTE_KNI_KMOD=n/g" config/common_linuxapp &&
             sed -i "s/CONFIG_RTE_LIBRTE_KNI=.*/CONFIG_RTE_LIBRTE_KNI=n/g" config/common_linuxapp &&
             sed -i "s/CONFIG_RTE_EAL_IGB_UIO=.*/CONFIG_RTE_EAL_IGB_UIO=n/g" config/common_linuxapp &&
