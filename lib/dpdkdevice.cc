@@ -5,6 +5,7 @@
  * Copyright (c) 2014-2018 University of Liege
  * Copyright (c) 2016 Cisco Meraki
  * Copyright (c) 2017-2018 RISE SICS
+ * Copyright (c) 2018-2019 KTH Royal Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -67,6 +68,7 @@ bool DPDKDevice::alloc_pktmbufs()
         if (numa_node > max_socket)
             max_socket = numa_node;
     }
+
     if (max_socket == -1)
         return false;
 
@@ -113,6 +115,10 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
 
     info.driver = dev_info.driver_name;
 
+#if RTE_VERSION >= RTE_VERSION_NUM(18,02,0,0) && RTE_VERSION < RTE_VERSION_NUM(18,11,0,0)
+    dev_conf.rxmode.offloads = DEV_RX_OFFLOAD_CRC_STRIP;
+    dev_conf.txmode.offloads = 0;
+#endif
     dev_conf.rxmode.mq_mode = ETH_MQ_RX_RSS;
     dev_conf.rx_adv_conf.rss_conf.rss_key = NULL;
     dev_conf.rx_adv_conf.rss_conf.rss_hf = ETH_RSS_IP | ETH_RSS_UDP | ETH_RSS_TCP;
@@ -124,8 +130,21 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
     }
     if (info.tx_queues.size() == 0) {
         info.tx_queues.resize(1);
-        info.n_tx_descs = DEF_DEV_TXDESC;
     }
+
+#if RTE_VERSION >= RTE_VERSION_NUM(18,05,0,0)
+    if (info.n_rx_descs == 0)
+        info.n_rx_descs = dev_info.default_rxportconf.ring_size > 0? dev_info.default_rxportconf.ring_size : DEF_DEV_RXDESC;
+
+    if (info.n_tx_descs == 0)
+        info.n_tx_descs = dev_info.default_txportconf.ring_size > 0? dev_info.default_txportconf.ring_size : DEF_DEV_TXDESC;
+#else
+    if (info.n_rx_descs == 0)
+        info.n_rx_descs = DEF_DEV_RXDESC;
+
+    if (info.n_tx_descs == 0)
+        info.n_tx_descs = DEF_DEV_TXDESC;
+#endif
 
     if (info.rx_queues.size() > dev_info.max_rx_queues) {
         return errh->error("Port %d can only use %d RX queues (asked for %d), use MAXQUEUES to set the maximum "
@@ -176,23 +195,41 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
 #else
     bzero(&rx_conf,sizeof rx_conf);
 #endif
+
+#if RTE_VERSION < RTE_VERSION_NUM(18,8,0,0)
     rx_conf.rx_thresh.pthresh = RX_PTHRESH;
     rx_conf.rx_thresh.hthresh = RX_HTHRESH;
     rx_conf.rx_thresh.wthresh = RX_WTHRESH;
+#endif
+
+#if RTE_VERSION >= RTE_VERSION_NUM(18,02,0,0)
+    rx_conf.offloads = dev_conf.rxmode.offloads;
+#endif
 
     struct rte_eth_txconf tx_conf;
+    tx_conf = dev_info.default_txconf;
 #if RTE_VERSION >= RTE_VERSION_NUM(2,0,0,0)
     memcpy(&tx_conf, &dev_info.default_txconf, sizeof tx_conf);
 #else
     bzero(&tx_conf,sizeof tx_conf);
 #endif
+
+#if RTE_VERSION < RTE_VERSION_NUM(18,8,0,0) && RTE_VERSION >= RTE_VERSION_NUM(18,02,0,0)
+    tx_conf.txq_flags = ETH_TXQ_FLAGS_IGNORE;
+#else
     tx_conf.tx_thresh.pthresh = TX_PTHRESH;
     tx_conf.tx_thresh.hthresh = TX_HTHRESH;
     tx_conf.tx_thresh.wthresh = TX_WTHRESH;
+#endif
+#if RTE_VERSION >= RTE_VERSION_NUM(18,02,0,i0)
+    tx_conf.offloads = dev_conf.txmode.offloads;
+#endif
+#if RTE_VERSION <= RTE_VERSION_NUM(18,05,0,0)
     tx_conf.txq_flags |= ETH_TXQ_FLAGS_NOMULTSEGS | ETH_TXQ_FLAGS_NOOFFLOADS;
+#endif
 
     int numa_node = DPDKDevice::get_port_numa_node(port_id);
-    for (unsigned i = 0; i < info.rx_queues.size(); ++i) {
+    for (unsigned i = 0; i < (unsigned)info.rx_queues.size(); ++i) {
         if (rte_eth_rx_queue_setup(
                 port_id, i, info.n_rx_descs, numa_node, &rx_conf,
                 _pktmbuf_pools[numa_node]) != 0)
@@ -201,7 +238,7 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
                 i, port_id, numa_node, rte_strerror(rte_errno));
     }
 
-    for (unsigned i = 0; i < info.tx_queues.size(); ++i)
+    for (unsigned i = 0; i < (unsigned)info.tx_queues.size(); ++i)
         if (rte_eth_tx_queue_setup(port_id, i, info.n_tx_descs, numa_node,
                                    &tx_conf) != 0)
             return errh->error(
@@ -258,15 +295,15 @@ EtherAddress DPDKDevice::get_mac() {
  */
 bool set_slot(Vector<bool> &v, unsigned &id) {
     if (id <= 0) {
-        int i;
-        for (i = 0; i < v.size(); i ++) {
+        unsigned i;
+        for (i = 0; i < (unsigned)v.size(); i ++) {
             if (!v[i]) break;
         }
         id = i;
-        if (id >= v.size())
+        if (id >= (unsigned)v.size())
             v.resize(id + 1, false);
     }
-    if (id >= v.size()) {
+    if (id >= (unsigned)v.size()) {
         v.resize(id + 1,false);
     }
     if (v[id])

@@ -88,7 +88,7 @@ CXXFLAGS = @CXXFLAGS@
 DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(srcdir) -I$(top_srcdir) \
-	@PROPER_INCLUDES@ @PCAP_INCLUDES@ @NETMAP_INCLUDES@
+	@PROPER_INCLUDES@ @PCAP_INCLUDES@ @DPDK_INCLUDES@ @NETMAP_INCLUDES@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@ `$(CLICK_BUILDTOOL) --otherlibs` $(ELEMENT_LIBS)
 DL_LDFLAGS = @DL_LDFLAGS@
@@ -138,7 +138,7 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 $(DRIVER): Makefile libclick.a $(OBJS)
-	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) libclick.a $(LIBS),LINK)
+	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) libclick.a $(LIBS) $(DPDK_LIBS),LINK)
 	@-mkdir -p ../bin; rm -f ../bin/$@; ln -s ../userlevel/$@ ../bin/$@
 
 libclick.a: Makefile $(LIBOBJS)
