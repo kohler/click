@@ -52,7 +52,7 @@ String DPDKInfo::read_handler(Element *e, void * thunk)
     switch((uintptr_t) thunk) {
         case h_pool_count:
             StringAccum acc;
-            for (int i = 0; i < DPDKDevice::_nr_pktmbuf_pools; i++) {
+            for (unsigned i = 0; i < DPDKDevice::_nr_pktmbuf_pools; i++) {
 #if RTE_VERSION < RTE_VERSION_NUM(17,02,0,0)
                 int avail = rte_mempool_count(DPDKDevice::_pktmbuf_pools[i]);
 #else
