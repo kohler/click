@@ -128,8 +128,8 @@ String FromDPDKDevice::read_handler(Element *e, void * thunk)
     FromDPDKDevice *fd = static_cast<FromDPDKDevice *>(e);
 
     switch((uintptr_t) thunk) {
-		case h_count:
-			return String(fd->_count);
+        case h_count:
+            return String(fd->_count);
         case h_active:
               if (!fd->_dev)
                   return "false";
@@ -249,7 +249,7 @@ int FromDPDKDevice::write_handler(
         }
         case h_reset_count:
             fd->_count = 0;
-			return 0;
+            return 0;
     }
     return -1;
 }
@@ -262,39 +262,39 @@ int FromDPDKDevice::xstats_handler(
     if (!fd->_dev)
         return -1;
 
-        struct rte_eth_xstat_name* names;
+    struct rte_eth_xstat_name* names;
 #if RTE_VERSION >= RTE_VERSION_NUM(16,07,0,0)
-        int len = rte_eth_xstats_get_names(fd->_dev->port_id, 0, 0);
-        names = static_cast<struct rte_eth_xstat_name*>(
-            malloc(sizeof(struct rte_eth_xstat_name) * len)
-        );
-        rte_eth_xstats_get_names(fd->_dev->port_id,names,len);
-        struct rte_eth_xstat* xstats;
-        xstats = static_cast<struct rte_eth_xstat*>(malloc(
-            sizeof(struct rte_eth_xstat) * len)
-        );
-        rte_eth_xstats_get(fd->_dev->port_id,xstats,len);
-        if (input == "") {
-            StringAccum acc;
-            for (int i = 0; i < len; i++) {
-                acc << names[i].name << "["<<
-                xstats[i].id << "] = " <<
-                xstats[i].value << "\n";
-            }
-
-            input = acc.take_string();
-        } else {
-            for (int i = 0; i < len; i++) {
-                if (strcmp(names[i].name,input.c_str()) == 0) {
-                    input = String(xstats[i].value);
-                    return 0;
-                }
-            }
-            return -1;
+    int len = rte_eth_xstats_get_names(fd->_dev->port_id, 0, 0);
+    names = static_cast<struct rte_eth_xstat_name*>(
+        malloc(sizeof(struct rte_eth_xstat_name) * len)
+    );
+    rte_eth_xstats_get_names(fd->_dev->port_id,names,len);
+    struct rte_eth_xstat* xstats;
+    xstats = static_cast<struct rte_eth_xstat*>(malloc(
+        sizeof(struct rte_eth_xstat) * len)
+    );
+    rte_eth_xstats_get(fd->_dev->port_id,xstats,len);
+    if (input == "") {
+        StringAccum acc;
+        for (int i = 0; i < len; i++) {
+            acc << names[i].name << "["<<
+            xstats[i].id << "] = " <<
+            xstats[i].value << "\n";
         }
-#else
-        input = "unsupported with DPDK < 16.07";
+
+        input = acc.take_string();
+    } else {
+        for (int i = 0; i < len; i++) {
+            if (strcmp(names[i].name,input.c_str()) == 0) {
+                input = String(xstats[i].value);
+                return 0;
+            }
+        }
         return -1;
+    }
+#else
+    input = "unsupported with DPDK < 16.07";
+    return -1;
 #endif
     return 0;
 }
