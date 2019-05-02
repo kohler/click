@@ -26,8 +26,6 @@ arp::ARPQuerier(18.26.4.116, 00:a0:c9:9c:fd:9e);
 arr::ARPResponder(18.26.4.116 00:a0:c9:9c:fd:9e);
 arr2::ARPResponder(18.26.4.17 00:a0:c9:9c:fd:9e);
 
-q::Queue(1024);
-
 nda :: IP6NDAdvertiser(
 	3ffe:1ce1:2:0:200::1/128 00:A0:C9:9C:FD:9E, 
 	fe80::2a0:c9ff:fe9c:fd9e/128 00:A0:C9:9C:FD:9E); 
@@ -70,7 +68,6 @@ at :: AddressTranslator(
 	1,
 	0,
 	3ffe:1ce1:2::1 ::18.26.4.17,
-	
 	0)
 
 //pt :: ProtocolTranslator();
@@ -80,10 +77,12 @@ pt46 :: ProtocolTranslator46();
 FromDevice(eth0, 1)
   	-> c; 
 
+q :: Queue(1024)
+	-> td0 :: ToDevice(eth0);
+
 c[0] 	-> nda
 	//-> Print(nda, 200)
-	-> Queue(1024)
-	-> ToDevice(eth0);
+	-> q;
 
 c[1] 	-> [1]nds;
 
@@ -92,13 +91,11 @@ c[2]	-> Strip(14)
 	-> GetIP6Address(24)
 	-> rt6;
 
-c[3] 	-> arr	
+c[3] 	-> arr
 	-> q;
 	
 c[4] 	-> arr2
 	-> q;
-
-q	-> ToDevice(eth0) ;
 	
 c[5] 	//-> Print(arp-reply, 200) 
 	->[1]arp;
@@ -155,16 +152,7 @@ pt46[0]	-> Print(after-pt46, 200)
 	-> [1]at;
 
 arp[0] 	//-> Print(arp0, 200)
-	-> ToDevice(eth0);
+	-> q;
 
 nds[0]  -> Print(nds, 200)
-	-> ToDevice(eth0);
-	
-	
-
-
-
-
-
-
-
+	-> q;
