@@ -128,13 +128,14 @@ to set up huge pages:
 On x86_64 you might achieve better performances with 1G huge pages, which must
 be enabled through the kernel cmdline.
 
-To bind eth0 to DPDK:
+Intel NICs use entierly userspace drivers and needs to be bound to DPDK.
+Eg., to bind eth0 to DPDK:
 
     modprobe uio_pci_generic
     dpdk/tools/dpdk_nic_bind.py --bind=uio_pci_generic eth0
 
 Refer to the DPDK documentation for more details about huge pages and binding
-devices, or use the DPDK helper located in `dpdk/tools/setup.sh`.
+devices, or use the DPDK helper located in `dpdk/usertools/setup.sh`.
 
 Unlike most other DPDK applications, you have to pass DPDK EAL arguments
 between `--dpdk` and `--`, then pass Click arguments. As the DPDK EAL will
