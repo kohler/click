@@ -230,7 +230,7 @@ class Timestamp { public:
 #endif
     }
 
-    inline seconds_type sec() const;
+    seconds_type sec() const;
     inline uint32_t subsec() const;
     inline uint32_t msec() const;
     inline uint32_t usec() const;
@@ -1024,19 +1024,7 @@ Timestamp::set_subsec(uint32_t subsec)
 #endif
 }
 
-/** @brief Return this timestamp's seconds component. */
-inline Timestamp::seconds_type
-Timestamp::sec() const
-{
-#if TIMESTAMP_REP_FLAT64
-    if (unlikely(_t.x < 0))
-        return -value_div(-(_t.x + 1), subsec_per_sec) - 1;
-    else
-        return value_div(_t.x, subsec_per_sec);
-#else
-    return _t.sec;
-#endif
-}
+
 
 /** @brief Return this timestamp's subseconds component. */
 inline uint32_t

@@ -159,13 +159,7 @@ class IPAddrPairRewriter : public IPRewriterBase { public:
 };
 
 
-inline void
-IPAddrPairRewriter::destroy_flow(IPRewriterFlow *flow)
-{
-    unmap_flow(flow, _map);
-    static_cast<IPAddrPairFlow *>(flow)->~IPAddrPairFlow();
-    _allocator.deallocate(flow);
-}
+
 
 CLICK_ENDDECLS
 #endif

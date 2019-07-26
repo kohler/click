@@ -183,6 +183,14 @@ IPAddrPairRewriter::add_handlers()
     add_rewriter_handlers(true);
 }
 
+void
+IPAddrPairRewriter::destroy_flow(IPRewriterFlow *flow)
+{
+	unmap_flow(flow, _map);
+	static_cast<IPAddrPairFlow *>(flow)->~IPAddrPairFlow();
+	_allocator.deallocate(flow);
+}
+
 ELEMENT_REQUIRES(IPRewriterBase)
 EXPORT_ELEMENT(IPAddrPairRewriter)
 CLICK_ENDDECLS

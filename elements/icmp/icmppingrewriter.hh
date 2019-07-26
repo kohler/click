@@ -124,13 +124,7 @@ class ICMPPingRewriter : public IPRewriterBase { public:
 };
 
 
-inline void
-ICMPPingRewriter::destroy_flow(IPRewriterFlow *flow)
-{
-    unmap_flow(flow, _map);
-    static_cast<ICMPPingFlow *>(flow)->~ICMPPingFlow();
-    _allocator.deallocate(flow);
-}
+
 
 CLICK_ENDDECLS
 #endif

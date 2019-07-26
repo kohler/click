@@ -92,7 +92,9 @@ struct proclikefs_file_system {
 #define PROCLIKEFS_COUNT 2
 static struct proclikefs_file_system fs_array[PROCLIKEFS_COUNT];
 static struct mutex fslist_lock;
-extern struct mutex inode_lock;
+// error: ‘inode_lock’ redeclared as different kind of symbol
+// inode_lock is never referenced.
+// extern struct mutex inode_lock; 
 
 #if !HAVE_LINUX_SB_LOCK
 # define lock_sb()
@@ -298,7 +300,18 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 
     /* create a garbage inode (which requires creating a garbage superblock) */
     inode_init_once(&dummy_inode);
+	
+    /* 
+       timespec_trunc in kernel/time/time.c
+       if granularity is set to 0 it will produce a warning
+       if is set to one it will do nothing. 
+    */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 3, 0)
+    dummy_sb.s_time_gran = 1;
+#else
     dummy_sb.s_time_gran = 0;
+#endif
+
     dummy_inode.i_sb = &dummy_sb;
     make_bad_inode(&dummy_inode);
     if ((uintptr_t) &dummy_inode.i_fop->llseek

@@ -73,7 +73,7 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
     return TCPRewriter::configure(conf, errh);
 }
 
-inline IPRewriterEntry *
+IPRewriterEntry *
 IPRewriter::get_entry(int ip_p, const IPFlowID &flowid, int input)
 {
     if (ip_p == IP_PROTO_TCP)
@@ -187,6 +187,18 @@ IPRewriter::add_handlers()
     add_read_handler("udp_mappings", udp_mappings_handler, 0, Handler::h_deprecated);
     set_handler("tcp_lookup", Handler::OP_READ | Handler::READ_PARAM, tcp_lookup_handler, 0);
     add_rewriter_handlers(true);
+}
+
+void
+IPRewriter::destroy_flow(IPRewriterFlow *flow)
+{
+	if (flow->ip_p() == IP_PROTO_TCP)
+		TCPRewriter::destroy_flow(flow);
+	else {
+		unmap_flow(flow, _udp_map, &reply_udp_map(flow->owner()));
+		flow->~IPRewriterFlow();
+		_udp_allocator.deallocate(flow);
+	}
 }
 
 CLICK_ENDDECLS

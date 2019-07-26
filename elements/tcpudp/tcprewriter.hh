@@ -194,13 +194,7 @@ class TCPRewriter : public IPRewriterBase { public:
 
 };
 
-inline void
-TCPRewriter::destroy_flow(IPRewriterFlow *flow)
-{
-    unmap_flow(flow, _map);
-    static_cast<TCPFlow *>(flow)->~TCPFlow();
-    _allocator.deallocate(flow);
-}
+
 
 inline tcp_seq_t
 TCPRewriter::TCPFlow::new_seq(bool direction, tcp_seq_t seqno) const

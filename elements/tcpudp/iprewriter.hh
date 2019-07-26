@@ -274,17 +274,7 @@ class IPRewriter : public TCPRewriter { public:
 };
 
 
-inline void
-IPRewriter::destroy_flow(IPRewriterFlow *flow)
-{
-    if (flow->ip_p() == IP_PROTO_TCP)
-	TCPRewriter::destroy_flow(flow);
-    else {
-	unmap_flow(flow, _udp_map, &reply_udp_map(flow->owner()));
-	flow->~IPRewriterFlow();
-	_udp_allocator.deallocate(flow);
-    }
-}
+
 
 CLICK_ENDDECLS
 #endif

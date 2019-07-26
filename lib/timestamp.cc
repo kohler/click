@@ -259,4 +259,18 @@ Timestamp::unparse_interval() const
     return sa.take_string();
 }
 
+/** @brief Return this timestamp's seconds component. */
+Timestamp::seconds_type
+Timestamp::sec() const
+{
+	#if TIMESTAMP_REP_FLAT64
+		if (unlikely(_t.x < 0))
+			return -value_div(-(_t.x + 1), subsec_per_sec) - 1;
+		else
+			return value_div(_t.x, subsec_per_sec);
+	#else
+		return _t.sec;
+	#endif
+}
+
 CLICK_ENDDECLS

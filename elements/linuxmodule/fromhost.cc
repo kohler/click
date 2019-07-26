@@ -135,11 +135,20 @@ static void fromhost_inet_setup(struct net_device *dev)
 }
 #endif
 
+/* include/uapi/linux/netdevice.h */
+/* interface name assignment types (sysfs name_assign_type attribute) */
+/* #define NET_NAME_UNKNOWN	0	 unknown origin (not exposed to userspace) */
+/* #define NET_NAME_ENUM	1	 enumerated by kernel */
+/* #define NET_NAME_PREDICTABLE	2	 predictably named by the kernel */
+/* #define NET_NAME_USER	3	 provided by user-space */
+/* #define NET_NAME_RENAMED	4	 renamed by user-space */
 net_device *
 FromHost::new_device(const char *name)
 {
     void (*setup)(struct net_device *) = (_macaddr ? ether_setup : fromhost_inet_setup);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 17, 0)
+    net_device *dev = alloc_netdev(0, name, NET_NAME_UNKNOWN, setup);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     net_device *dev = alloc_netdev(0, name, setup);
 #else
     int errcode;

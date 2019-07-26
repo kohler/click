@@ -139,7 +139,7 @@ class IPAddrRewriter : public IPRewriterBase { public:
     int configure(Vector<String> &conf, ErrorHandler *errh) CLICK_COLD;
     //void take_state(Element *, ErrorHandler *);
 
-    inline IPRewriterEntry *get_entry(int ip_p, const IPFlowID &flowid, int input);
+    IPRewriterEntry *get_entry(int ip_p, const IPFlowID &flowid, int input);
     IPRewriterEntry *add_flow(int ip_p, const IPFlowID &flowid,
 			      const IPFlowID &rewritten_flowid, int input);
     void destroy_flow(IPRewriterFlow *flow);
@@ -158,13 +158,7 @@ class IPAddrRewriter : public IPRewriterBase { public:
 };
 
 
-inline void
-IPAddrRewriter::destroy_flow(IPRewriterFlow *flow)
-{
-    unmap_flow(flow, _map);
-    static_cast<IPAddrFlow *>(flow)->~IPAddrFlow();
-    _allocator.deallocate(flow);
-}
+
 
 CLICK_ENDDECLS
 #endif

@@ -194,6 +194,14 @@ IPAddrRewriter::add_handlers()
     add_rewriter_handlers(true);
 }
 
+void
+IPAddrRewriter::destroy_flow(IPRewriterFlow *flow)
+{
+	unmap_flow(flow, _map);
+	static_cast<IPAddrFlow *>(flow)->~IPAddrFlow();
+	_allocator.deallocate(flow);
+}
+
 ELEMENT_REQUIRES(IPRewriterBase)
 EXPORT_ELEMENT(IPAddrRewriter)
 CLICK_ENDDECLS
