@@ -2,6 +2,13 @@
 #ifndef CLICK_CONFIG_USERLEVEL_H
 #define CLICK_CONFIG_USERLEVEL_H
 
+/* Define to use OML (OMF Measurement Library) */
+#undef CLICK_OML
+
+/* Define if you have Sigar header file */
+#undef HAVE_LIBSIGAR_SIGAR_H
+#undef HAVE_SIGAR_H
+
 /* Define if you have the __thread storage class specifier. */
 #undef HAVE___THREAD_STORAGE_CLASS
 

@@ -855,6 +855,7 @@ enable_dmalloc
 enable_valgrind
 enable_schedule_debugging
 enable_intel_cpu
+with_oml
 with_netmap
 with_proper
 with_expat
@@ -1559,6 +1560,7 @@ Optional Packages:
   --with-linux-map[=FILE] filename for Linux System.map [LINUXDIR/System.map]
   --with-freebsd[=SRC,INC] FreeBSD source code is in SRC [/usr/src/sys],
                           include directory is INC [/usr/include]
+  --with-oml              enable OML (OMF Measurement Library) [no]
   --with-netmap           enable netmap [no]
   --with-proper[=PREFIX]  use PlanetLab Proper library (optional)
   --with-expat[=PREFIX]   locate expat XML library (optional)
@@ -10711,6 +10713,49 @@ done
     fi
 
 
+
+# Check whether --with-oml was given.
+if test "${with_oml+set}" = set; then :
+  withval=$with_oml; :
+else
+  with_oml=no
+fi
+
+if test "$with_oml" = yes; then 
+
+  ac_fn_cxx_check_header_mongrel "$LINENO" "oml2/omlc.h" "ac_cv_header_oml2_omlc_h" "$ac_includes_default"
+  if test "x$ac_cv_header_oml2_omlc_h" = xyes; then :
+    cat >>confdefs.h <<_ACEOF
+#define CLICK_OML
+_ACEOF
+  LIBS="-loml2  $LIBS"
+  else
+    as_fn_error $? "
+=========================================
+
+Can't find OML header file 'oml2/omlc.h'.
+Try again without '--with-oml'.
+
+=========================================" "$LINENO" 5
+  fi
+fi
+
+# Check whether Sigar header file is available.
+ac_fn_cxx_check_header_mongrel "$LINENO" "libsigar/sigar.h" "ac_cv_header_libsigar_sigar_h" "$ac_includes_default"
+if test "x$ac_cv_header_libsigar_sigar_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSIGAR_SIGAR_H
+_ACEOF
+  LIBS="-lsigar  $LIBS"
+else
+  ac_fn_cxx_check_header_mongrel "$LINENO" "sigar.h" "ac_cv_header_sigar_h" "$ac_includes_default"
+  if test "x$ac_cv_header_sigar_h" = xyes; then :
+    cat >>confdefs.h <<_ACEOF
+#define HAVE_SIGAR_H
+_ACEOF
+  LIBS="-lsigar  $LIBS"
+  fi
+fi
 
 # Check whether --with-netmap was given.
 if test "${with_netmap+set}" = set; then :
