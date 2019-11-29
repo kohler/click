@@ -1,12 +1,12 @@
-#ifndef CLICK_SETTXRATE_HH
-#define CLICK_SETTXRATE_HH
+#ifndef CLICK_SETTXRATEHT_HH
+#define CLICK_SETTXRATEHT_HH
 #include <click/element.hh>
 #include <click/glue.hh>
 CLICK_DECLS
 
 /*
 =c
-SetTXRate([I<KEYWORDS>])
+SetTXRateHT([I<KEYWORDS>])
 
 =s Wifi
 
@@ -19,9 +19,8 @@ Sets the Wifi TXRate Annotation on a packet.
 Regular Arguments:
 =over 8
 
-=item RATE
-Unsigned integer. Rate value is multiplied by 2 (i.e. 2
-means 1 Mbps, 11 means 5.5 Mbps)
+=item MCS
+Unsigned integer. MCS index.
 
 =back 8
 
@@ -31,13 +30,13 @@ Same as RATE Argument
 =a AutoRateFallback, MadwifiRate, ProbeRate, ExtraEncap
 */
 
-class SetTXRate: public Element {
+class SetTXRateHT: public Element {
 public:
 
-	SetTXRate() CLICK_COLD;
-	~SetTXRate() CLICK_COLD;
+	SetTXRateHT() CLICK_COLD;
+	~SetTXRateHT() CLICK_COLD;
 
-	const char *class_name() const { return "SetTXRate"; }
+	const char *class_name() const { return "SetTXRateHT"; }
 	const char *port_count() const { return PORTS_1_1; }
 	const char *processing() const { return AGNOSTIC; }
 
@@ -53,10 +52,10 @@ public:
 
 private:
 
-	int _rate;
-	int _rate1;
-	int _rate2;
-	int _rate3;
+	int _mcs;
+	int _mcs1;
+	int _mcs2;
+	int _mcs3;
 
 	unsigned _max_tries;
 	unsigned _max_tries1;
@@ -65,6 +64,8 @@ private:
 
 	uint16_t _et;
 	unsigned _offset;
+	bool _sgi;
+	bool _bw_40;
 
 };
 

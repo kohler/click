@@ -1,5 +1,5 @@
 /*
- * settxrate.{cc,hh} -- sets wifi txrate annotation on a packet
+ * settxrateht.{cc,hh} -- sets wifi txrate annotation on a packet
  * John Bicket, Roberto Riggio
  *
  * Copyright (c) 2003 Massachusetts Institute of Technology
@@ -20,37 +20,40 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
-#include "settxrate.hh"
+#include "settxrateht.hh"
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <clicknet/wifi.h>
 CLICK_DECLS
 
-SetTXRate::SetTXRate() : _rate(-1), _rate1(-1), _rate2(-1), _rate3(-1),
+SetTXRateHT::SetTXRateHT() : _mcs(-1), _mcs1(-1), _mcs2(-1), _mcs3(-1),
                          _max_tries(0), _max_tries1(0), _max_tries2(0),
-                         _max_tries3(0), _et(0), _offset(0) {
+                         _max_tries3(0), _et(0), _offset(0), _sgi(false),
+                         _bw_40(false) {
 }
 
-SetTXRate::~SetTXRate() {
+SetTXRateHT::~SetTXRateHT() {
 }
 
-int SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh) {
+int SetTXRateHT::configure(Vector<String> &conf, ErrorHandler *errh) {
 	return Args(conf, this, errh)
-			.read_p("RATE", _rate)
+			.read_p("MCS", _mcs)
 			.read("TRIES", _max_tries)
-			.read("RATE1", _rate1)
+			.read("MCS1", _mcs1)
 			.read("TRIES1", _max_tries1)
-			.read("RATE2", _rate2)
+			.read("MCS2", _mcs2)
 			.read("TRIES2", _max_tries2)
-			.read("RATE3", _rate3)
+			.read("MCS3", _mcs3)
 			.read("TRIES3", _max_tries3)
 			.read("ETHTYPE", _et)
 			.read("OFFSET", _offset)
+			.read("SGI", _sgi)
+			.read("BW_40", _bw_40)
 			.complete();
 }
 
 Packet *
-SetTXRate::simple_action(Packet *p_in) {
+SetTXRateHT::simple_action(Packet *p_in) {
 
 	uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
 	click_ether *eh = (click_ether *) dst_ptr;
@@ -63,31 +66,39 @@ SetTXRate::simple_action(Packet *p_in) {
 
 	ceh->magic = WIFI_EXTRA_MAGIC;
 
-	ceh->rate = _rate ? _rate : 2;
+	ceh->rate = _mcs;
 	ceh->max_tries = _max_tries;
 
-	ceh->rate1 = _rate1;
+	ceh->rate1 = _mcs1;
 	ceh->max_tries1 = _max_tries1;
 
-	ceh->rate2 = _rate2;
+	ceh->rate2 = _mcs2;
 	ceh->max_tries2 = _max_tries2;
 
-	ceh->rate3 = _rate3;
+	ceh->rate3 = _mcs3;
 	ceh->max_tries3 = _max_tries3;
+
+	ceh->flags |= WIFI_EXTRA_MCS;
+
+	if (_sgi)
+		ceh->flags |= WIFI_EXTRA_MCS_SGI;
+
+	if (_bw_40)
+		ceh->flags |= WIFI_EXTRA_MCS_BW_40;
 
 	return p_in;
 
 }
 
 enum {
-	H_RATE, H_TRIES
+	H_MCS, H_TRIES
 };
 
-String SetTXRate::read_handler(Element *e, void *thunk) {
-	SetTXRate *foo = (SetTXRate *) e;
+String SetTXRateHT::read_handler(Element *e, void *thunk) {
+	SetTXRateHT *foo = (SetTXRateHT *) e;
 	switch ((uintptr_t) thunk) {
-	case H_RATE:
-		return String(foo->_rate) + "\n";
+	case H_MCS:
+		return String(foo->_mcs) + "\n";
 	case H_TRIES:
 		return String(foo->_max_tries) + "\n";
 	default:
@@ -95,16 +106,16 @@ String SetTXRate::read_handler(Element *e, void *thunk) {
 	}
 }
 
-int SetTXRate::write_handler(const String &arg, Element *e, void *vparam,
+int SetTXRateHT::write_handler(const String &arg, Element *e, void *vparam,
 		ErrorHandler *errh) {
-	SetTXRate *f = (SetTXRate *) e;
+	SetTXRateHT *f = (SetTXRateHT *) e;
 	String s = cp_uncomment(arg);
 	switch ((intptr_t) vparam) {
-	case H_RATE: {
+	case H_MCS: {
 		unsigned m;
 		if (!IntArg().parse(s, m))
 			return errh->error("rate parameter must be unsigned");
-		f->_rate = m;
+		f->_mcs = m;
 		break;
 	}
 	case H_TRIES: {
@@ -118,12 +129,12 @@ int SetTXRate::write_handler(const String &arg, Element *e, void *vparam,
 	return 0;
 }
 
-void SetTXRate::add_handlers() {
-	add_read_handler("rate", read_handler, H_RATE);
+void SetTXRateHT::add_handlers() {
+	add_read_handler("rate", read_handler, H_MCS);
 	add_read_handler("tries", read_handler, H_TRIES);
-	add_write_handler("rate", write_handler, H_RATE);
+	add_write_handler("rate", write_handler, H_MCS);
 	add_write_handler("tries", write_handler, H_TRIES);
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(SetTXRate)
+EXPORT_ELEMENT(SetTXRateHT)

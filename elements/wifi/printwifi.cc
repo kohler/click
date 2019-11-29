@@ -540,7 +540,7 @@ PrintWifi::simple_action(Packet *p)
   sa << " ] ";
 
   if (ceh->flags & WIFI_EXTRA_TX) {
-	  sa << " retries " << (int) ceh->retries;
+	  sa << " retries " << (int) ceh->max_tries;
   }
 
  done:

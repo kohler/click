@@ -192,7 +192,7 @@ MadwifiRate::process_feedback(Packet *p_in)
 
   if (success && (!_alt_rate || !used_alt_rate)) {
     nfo->_successes++;
-    nfo->_retries += ceh->retries;
+    nfo->_retries += ceh->max_tries;
   } else {
     nfo->_failures++;
     nfo->_retries += 4;

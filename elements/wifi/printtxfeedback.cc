@@ -75,8 +75,7 @@ PrintTXFeedback::simple_action(Packet *p)
   sa << " max_retries " << (int) ceh->max_tries;
   sa << " alt_rate " << (int) ceh->rate1;
   sa << " alt_retries " << (int) ceh->max_tries1;
-  sa << " retries " << (int) ceh->retries;
-  sa << " virt_col " << (int) ceh->virt_col;
+  sa << " retries " << (int) ceh->max_tries;
 
   click_chatter("%s\n", sa.c_str());
 
