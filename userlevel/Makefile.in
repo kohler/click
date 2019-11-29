@@ -70,7 +70,7 @@ GENERIC_OBJS = string.o straccum.o nameinfo.o \
 	element.o \
 	confparse.o args.o variableenv.o lexer.o elemfilter.o routervisitor.o \
 	routerthread.o router.o master.o timerset.o selectset.o handlercall.o notifier.o \
-	integers.o md5.o radiotap.o crc32.o in_cksum.o iptable.o \
+	integers.o md5.o crc32.o in_cksum.o iptable.o \
 	archive.o userutils.o driver.o \
 	$(EXTRA_DRIVER_OBJS)
 
