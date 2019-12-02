@@ -104,7 +104,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
 
   if (used_alt_rate || !success) {
     /* step down 1 or 2 rates */
-    int down = eh->retries / 2;
+    int down = eh->max_tries / 2;
     if (down > 0) {
       down--;
     }
@@ -137,7 +137,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
   }
   nfo->_wentup = false;
 
-  if (eh->retries == 0) {
+  if (eh->max_tries == 0) {
     nfo->_successes++;
   } else {
     nfo->_successes = 0;

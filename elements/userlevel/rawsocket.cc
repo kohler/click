@@ -21,6 +21,7 @@
  */
 
 #include <click/config.h>
+#include <sys/types.h>
 #include "rawsocket.hh"
 #include <click/nameinfo.hh>
 #include <click/error.hh>
@@ -42,6 +43,15 @@
 #endif
 
 #include "fakepcap.hh"
+
+#if FROMDEVICE_ALLOW_LINUX
+# include <sys/socket.h>
+# include <net/if.h>
+# include <features.h>
+# include <linux/if_packet.h>
+# include <net/ethernet.h>
+# include <linux/sockios.h>
+#endif
 
 CLICK_DECLS
 

@@ -66,7 +66,7 @@ AthdescDecap::simple_action(Packet *p)
 			eh->power = desc->xmit_power;
 			eh->rssi = desc->ack_sig_strength;
 			eh->rate = ratecode_to_dot11(desc->xmit_rate0);
-			eh->retries = desc->data_fail_count;
+			eh->max_tries = desc->data_fail_count;
 			if (desc->excessive_retries)
 				eh->flags |= WIFI_EXTRA_TX_FAIL;
 		}
