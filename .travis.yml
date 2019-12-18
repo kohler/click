@@ -33,16 +33,17 @@ script:
   - if [ $FRAMEWORK = "dpdk" ] ; then
       FRAMEWORK_FLAGS="--enable-user-multithread --enable-dpdk";
       export RTE_SDK=`pwd`/dpdk-$VERSION;
-      export RTE_TARGET=x86_64-native-linuxapp-gcc;
+      export RTE_TARGET=x86_64-default-linuxapp-gcc;
       if [ ! -e "$RTE_SDK/$RTE_TARGET/include/rte_version.h" -o ! -e "$RTE_SDK/$RTE_TARGET/build/lib/librte_eal/linuxapp/eal/librte_eal.a" ]; then
             wget http://fast.dpdk.org/rel/dpdk-$VERSION.tar.gz &&
             tar -zxf dpdk-$VERSION.tar.gz &&
             cd dpdk-$VERSION &&
-            sed -i "s/CONFIG_RTE_ENABLE_AVX=.*/CONFIG_RTE_ENABLE_AVX=n/g" config/common_base &&
-            sed -i "s/CONFIG_RTE_KNI_KMOD=.*/CONFIG_RTE_KNI_KMOD=n/g" config/common_linuxapp &&
-            sed -i "s/CONFIG_RTE_LIBRTE_KNI=.*/CONFIG_RTE_LIBRTE_KNI=n/g" config/common_linuxapp &&
-            sed -i "s/CONFIG_RTE_EAL_IGB_UIO=.*/CONFIG_RTE_EAL_IGB_UIO=n/g" config/common_linuxapp &&
+            sed -i "s/CONFIG_RTE_KNI_KMOD=.*/CONFIG_RTE_KNI_KMOD=n/g" config/common_linux* &&
+            sed -i "s/CONFIG_RTE_LIBRTE_KNI=.*/CONFIG_RTE_LIBRTE_KNI=n/g" config/common_linux* &&
+            sed -i "s/CONFIG_RTE_EAL_IGB_UIO=.*/CONFIG_RTE_EAL_IGB_UIO=n/g" config/common_linux* &&
             sed -i "s/CONFIG_RTE_LIBRTE_VIRTIO_PMD=.*/CONFIG_RTE_LIBRTE_VIRTIO_PMD=n/g" config/common_base ;
+            cp config/defconfig_x86_64-native-linuxapp-gcc config/defconfig_x86_64-default-linuxapp-gcc ;
+            sed -i "s/CONFIG_RTE_MACHINE=.*/CONFIG_RTE_MACHINE=default/g" config/defconfig_x86_64-default-linux*-gcc ;
             make config T=$RTE_TARGET &&
             make install T=$RTE_TARGET &&
             cd ..;
