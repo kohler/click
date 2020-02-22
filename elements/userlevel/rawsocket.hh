@@ -5,6 +5,11 @@
 #include <click/task.hh>
 #include <click/timer.hh>
 #include <click/notifier.hh>
+
+#ifdef __linux__
+# define RAWSOCKET_ALLOW_LINUX 1
+#endif
+
 CLICK_DECLS
 
 /*

@@ -35,6 +35,10 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
+#if RAWSOCKET_ALLOW_LINUX
+# include <linux/sockios.h>
+#endif
+
 #ifndef __sun
 #include <sys/ioctl.h>
 #else
