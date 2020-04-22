@@ -142,12 +142,22 @@ AC_ARG_ENABLE([dpdk],
 
 if test "x$enable_dpdk" = "xyes"; then
 
+    AC_MSG_CHECKING([for DPDK library])
+
     if test -z "$RTE_SDK_BIN"; then
         RTE_SDK_BIN=$RTE_SDK/$RTE_TARGET
     fi
 
+    if test ! -d "$RTE_SDK_BIN"; then
+        RTE_SDK_BIN=$RTE_SDK/build/
+    fi
+
     if test -z "$RTE_LIBNAME"; then
         RTE_LIBNAME=dpdk
+    fi
+
+    if test -z "$RTE_SRCDIR"; then
+        RTE_SRCDIR=$RTE_SDK
     fi
 
     if test "x$enable_user_multithread" != "xyes"; then
@@ -167,11 +177,24 @@ Define \$RTE_SDK and \$RTE_TARGET as per DPDK documentation.
 
 =========================================])
     fi
-    rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
-    rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
-    rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
-    rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
 
+    AC_MSG_RESULT([yes, found at $RTE_SDK_BIN])
+
+    if test -e "$RTE_SRCDIR/VERSION"; then
+     rte_ver_year=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($1)}'`
+     rte_ver_month=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($2)}'`
+     rte_ver_minor=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($3)}'`
+    else
+     if grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/rte_config.h" &> /dev/null ; then
+         verfile=rte_config
+     else
+         verfile=rte_version
+     fi
+     rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+     rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+     rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+     rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+    fi
     AC_SUBST(RTE_SDK)
     AC_SUBST(RTE_TARGET)
     AC_SUBST(RTE_SDK_BIN)
@@ -179,10 +202,11 @@ Define \$RTE_SDK and \$RTE_TARGET as per DPDK documentation.
     AC_SUBST(RTE_VER_MINOR, $rte_ver_minor)
     AC_SUBST(RTE_VER_YEAR, $rte_ver_year)
     AC_SUBST(RTE_VER_MONTH, $rte_ver_month)
-    AC_DEFINE([HAVE_DPDK])
-
-    AC_SUBST(USE_DPDK, yes)
     AC_SUBST(DPDK_INCLUDES, -I${RTE_SDK_BIN}/include/)
+
+
+    AC_DEFINE([HAVE_DPDK])
+    AC_SUBST(USE_DPDK, yes)
 fi
 
 

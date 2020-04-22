@@ -703,8 +703,8 @@ minios_dir
 xen_dir
 INCLUDE_KSYMS
 LINUXMODULE_FIXINCLUDES
-DPDK_INCLUDES
 USE_DPDK
+DPDK_INCLUDES
 RTE_VER_MONTH
 RTE_VER_YEAR
 RTE_VER_MINOR
@@ -6555,12 +6555,23 @@ fi
 
 if test "x$enable_dpdk" = "xyes"; then
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DPDK library" >&5
+$as_echo_n "checking for DPDK library... " >&6; }
+
     if test -z "$RTE_SDK_BIN"; then
         RTE_SDK_BIN=$RTE_SDK/$RTE_TARGET
     fi
 
+    if test ! -d "$RTE_SDK_BIN"; then
+        RTE_SDK_BIN=$RTE_SDK/build/
+    fi
+
     if test -z "$RTE_LIBNAME"; then
         RTE_LIBNAME=dpdk
+    fi
+
+    if test -z "$RTE_SRCDIR"; then
+        RTE_SRCDIR=$RTE_SDK
     fi
 
     if test "x$enable_user_multithread" != "xyes"; then
@@ -6580,11 +6591,25 @@ Define \$RTE_SDK and \$RTE_TARGET as per DPDK documentation.
 
 =========================================" "$LINENO" 5
     fi
-    rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
-    rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
-    rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
-    rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_SDK_BIN/include/rte_version.h" | head -n 1 | awk '{print $3}'`
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, found at $RTE_SDK_BIN" >&5
+$as_echo "yes, found at $RTE_SDK_BIN" >&6; }
+
+    if test -e "$RTE_SRCDIR/VERSION"; then
+     rte_ver_year=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($1)}'`
+     rte_ver_month=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($2)}'`
+     rte_ver_minor=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($3)}'`
+    else
+     if grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/rte_config.h" &> /dev/null ; then
+         verfile=rte_config
+     else
+         verfile=rte_version
+     fi
+     rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+     rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+     rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+     rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+    fi
 
 
 
@@ -6596,12 +6621,13 @@ Define \$RTE_SDK and \$RTE_TARGET as per DPDK documentation.
 
     RTE_VER_MONTH=$rte_ver_month
 
+    DPDK_INCLUDES=-I${RTE_SDK_BIN}/include/
+
+
+
     $as_echo "#define HAVE_DPDK 1" >>confdefs.h
 
-
     USE_DPDK=yes
-
-    DPDK_INCLUDES=-I${RTE_SDK_BIN}/include/
 
 fi
 
@@ -10781,7 +10807,6 @@ $as_echo "$ac_cv_working_net_netmap_h" >&6; }
 $as_echo "#define HAVE_NET_NETMAP_H 1" >>confdefs.h
 
     fi
-
 
 
     if test "$HAVE_PCAP" != yes -a "$HAVE_NETMAP" != yes -a "$ac_cv_under_linux" != yes; then

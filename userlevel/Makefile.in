@@ -138,7 +138,7 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 $(DRIVER): Makefile libclick.a $(OBJS)
-	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) libclick.a $(LIBS) $(DPDK_LIBS),LINK)
+	$(call cxxlink,$(DL_LDFLAGS) $(OBJS) libclick.a $(LIBS),LINK)
 	@-mkdir -p ../bin; rm -f ../bin/$@; ln -s ../userlevel/$@ ../bin/$@
 
 libclick.a: Makefile $(LIBOBJS)

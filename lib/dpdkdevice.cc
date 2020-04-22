@@ -260,8 +260,8 @@ int DPDKDevice::initialize_device(ErrorHandler *errh)
         rte_eth_promiscuous_enable(port_id);
 
     if (info.init_mac != EtherAddress()) {
-        struct ether_addr addr;
-        memcpy(&addr,info.init_mac.data(),sizeof(struct ether_addr));
+        struct rte_ether_addr addr;
+        memcpy(&addr,info.init_mac.data(),sizeof(struct rte_ether_addr));
         if (rte_eth_dev_default_mac_addr_set(port_id, &addr) != 0) {
             return errh->error("Could not set default MAC address");
         }
@@ -282,7 +282,7 @@ void DPDKDevice::set_init_mtu(uint16_t mtu) {
 
 EtherAddress DPDKDevice::get_mac() {
     assert(_is_initialized);
-    struct ether_addr addr;
+    struct rte_ether_addr addr;
     rte_eth_macaddr_get(port_id,&addr);
     return EtherAddress((unsigned char*)&addr);
 }
