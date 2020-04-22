@@ -227,7 +227,7 @@ int FromDPDKDevice::write_handler(
 
             ret = rte_eth_dev_mac_addr_add(
                 fd->_dev->port_id,
-                reinterpret_cast<ether_addr*>(mac.data()), pool
+                reinterpret_cast<rte_ether_addr*>(mac.data()), pool
             );
             if (ret != 0) {
                 return errh->error("Could not add mac address !");
