@@ -472,9 +472,15 @@ FromDevice::emit_packet(WritablePacket *p, int extra_len, const Timestamp &ts)
     else
 	checked_output_push(1, p);
 }
+
+void
+FromDevice::emit_packet_arg(WritablePacket *p, int extra_len, const Timestamp &ts, void* arg) {
+	FromDevice* fd = static_cast<FromDevice*>(arg);
+	fd->emit_packet(p, extra_len, ts);
+}
 #endif
 
-#if FROMDEVICE_ALLOW_PCAP || FROMDEVICE_ALLOW_NETMAP
+#if FROMDEVICE_ALLOW_PCAP
 CLICK_ENDDECLS
 extern "C" {
 void
@@ -497,7 +503,6 @@ FromDevice_get_packet(u_char* clientdata,
 CLICK_DECLS
 #endif
 
-
 void
 FromDevice::selected(int, int)
 {
@@ -507,8 +512,7 @@ FromDevice::selected(int, int)
 #if FROMDEVICE_ALLOW_NETMAP
     if (_method == method_netmap) {
 	// Read and push() at most one burst of packets.
-	int r = _netmap.dispatch(_burst,
-		reinterpret_cast<nm_cb_t>(FromDevice_get_packet), (u_char *) this);
+	int r = _netmap.receive(_burst, _headroom, emit_packet_arg, this);
 	if (r > 0) {
 	    _count += r;
 	    _task.reschedule();
@@ -570,8 +574,7 @@ FromDevice::run_task(Task *)
 # if FROMDEVICE_ALLOW_NETMAP
     if (_method == method_netmap) {
 	// Read and push() at most one burst of packets.
-	r = _netmap.dispatch(_burst,
-		reinterpret_cast<nm_cb_t>(FromDevice_get_packet), (u_char *) this);
+	r = _netmap.receive(_burst,_headroom,emit_packet_arg, this);
 	if (r < 0 && ++_pcap_complaints < 5)
 	    ErrorHandler::default_handler()->error("%p{element}: %s",
 			this, "nm_dispatch failed");
@@ -652,5 +655,5 @@ FromDevice::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel FakePcap KernelFilter NetmapInfo)
+ELEMENT_REQUIRES(userlevel FakePcap KernelFilter)
 EXPORT_ELEMENT(FromDevice)

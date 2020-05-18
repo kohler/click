@@ -48,6 +48,8 @@
 # include <click/lexer.hh>
 #endif
 
+#include <click/netmapdevice.hh>
+
 #if CLICK_USERLEVEL || CLICK_MINIOS
 # include <click/master.hh>
 # include <click/notifier.hh>
@@ -468,6 +470,9 @@ click_static_cleanup()
 
     Router::static_cleanup();
     Packet::static_cleanup();
+#if HAVE_NETMAP
+    NetmapDevice::static_cleanup();
+#endif
     ErrorHandler::static_cleanup();
     cp_va_static_cleanup();
     NameInfo::static_cleanup();

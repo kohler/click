@@ -467,9 +467,13 @@ AC_DEFUN([CLICK_CHECK_NETMAP], [
 
     CPPFLAGS="$saveflags"
     if test "$HAVE_NETMAP" = yes -a "$use_netmap" != no; then
-        AC_DEFINE([HAVE_NET_NETMAP_H], [1], [Define if you have the <net/netmap.h> header file.])
+        AC_DEFINE([HAVE_NETMAP], [1], [Define if Netmap support is enabled.])
+        EXTRA_DRIVER_OBJS="netmapdevice.o $EXTRA_DRIVER_OBJS"
+    else
+        HAVE_NETMAP=no
     fi
     AC_SUBST(NETMAP_INCLUDES)
+    AC_SUBST(EXTRA_DRIVER_OBJS)
 ])
 
 

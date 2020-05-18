@@ -113,9 +113,6 @@
 /* Define if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
 
-/* Define if you have the <net/netmap.h> header file. */
-#undef HAVE_NET_NETMAP_H
-
 /* Define if you have the <netpacket/packet.h> header file. */
 #undef HAVE_NETPACKET_PACKET_H
 
@@ -213,6 +210,9 @@
 
 /* Define if a Click user-level driver might run multiple threads. */
 #undef HAVE_USER_MULTITHREAD
+
+/* Define if Netmap support is enabled. */
+#undef HAVE_NETMAP
 
 /* Define if a Click user-level driver uses Intel DPDK. */
 #undef HAVE_DPDK
