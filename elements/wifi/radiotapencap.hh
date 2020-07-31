@@ -29,17 +29,13 @@ class RadiotapEncap : public Element { public:
   const char *port_count() const	{ return PORTS_1_1; }
   const char *processing() const	{ return AGNOSTIC; }
 
-  int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
   bool can_live_reconfigure() const	{ return true; }
 
   Packet *simple_action(Packet *);
-
-
-  void add_handlers() CLICK_COLD;
-
+  Packet *encap(Packet *);
+  Packet *encap_ht(Packet *);
 
   bool _debug;
- private:
 
 };
 

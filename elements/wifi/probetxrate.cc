@@ -146,7 +146,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   EtherAddress dst = EtherAddress(dst_ptr);
   struct click_wifi_extra *ceh = WIFI_EXTRA_ANNO(p_in);
   bool success = !(ceh->flags & WIFI_EXTRA_TX_FAIL);
-  int retries = ceh->retries;
+  int retries = ceh->max_tries;
 
   Timestamp now = Timestamp::now();
 

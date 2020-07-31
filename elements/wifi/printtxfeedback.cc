@@ -72,14 +72,15 @@ PrintTXFeedback::simple_action(Packet *p)
   sa << " " << dst;
   sa << " flags " << (int) ceh->flags;
   sa << " rate " << (int) ceh->rate;
-  sa << " max_retries " << (int) ceh->max_tries;
-  sa << " alt_rate " << (int) ceh->rate1;
-  sa << " alt_retries " << (int) ceh->max_tries1;
-  sa << " retries " << (int) ceh->retries;
-  sa << " virt_col " << (int) ceh->virt_col;
+  sa << " tries " << (int) ceh->max_tries;
+  sa << " rate1 " << (int) ceh->rate1;
+  sa << " tries1 " << (int) ceh->max_tries1;
+  sa << " rate2 " << (int) ceh->rate2;
+  sa << " tries2 " << (int) ceh->max_tries2;
+  sa << " rate3 " << (int) ceh->rate3;
+  sa << " tries3 " << (int) ceh->max_tries3;
 
   click_chatter("%s\n", sa.c_str());
-
 
   return p;
 }

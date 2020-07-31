@@ -10,48 +10,48 @@
 #ifndef _CLICKNET_WIFI_H_
 #define _CLICKNET_WIFI_H_
 
-
 #define WIFI_EXTRA_MAGIC  0x7492001
 
 enum {
-  WIFI_EXTRA_TX			= (1<<0), /* packet transmission */
-  WIFI_EXTRA_TX_FAIL		= (1<<1), /* transmission failed */
+  WIFI_EXTRA_TX			        	= (1<<0), /* packet transmission */
+  WIFI_EXTRA_TX_FAIL				= (1<<1), /* transmission failed */
   WIFI_EXTRA_TX_USED_ALT_RATE	= (1<<2), /* used alternate bitrate */
-  WIFI_EXTRA_RX_ERR		= (1<<3), /* failed crc check */
-  WIFI_EXTRA_RX_MORE		= (1<<4), /* first part of a fragmented skb */
-  WIFI_EXTRA_NO_SEQ		= (1<<5),
-  WIFI_EXTRA_NO_TXF		= (1<<6),
-  WIFI_EXTRA_DO_RTS_CTS		= (1<<7),
-  WIFI_EXTRA_DO_CTS		= (1<<8),
-  WIFI_EXTRA_TX_NOACK		= (1<<9)
+  WIFI_EXTRA_RX_ERR		        	= (1<<3), /* failed crc check */
+  WIFI_EXTRA_RX_MORE		   	 	= (1<<4), /* first part of a fragmented skb */
+  WIFI_EXTRA_NO_SEQ		        	= (1<<5),
+  WIFI_EXTRA_NO_TXF	 	        	= (1<<6),
+  WIFI_EXTRA_DO_RTS_CTS			= (1<<7),
+  WIFI_EXTRA_DO_CTS				= (1<<8),
+  WIFI_EXTRA_MCS					= (1<<9),
+  WIFI_EXTRA_MCS_SGI				= (1<<10),
+  WIFI_EXTRA_MCS_BW_40			= (1<<11),
+  WIFI_EXTRA_TX_NOACK			= (1<<12)
 };
-
-
 
 struct click_wifi_extra {
   uint32_t magic;
-  uint32_t flags;
+
+  uint64_t tsft;
+
+  uint16_t flags;
+  uint16_t channel;
 
   uint8_t rssi;
   uint8_t silence;
   uint8_t power;
   uint8_t pad;
 
-  uint8_t rate;			/* bitrate in Mbps*2 */
-  uint8_t rate1;		/* bitrate in Mbps*2 */
-  uint8_t rate2;		/* bitrate in Mbps*2 */
-  uint8_t rate3;		/* bitrate in Mbps*2 */
+  int8_t rate;		/* bitrate in Mbps*2 or MCS index */
+  int8_t rate1;		/* bitrate in Mbps*2 or MCS index */
+  int8_t rate2;		/* bitrate in Mbps*2 or MCS index */
+  int8_t rate3;		/* bitrate in Mbps*2 or MCS index */
 
   uint8_t max_tries;
   uint8_t max_tries1;
   uint8_t max_tries2;
   uint8_t max_tries3;
 
-  uint8_t virt_col;
-  uint8_t retries;
-  uint16_t len;
 } CLICK_SIZE_PACKED_ATTRIBUTE;
-
 
 /*
  * generic definitions for IEEE 802.11 frames
@@ -67,7 +67,22 @@ struct click_wifi {
 	uint16_t	i_seq;
 } CLICK_SIZE_PACKED_ATTRIBUTE;
 
-#define	WIFI_FC0_VERSION_MASK		0x03
+struct click_qos_control {
+	uint16_t	qos_control;
+} CLICK_SIZE_PACKED_ATTRIBUTE;
+
+#define WIFI_QOS_CONTROL_QOS_TID_MASK               0x000F
+#define WIFI_QOS_CONTROL_QOS_TID_SHIFT              0
+#define WIFI_QOS_CONTROL_QOS_EOSP_MASK              0x0010
+#define WIFI_QOS_CONTROL_QOS_EOSP_SHIFT             4
+#define WIFI_QOS_CONTROL_ACK_POLICY_MASK            0x0060
+#define WIFI_QOS_CONTROL_ACK_POLICY_SHIFT           5
+#define WIFI_QOS_CONTROL_QOS_AMSDU_PRESENT_MASK     0x0080
+#define WIFI_QOS_CONTROL_QOS_AMSDU_PRESENT_SHIFT    7
+#define WIFI_QOS_CONTROL_QOS_STUFF_MASK             0xFF00
+#define WIFI_QOS_CONTROL_QOS_STUFF_SHIFT            8
+
+#define	WIFI_FC0_VERSION_MASK	0x03
 #define	WIFI_FC0_VERSION_0		0x00
 #define	WIFI_FC0_TYPE_MASK		0x0c
 #define	WIFI_FC0_TYPE_MGT		0x00
@@ -87,6 +102,7 @@ struct click_wifi {
 #define	WIFI_FC0_SUBTYPE_DISASSOC	0xa0
 #define	WIFI_FC0_SUBTYPE_AUTH		0xb0
 #define	WIFI_FC0_SUBTYPE_DEAUTH		0xc0
+#define	WIFI_FC0_SUBTYPE_ACTION		0xd0
 /* for TYPE_CTL */
 #define	WIFI_FC0_SUBTYPE_PS_POLL	0xa0
 #define	WIFI_FC0_SUBTYPE_RTS		0xb0
@@ -105,7 +121,6 @@ struct click_wifi {
 #define	WIFI_FC0_SUBTYPE_CF_ACK_CF_ACK	0x70
 #define WIFI_FC0_SUBTYPE_QOS               0x80
 #define WIFI_FC0_SUBTYPE_QOS_NULL          0xc0
-
 
 #define	WIFI_FC1_DIR_MASK		0x03
 #define	WIFI_FC1_DIR_NODS		0x00	/* STA->STA */
@@ -146,15 +161,12 @@ typedef uint8_t *	wifi_mgt_beacon_t;
 #define	WIFI_CAPINFO_CF_POLLREQ		0x08
 #define	WIFI_CAPINFO_PRIVACY		0x10
 
-
-
 #define WIFI_MAX_RETRIES 11
 
 #define WIFI_QOS_HAS_SEQ(wh) \
         (((wh)->i_fc[0] & \
           (WIFI_FC0_TYPE_MASK | WIFI_FC0_SUBTYPE_QOS)) == \
           (WIFI_FC0_TYPE_DATA | WIFI_FC0_SUBTYPE_QOS))
-
 
 /*
  * Management information elements
@@ -194,20 +206,168 @@ struct wifi_information {
 	} challenge;
 };
 
+/*
+ * HT Capabilities Element
+ */
+
+#define WIFI_HT_CAPS_TYPE 45
+#define WIFI_HT_CAPS_SIZE 26
+
+#define	WIFI_HT_CI_LDPC 				0x01
+#define	WIFI_HT_CI_CHANNEL_WIDTH_SET 	0x02
+
+#define	WIFI_HT_CI_SM_PS_MASK		0x0C
+#define	WIFI_HT_CI_SM_PS_SHIFT		2
+#define	WIFI_HT_CI_SM_PS_STATIC		0x00
+#define	WIFI_HT_CI_SM_PS_DYNAMIC	0x01
+#define	WIFI_HT_CI_SM_PS_DISABLED	0x03
+
+#define	WIFI_HT_CI_HT_GF 			0x10
+#define	WIFI_HT_CI_SGI_20 			0x20
+#define	WIFI_HT_CI_SGI_40			0x40
+
+#define	WIFI_HT_CI_TX_STBC			0x80
+
+#define	WIFI_HT_CI_RX_STBC_MASK		0x300
+#define	WIFI_HT_CI_RX_STBC_SHIFT	8
+#define	WIFI_HT_CI_RX_STBC_NO		0x00
+#define	WIFI_HT_CI_RX_STBC_1SS		0x01
+#define	WIFI_HT_CI_RX_STBC_2SS		0x02
+#define	WIFI_HT_CI_RX_STBC_3SS		0x03
+
+#define	WIFI_HT_CI_HT_DBACK			0x400
+#define	WIFI_HT_CI_HT_MAX_AMSDU		0x800
+#define	WIFI_HT_CI_HT_DSSS_CCK		0x1000
+#define	WIFI_HT_CI_HT_PSMP			0x2000
+#define	WIFI_HT_CI_HT_INTOLLERANT	0x4000
+#define	WIFI_HT_CI_HT_LSIG_TXOP		0x8000
+
+#define	WIFI_HT_CI_AMDU_PARAMS_MAX_AMPDU_LENGTH_MASK	0x03
+#define	WIFI_HT_CI_AMDU_PARAMS_MAX_AMPDU_LENGTH_SHIFT	0
+
+#define	WIFI_HT_CI_AMDU_PARAMS_MPDU_DENSITY_MASK		0x1C
+#define	WIFI_HT_CI_AMDU_PARAMS_MPDU_DENSITY_SHIFT		2
+
+#define	WIFI_HT_CI_SM12_TX_MCS_SET_DEFINED 			0x1
+#define	WIFI_HT_CI_SM12_TX_RX_MCS_SET_NOT_EQUAL		0x2
+#define	WIFI_HT_CI_SM12_TX_MAX_SS_MASK				0x10
+#define	WIFI_HT_CI_SM12_TX_MAX_SS_SHIFT				2
+#define	WIFI_HT_CI_SM12_TX_UEQM 					0x016
+
+struct click_wifi_ht_caps {
+	uint8_t		type;
+	uint8_t		len;
+	uint16_t	ht_caps_info;
+	uint8_t		ampdu_params;
+	uint8_t		rx_supported_mcs[16];
+	uint16_t	ht_extended_caps;
+	uint32_t	transmit_beam_forming;
+	uint8_t		antenna_selection;
+} CLICK_SIZE_PACKED_ATTRIBUTE;
+
+/*
+ * HT Info Element
+ */
+
+#define WIFI_HT_INFO_TYPE 61
+#define WIFI_HT_INFO_SIZE 22
+
+struct click_wifi_ht_info {
+	uint8_t		type;
+	uint8_t		len;
+	uint8_t		primary_channel;
+	uint8_t		ht_info_1_3;
+	uint16_t	ht_info_2_3;
+	uint16_t	ht_info_3_3;
+	uint8_t		rx_supported_mcs[16];
+} CLICK_SIZE_PACKED_ATTRIBUTE;
+
+
+/*
+ * WMM/WME Information Element
+ */
+
+/* WMM/WME Elements */
+#define WIFI_WME_LEN				24
+#define WIFI_WME_OUI				"\x00\x50\xf2"
+#define WIFI_WME_OUI_LEN			3
+#define WIFI_WME_TYPE				0x02
+#define WIFI_WME_SUBTYPE			1
+#define WIFI_WME_VERSION			1
+
+/* EDCA categories */
+#define AC_BE			0
+#define AC_BK			1
+#define AC_VI			2
+#define AC_VO			3
+#define AC_COUNT		4
+
+/* EDCA Values */
+#define WIFI_WME_AC_BE_ACI      	0x03
+#define WIFI_WME_AC_BE_ECW  		0xA4
+#define WIFI_WME_AC_BE_TXOP      	0x0000
+
+#define WIFI_WME_AC_BK_ACI      	0x27
+#define WIFI_WME_AC_BK_ECW       	0xA4
+#define WIFI_WME_AC_BK_TXOP        	0x0000
+
+#define WIFI_WME_AC_VI_ACI         	0x42
+#define WIFI_WME_AC_VI_ECW         	0x43
+#define WIFI_WME_AC_VI_TXOP       	0x005E
+
+#define WIFI_WME_AC_VO_ACI        	0x62
+#define WIFI_WME_AC_VO_ECW        	0x32
+#define WIFI_WME_AC_VO_TXOP       	0x002F
+
+/* WME QoS Info */
+#define WIFI_WME_APSD_MASK         	0x80
+#define WIFI_WME_APSD_SHIFT        	7
+
+struct edca_ac_param {
+	uint8_t   		aci;
+	uint8_t   		ecw;
+	uint16_t  		txop;
+} CLICK_SIZE_PACKED_ATTRIBUTE;
+
+/* WMM/WME Parameter Element */
+struct click_wifi_wmm {
+	uint8_t			tag_type;
+	uint8_t			len;
+	char			oui[WIFI_WME_OUI_LEN];
+	uint8_t 		type;
+	uint8_t 		subtype;
+	uint8_t 		version;
+	uint8_t 		qosinfo;
+	uint8_t 		reserved;
+	edca_ac_param 	acparam[AC_COUNT];
+} CLICK_SIZE_PACKED_ATTRIBUTE;
+
+/*
+ * AMSDU subframe header
+ */
+struct click_wifi_amsdu_subframe_header {
+	uint8_t     da[6];      /* 0-5    Ethernet destination address */
+	uint8_t     sa[6];      /* 6-11   Ethernet source address */
+	uint16_t    len;        /* A-MSDU Length without including header and padding */
+} CLICK_SIZE_PACKED_ATTRIBUTE;
+
 #define WIFI_RATES_MAXSIZE	15
 #define WIFI_NWID_MAXSIZE	32
 
 enum {
-  WIFI_ELEMID_SSID		= 0,
-  WIFI_ELEMID_RATES		= 1,
+  WIFI_ELEMID_SSID			= 0,
+  WIFI_ELEMID_RATES			= 1,
   WIFI_ELEMID_FHPARMS		= 2,
   WIFI_ELEMID_DSPARMS		= 3,
   WIFI_ELEMID_CFPARMS		= 4,
-  WIFI_ELEMID_TIM		= 5,
+  WIFI_ELEMID_TIM			= 5,
   WIFI_ELEMID_IBSSPARMS		= 6,
   WIFI_ELEMID_CHALLENGE		= 16,
-  WIFI_ELEMID_ERP		= 42,
+  WIFI_ELEMID_CSA	        = 37,
+  WIFI_ELEMID_ERP			= 42,
+  WIFI_ELEMID_HTCAPS		= 45,
   WIFI_ELEMID_XRATES		= 50,
+  WIFI_ELEMID_HTINFO		= 61,
   WIFI_ELEMID_VENDOR		= 221
 };
 /*
@@ -274,7 +434,6 @@ typedef uint8_t *	wifi_mgt_auth_t;
 #define	WIFI_STATUS_RATES		23
 #define WIFI_STATUS_SHORTSLOT_REQUIRED  25
 
-
 #define	WIFI_WEP_KEYLEN			5	/* 40bit */
 #define	WIFI_WEP_IVLEN			3	/* 24bit */
 #define	WIFI_WEP_KIDLEN			1	/* 1 octet */
@@ -282,7 +441,6 @@ typedef uint8_t *	wifi_mgt_auth_t;
 #define	WIFI_WEP_NKID			4	/* number of key ids */
 
 #define WIFI_WEP_HEADERSIZE (WIFI_WEP_IVLEN + WIFI_WEP_KIDLEN)
-
 
 #define WIFI_WEP_NOSUP	-1
 #define WIFI_WEP_OFF	0
@@ -310,7 +468,6 @@ typedef uint8_t *	wifi_mgt_auth_t;
 #define WIFI_SEQ_SEQ_MASK                  0xfff0
 #define WIFI_SEQ_SEQ_SHIFT                 4
 
-
 /*
  * 802.11 protocol crypto-related definitions.
  */
@@ -324,11 +481,6 @@ typedef uint8_t *	wifi_mgt_auth_t;
 #ifndef WIFI_MIN
 #define WIFI_MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
-
-
-
-/* ARPHRD_IEEE80211_PRISM uses a bloated version of Prism2 RX frame header
- * (from linux-wlan-ng) */
 
 /*
  * For packet capture, define the same physical layer packet header
@@ -354,7 +506,6 @@ enum {
         P80211ENUM_truth_false                  = 0x00
 };
 
-
 typedef struct {
   uint32_t did;
   uint16_t status;
@@ -379,27 +530,34 @@ typedef struct {
   p80211item_uint32_t frmlen;
 } wlan_ng_prism2_header;
 
-
 #define LWNG_CAP_DID_BASE   (4 | (1 << 6)) /* section 4, group 1 */
 #define LWNG_CAPHDR_VERSION 0x80211001
 
 #define WIFI_SLOT_B 20
 #define WIFI_DIFS_B 50
 #define WIFI_SIFS_B 10
-#define WIFI_ACK_B 304
+#define WIFI_ACK_B 304 // 192 + (14 * 8) / 1
 #define WIFI_PLCP_HEADER_LONG_B 192
-#define WIFI_PLCP_HEADER_SHORT_B 192
+#define WIFI_PLCP_HEADER_SHORT_B 96
 
 #define WIFI_SLOT_A 9
-#define WIFI_DIFS_A 28
-#define WIFI_SIFS_A 9
-#define WIFI_ACK_A 30
-#define WIFI_PLCP_HEADER_A 20
+#define WIFI_DIFS_A 34
+#define WIFI_SIFS_A 16
+#define WIFI_ACK_A 44 // 25 + (14 * 8) / 6
+#define WIFI_PLCP_HEADER_A 25
 
+#define WIFI_SLOT_N 9
+#define WIFI_DIFS_N 28
+#define WIFI_SIFS_N 10
+#define WIFI_ACK_N 50 // 33 + (14 * 8) / 6.5
+#define WIFI_PLCP_HEADER_N 33
 
 #define is_b_rate(b) ((b == 2) || (b == 4) || (b == 11) || (b == 22))
 
-#define WIFI_CW_MIN 31
+#define WIFI_CW_MIN_B 31
+#define WIFI_CW_MAX_B 1023
+
+#define WIFI_CW_MIN 15
 #define WIFI_CW_MAX 1023
 
 // 6-byte LLC header (last byte is terminating NUL)

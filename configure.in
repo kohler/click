@@ -814,6 +814,9 @@ if test "x$enable_ip6" = xyes; then
     EXTRA_DRIVER_OBJS="ip6address.o ip6flowid.o ip6table.o $EXTRA_DRIVER_OBJS"
     EXTRA_TOOL_OBJS="ip6address.o $EXTRA_TOOL_OBJS"
 fi
+if test "x$enable_wifi" = xyes; then
+    EXTRA_DRIVER_OBJS="radiotap.o $EXTRA_DRIVER_OBJS"
+fi
 AC_SUBST(EXTRA_DRIVER_OBJS)
 AC_SUBST(EXTRA_TOOL_OBJS)
 

@@ -327,19 +327,26 @@ PrintWifi::simple_action(Packet *p)
   len = sprintf(sa.reserve(9), "%4d | ", p->length());
   sa.adjust_length(len);
 
-  if (ceh->rate == 11) {
-    sa << " 5.5";
+  if (ceh->flags & WIFI_EXTRA_MCS) {
+	    len = sprintf(sa.reserve(2), "%2d", ceh->rate);
+	    sa.adjust_length(len);
+	    sa << "HT ";
   } else {
-    len = sprintf(sa.reserve(2), "%2d", ceh->rate/2);
-    sa.adjust_length(len);
+	  if (ceh->rate == 11) {
+	    sa << " 5.5";
+	  } else {
+	    len = sprintf(sa.reserve(2), "%2d", ceh->rate/2);
+	    sa.adjust_length(len);
+	  }
+	  sa << "Mb ";
   }
-  sa << "Mb ";
 
-  len = sprintf(sa.reserve(9), "+%2d/", ceh->rssi);
+  int8_t rssi;
+  memcpy(&rssi, &ceh->rssi, 1);
+
+  len = sprintf(sa.reserve(9), "%2ddB ", rssi);
   sa.adjust_length(len);
 
-  len = sprintf(sa.reserve(9), "%2d | ", ceh->silence);
-  sa.adjust_length(len);
 
 
 
@@ -540,7 +547,7 @@ PrintWifi::simple_action(Packet *p)
   sa << " ] ";
 
   if (ceh->flags & WIFI_EXTRA_TX) {
-	  sa << " retries " << (int) ceh->retries;
+	  sa << " tries " << (int) ceh->max_tries;
   }
 
  done:
