@@ -1,6 +1,7 @@
 #! /usr/bin/perl -w
 use Symbol 'qualify_to_ref';
 use IO::Handle;
+use File::Basename;
 use Errno;
 use POSIX ":sys_wait_h";
 use MIME::Base64;
@@ -13,6 +14,7 @@ require 5.006;
 $running_pid = 0;
 %require_error_commands = ();
 $quiet_ebadf = 0;
+$bin_name = basename $0;
 
 ## utilities
 
@@ -37,7 +39,7 @@ sub min (@) {
 }
 
 
-## testie ipc
+## clicktest ipc
 
 sub tipc_write ($$;$$) {
     my($fh, $command, $arg, $noflush) = @_;
@@ -54,7 +56,7 @@ sub tipc_error () {
     } elsif ($!{EBADF} && $::quiet_ebadf) {
 	exit(0);
     } else {
-	die "testie: ipc error: $!";
+	die "$bin_name: ipc error: $!";
     }
 }
 
@@ -80,13 +82,13 @@ sub tipc_read ($$) {
 }
 
 
-## testie error handler object
+## clicktest error handler object
 
-package TestieErrorHandler;
+package ClickTestErrorHandler;
 
 sub new (;$) {
     my($print_context) = @_;
-    bless ["", $print_context], TestieErrorHandler;
+    bless ["", $print_context], ClickTestErrorHandler;
 }
 
 sub message ($@) {
@@ -116,13 +118,13 @@ sub complete ($$) {
 }
 
 
-## testie error handler object
+## clicktest error handler object
 
-package TestieChildErrorHandler;
+package ClickTestChildErrorHandler;
 
 sub new ($) {
     my($fh) = @_;
-    bless ["", "", $fh], TestieChildErrorHandler;
+    bless ["", "", $fh], ClickTestChildErrorHandler;
 }
 
 sub message ($@) {
@@ -170,15 +172,15 @@ sub complete ($$) {
 }
 
 
-## testie error counter object
+## clicktest error counter object
 
-package TestieCounter;
+package ClickTestCounter;
 
 my @counters = ("errors", "require_errors", "test_attempts", "test_skips",
 		"test_failures", "bad_files");
 
 sub new () {
-    my($tctr) = bless { "require_error_commands" => [] }, TestieCounter;
+    my($tctr) = bless { "require_error_commands" => [] }, ClickTestCounter;
     foreach my $x (@counters) {
 	$tctr->{$x} = 0;
     }
@@ -195,11 +197,11 @@ sub add ($$) {
 }
 
 
-## main testie test object
+## main clicktest test object
 
-package Testie;
+package ClickTest;
 
-## read testie file
+## read clicktest file
 
 my %_special_filerefs = ('stdin' => 1, 'stdout' => 2, 'stderr' => 2);
 %_variables = ();
@@ -639,7 +641,7 @@ sub read (*$;$) {
     $fh = ::qualify_to_ref($fh, caller);
     my($t, $tt);
 
-    $tt = bless { "err" => 0, "_data" => [[$fn, 0]], "_eh" => $teh }, Testie;
+    $tt = bless { "err" => 0, "_data" => [[$fn, 0]], "_eh" => $teh }, ClickTest;
     push @{$tt->{"_data"}}, $t while defined($t = <$fh>);
 
     $tt->parse();
@@ -690,16 +692,16 @@ sub script_text ($&$) {
     my($t) = '';
     if (!$::expand_mode) {
 	$t .= <<'EOD;';
-testie_failed () {
+clicktest_failed () {
     exitval=$?
-    test $exitval = 0 || (echo; echo testie_failure:$exitval) >&2
+    test $exitval = 0 || (echo; echo clicktest_failure:$exitval) >&2
     exit $exitval
 }
-testie_subtest () {
-    echo testie_subtest "$@"
-    echo testie_subtest "$@" >&2
+clicktest_subtest () {
+    echo clicktest_subtest "$@"
+    echo clicktest_subtest "$@" >&2
 }
-trap testie_failed EXIT
+trap clicktest_failed EXIT
 EOD;
     }
 
@@ -708,7 +710,7 @@ EOD;
     foreach my $i (0..$#{$tt->{$script_type}}) {
 	my($ln, $text) = ($linenoarr->[$i], $scriptarr->[$i]);
         if (!$::expand_mode && !$last_unfinished) {
-            $t .= "echo >&2; echo testie_lineno:$ln >&2\n";
+            $t .= "echo >&2; echo clicktest_lineno:$ln >&2\n";
         }
 	my(@c, @d);
 	_shell_split(@c, "", @d, $text, 0);
@@ -735,12 +737,12 @@ sub output_error ($$$$) {
 
     my($errortext, $subtest, $t, $lineno, $failure) = ('', '');
     while ($t = <ERR>) {
-	if ($t =~ /^testie_lineno:(.*)$/) {
+	if ($t =~ /^clicktest_lineno:(.*)$/) {
 	    $lineno = $1;
 	    $errortext = '';
-	} elsif ($t =~ /^testie_failure:(.*)$/) {
+	} elsif ($t =~ /^clicktest_failure:(.*)$/) {
 	    $failure = $1;
-        } elsif ($t =~ /^testie_subtest (.*)$/) {
+        } elsif ($t =~ /^clicktest_subtest (.*)$/) {
             $subtest = " subtest $1";
 	} else {
 	    $errortext .= $t;
@@ -754,7 +756,7 @@ sub output_error ($$$$) {
     if (!defined($failure)) {
 	$failure_text = "undefined error";
     } elsif ($failure eq "timeout") {
-        $failure_text = "timed out after $Testie::timeout sec";
+        $failure_text = "timed out after $ClickTest::timeout sec";
     } elsif ($failure == 1) {
         $failure_text = "failure";
     } else {
@@ -775,11 +777,11 @@ sub output_error ($$$$) {
     return $tctr if $tt->{$script_type . '_quietline'}->{$lineno} && $::verbose <= 0;
 
     $lineno .= $subtest;
-    if ($errortext =~ /^testie_error:/) {
-	while ($errortext =~ /^testie_error:([^\n]*)/g) {
+    if ($errortext =~ /^clicktest_error:/) {
+	while ($errortext =~ /^clicktest_error:([^\n]*)/g) {
 	    $tt->eh->message($lineno, ": ", $1, "\n");
 	}
-	$errortext =~ s/^testie_error:([^\n]*)//g;
+	$errortext =~ s/^clicktest_error:([^\n]*)//g;
 	$errortext =~ s/\s*//;
 	$tt->eh->message($lineno, ": (There were other errors as well.)\n")
 	    if $errortext ne '';
@@ -893,9 +895,10 @@ sub _check_one_typed_expect ($$$$$) {
 	    ++$ep while $el[$ep] eq '' && $mode > 0;
 	    ++$tp while ($tl[$tp] eq '' && $mode > 0) || $tl[$tp] eq "\377";
 
-	    # process testie_subtest
-	    if (length($tl[$tp]) > 15 && substr($tl[$tp], 0, 15) eq "testie_subtest ") {
-		$subtest = substr($tl[$tp], 15);
+	    # process clicktest_subtest
+	    if (length($tl[$tp]) > 18 &&
+	      substr($tl[$tp], 0, 18) eq "clicktest_subtest ") {
+		$subtest = substr($tl[$tp], 18);
 		$tp++;
 		next;
 	    }
@@ -955,8 +958,8 @@ sub _create_ignores ($$) {
 	    }
 	}
     }
-    # ignore testie messages
-    $ignores .= "testie_lineno:.*\ntestie_error:.*\n" if $efn eq "stderr";
+    # ignore clicktest messages
+    $ignores .= "clicktest_lineno:.*\nclicktest_error:.*\n" if $efn eq "stderr";
 
     if ($ignores eq "" && $wignores eq "") {
 	return undef;
@@ -1051,23 +1054,23 @@ sub _shell ($$$$$) {
 	open(STDOUT, ">", $stdout) || die "$stdout: $!\n";
 	open(STDERR, ">", $stderr) || die "$stderr: $!\n";
 	my($var, $val);
-	$ENV{$var} = $val while (($var, $val) = each %Testie::_variables);
+	$ENV{$var} = $val while (($var, $val) = each %ClickTest::_variables);
         $ENV{"rundir"} = "..";
 	exec $SHELL, "-e", $scriptfn;
     } else {
 	$running_pid = $child_pid;
         my($result) = undef;
-        if ($Testie::timeout > 0) {
+        if ($ClickTest::timeout > 0) {
             my($before) = Time::HiRes::time();
             my($delta) = 10;
             do {
                 Time::HiRes::usleep($delta);
                 $result = $? if waitpid($child_pid, WNOHANG) > 0;
                 $delta = ($delta < 150000 ? $delta * 2 : 300000);
-            } while (!defined($result) && Time::HiRes::time() < $before + $Testie::timeout);
+            } while (!defined($result) && Time::HiRes::time() < $before + $ClickTest::timeout);
             if (!defined($result)) {
                 if (open(X, ">>", out_script_fn_to_fn($stderr))) {
-                    print X "testie_failure:timeout\n";
+                    print X "clicktest_failure:timeout\n";
                     close X;
                 }
                 $result = 124;
@@ -1088,7 +1091,7 @@ sub _shell ($$$$$) {
 
 sub execute_test ($$) {
     my($tt, $fn) = @_;
-    my($tctr, $teh) = (TestieCounter::new, $tt->eh);
+    my($tctr, $teh) = (ClickTestCounter::new, $tt->eh);
     ++$tctr->{"test_attempts"};
     my($f);
 
@@ -1185,7 +1188,7 @@ sub execute_test ($$) {
 	    my($text) = <X>;
 	    close(X);
 	    if ($f->[1] && defined($text)) {
-		my($ignores) = Testie::_create_ignores($tt, $efn);
+		my($ignores) = ClickTest::_create_ignores($tt, $efn);
 		if ($ignores) {
 		    $text = $ignores->($text);
 		    $text =~ s/^\377\n//mg;
@@ -1217,7 +1220,7 @@ sub execute_test ($$) {
 sub run_test_read_file ($$) {
     my($fn, $teh) = @_;
 
-    # read the testie
+    # read the clicktest
     my($tt, $display_fn, $close_in);
     if (!defined($fn) || $fn eq '-') {
 	if (!open(IN, "<&=STDIN")) {
@@ -1237,13 +1240,13 @@ sub run_test_read_file ($$) {
 	$close_in = 1;
     }
 
-    $tt = Testie::read(IN, $teh, $display_fn);
+    $tt = ClickTest::read(IN, $teh, $display_fn);
     return ($tt, $display_fn, $close_in);
 }
 
 sub run_test_body ($$) {
     my($fn, $teh) = @_;
-    my($tctr) = TestieCounter::new;
+    my($tctr) = ClickTestCounter::new;
 
     my($tt, $display_fn, $close_in) = run_test_read_file($fn, $teh);
     if (!defined($tt)) {
@@ -1276,7 +1279,7 @@ sub run_test ($$$) {
     my($fn, $teh, $testnumber) = @_;
 
     if (!$::expand_mode) {
-	$dir = "testie$$" . ($testnumber ? "-$testnumber" : "");
+	$dir = "clicktest$$" . ($testnumber ? "-$testnumber" : "");
 	if (-d $dir) {
 	    $teh->message("warning: $dir directory exists; removing it\n");
 	    system("/bin/rm -rf $dir");
@@ -1314,7 +1317,7 @@ $SIG{'__DIE__'} = \&cleanup;
 
 # child processing
 
-sub testie_child () {
+sub clicktest_child () {
     my($p2cr, $p2cw, $c2pr, $c2pw);
     pipe($p2cr, $p2cw);
     pipe($c2pr, $c2pw);
@@ -1342,7 +1345,7 @@ sub testie_child () {
     $p2cw->close;
     $c2pr->close;
     my($p2crbuf, $testnumber) = ("", 0);
-    my($teh) = TestieChildErrorHandler::new($c2pw);
+    my($teh) = ClickTestChildErrorHandler::new($c2pw);
     my($command, $arg, $rin, $rout, $win, $wout);
     $rin = $win = "";
     vec($rin, $p2cr->fileno, 1) = 1;
@@ -1368,22 +1371,22 @@ sub testie_child () {
     }
 }
 
-sub testie_child_reaper {
+sub clicktest_child_reaper {
     my $kid;
     while (($kid = waitpid(-1, WNOHANG)) > 0) {
 	delete $child_pids{$kid};
     }
 }
 
-sub testie_parent_loop (\@$$$) {
+sub clicktest_parent_loop (\@$$$) {
     my($tests, $tctr, $teh, $jobs) = @_;
     my($testpos, $testdone, $rin, $rout) = (0, 0, "", "");
     my(@children, @child_out, $command, $arg);
-    $SIG{"CHLD"} = \&testie_child_reaper;
+    $SIG{"CHLD"} = \&clicktest_child_reaper;
 
     for (my $i = 0; $i < $jobs; ++$i) {
 	last if $testpos == @$tests;
-	push @children, testie_child;
+	push @children, clicktest_child;
 	my($c2pr, $p2cw) = ($children[$i]->[0], $children[$i]->[1]);
 	tipc_write($p2cw, "T", $tests->[$testpos]);
 	++$testpos;
@@ -1403,7 +1406,7 @@ sub testie_parent_loop (\@$$$) {
 		    push @{$child_out[$i]}, [$command, $arg];
 		} elsif ($command eq "T") {
 		    my($tctr1) = eval($arg);
-		    bless $tctr1, TestieCounter;
+		    bless $tctr1, ClickTestCounter;
 		    $tctr->add($tctr1);
 		    foreach my $x (@{$child_out[$i]}) {
 			if ($x->[0] eq "S") {
@@ -1431,17 +1434,17 @@ sub testie_parent_loop (\@$$$) {
 
 sub help () {
     print <<'EOD;';
-'Testie' is a simple test harness.
+'ClickTest' is a simple test harness.
 
-Usage: testie [OPTIONS] [FILE]...
+Usage: clicktest [OPTIONS] [FILE]...
 
 Options:
   VARIABLE=VALUE             Variable settings for test script.
   -V, --verbose              Print information for successful tests.
   -VV, --superverbose        Print initial %info for all tests.
-  -s, --show TESTIEFILE      Show contents of TESTIEFILE on completion.
-  -S, --show-raw TESTIEFILE  Like --show, but include ignored lines.
-  --show-all                 Show contents of all TESTIEFILEs on completion.
+  -s, --show TESTFILE        Show contents of TESTFILE on completion.
+  -S, --show-raw TESTFILE    Like --show, but include ignored lines.
+  --show-all                 Show contents of all TESTFILEs on completion.
   --show-all-raw             Like --show-all, but include ignored lines.
   --preserve-temporaries     Preserve temporary files.
   -e, --expand               Expand test files into current directory.
@@ -1457,15 +1460,15 @@ EOD;
 
 sub usage () {
     print STDERR <<'EOD;';
-Usage: testie [-V] [FILE]...
-Try 'testie --help' for more information.
+Usage: clicktest [-V] [FILE]...
+Try 'clicktest --help' for more information.
 EOD;
     exit(1);
 }
 
 sub print_version () {
     print <<'EOD;';
-Testie 1.3
+ClickTest 1.3
 Copyright (c) 2002-2016 Eddie Kohler
 Copyright (c) 2002-2003 International Computer Science Institute
 Copyright (c) 2004-2007 Regents of the University of California
@@ -1504,7 +1507,7 @@ sub search_dir ($$) {
     foreach my $f (sort { $a cmp $b } @f) {
 	if (-d "$dir/$f") {
 	    &search_dir("$dir/$f", $aref);
-	} elsif ($f =~ /^[^#\.].*\.testie$/) {
+	} elsif ($f =~ /^[^#\.].*\.(testie|clicktest)$/) {
 	    push @$aref, "$dir/$f";
 	}
     }
@@ -1516,12 +1519,12 @@ sub search_dir ($$) {
 $dir = undef;
 
 my(@tests, $arg, $jobs, @pathprepend);
-$Testie::_variables{"LC_ALL"} = "C";
+$ClickTest::_variables{"LC_ALL"} = "C";
 
 while (@ARGV) {
     $_ = shift @ARGV;
     if (/^([A-Za-z_]\w*)=(.*)$/s) {
-	$Testie::_variables{$1} = $2;
+	$ClickTest::_variables{$1} = $2;
     } elsif (/^-$/) {
 	push @tests, $_;
     } elsif (!/^-/) {
@@ -1574,11 +1577,11 @@ while (@ARGV) {
 	push @show, ["*", 0];
     } elsif (/^-t$/ || argcmp($_, '--timeout', 1)) {
         usage if @ARGV == 0;
-        $Testie::timeout = shift @ARGV;
+        $ClickTest::timeout = shift @ARGV;
     } elsif (/^-t(.+)$/) {
-        $Testie::timeout = $1;
+        $ClickTest::timeout = $1;
     } elsif (argcmp($_, '--timeout', 1, $arg)) {
-        $Testie::timeout = $arg;
+        $ClickTest::timeout = $arg;
     } elsif (/^-j$/ || argcmp($_, "--jobs", 1)) {
 	usage if @ARGV == 0 || $ARGV[0] !~ /\A\d+\z/;
 	$jobs = shift @ARGV;
@@ -1611,11 +1614,11 @@ foreach my $s (@show) {
 }
 
 push @tests, '-' if !@tests;
-my($tctr) = TestieCounter::new;
-my($teh) = TestieErrorHandler::new(@tests > 1 && -t STDERR);
+my($tctr) = ClickTestCounter::new;
+my($teh) = ClickTestErrorHandler::new(@tests > 1 && -t STDERR);
 
 if ($jobs && $jobs > 1) {
-    testie_parent_loop(@tests, $tctr, $teh, $jobs);
+    clicktest_parent_loop(@tests, $tctr, $teh, $jobs);
 } else {
     my($testnumber) = 0;
     foreach my $test (@tests) {
@@ -1636,14 +1639,14 @@ if (@require_error_commands) {
 	    ++$i;
 	}
     }
-    $teh->message("testie: requirement failures blocked ", $tctr->{"require_errors"}, ($tctr->{"require_errors"} > 1 ? " tests" : " test"), ", use '-V' for details\n");
-    $teh->message("testie: (", (@require_error_commands > 1 ? "commands" : "command"), " '", join("', '", @require_error_commands), "')\n");
+    $teh->message("$bin_name: requirement failures blocked ", $tctr->{"require_errors"}, ($tctr->{"require_errors"} > 1 ? " tests" : " test"), ", use '-V' for details\n");
+    $teh->message("$bin_name: (", (@require_error_commands > 1 ? "commands" : "command"), " '", join("', '", @require_error_commands), "')\n");
 }
 
 my($attempts, $failures, $skips, $successes) =
     ($tctr->{"test_attempts"}, $tctr->{"test_failures"}, $tctr->{"test_skips"},
      $tctr->{"test_attempts"} - $tctr->{"test_failures"} - $tctr->{"test_skips"});
-$teh->message("testie: ",
+$teh->message("$bin_name: ",
     $successes, ($successes == 1 ? " success, " : " successes, "),
     $failures, ($failures == 1 ? " failure, " : " failures, "),
     $skips, " skipped\n");
@@ -1662,24 +1665,24 @@ if ($tctr->{"bad_files"} > 0) {
 
 =head1 NAME
 
-testie - simple test harness
+clicktest - simple test harness
 
 =head1 SYNOPSIS
 
-testie [OPTIONS] [FILE]...
+clicktest [OPTIONS] [FILE]...
 
 =head1 DESCRIPTION
 
-Testie is a simple test harness. A testie test comprises a shell
+ClickTest is a simple test harness. A clicktest test comprises a shell
 script and, optionally, input and expected output files for that
-script. Testie runs the script; the test succeeds if all of the script
+script. ClickTest runs the script; the test succeeds if all of the script
 commands succeed, and the actual output files match expectations.
 
-Testie accepts test filenames and directories as arguments.
-Directories are recursively searched for F<*.testie> files. It
+ClickTest accepts test filenames and directories as arguments.
+Directories are recursively searched for F<*.clicktest> files. It
 reports problems for failed tests, plus a summary.
 
-Testie exits with status 0 if all tests succeed, 1 if any test fails,
+ClickTest exits with status 0 if all tests succeed, 1 if any test fails,
 and 2 if a test fails due to an internal error. Tests whose B<%require>
 prerequisites fail do not affect the exit status, except that if all
 tests' prerequisites fail, the return status is 1 instead of 0.
@@ -1722,9 +1725,9 @@ directory. The script is stored in a file called F<%script>.
 
 =item B<--preserve-temporaries>
 
-Preserve temporary test directories. Testie runs each test in its own
+Preserve temporary test directories. ClickTest runs each test in its own
 subdirectory of the current directory. Test directories are named
-F<testieNNNNN>, and are typically removed on test completion.
+F<clicktestNNNNN>, and are typically removed on test completion.
 Examining the contents of a test directory can be useful when
 debugging a test.
 
@@ -1759,7 +1762,7 @@ Print help information and exit.
 
 =head1 FILE FORMAT
 
-Testie test files consist of several sections, each introduced by a line
+ClickTest test files consist of several sections, each introduced by a line
 starting with B<%>. There must be, at least, a B<%script> section.
 The B<%file> and B<%expect> sections define input and output files by
 name.
@@ -1768,31 +1771,31 @@ name.
 
 =item B<%script>
 
-The B<sh> shell script that controls the test. Testie will run each
+The B<sh> shell script that controls the test. ClickTest will run each
 command in sequence. Every command in the script must succeed, with
 exit status 0, or the test will fail. Use B<%file> sections to define
 script input files and B<%expect> sections to check script output files
 for expected values.
 
 The B<%script> section can contain subtests. To start a new subtest,
-execute a command like S<C<testie_subtest SECTIONNAME>>. Testie will
+execute a command like S<C<clicktest_subtest SECTIONNAME>>. ClickTest will
 report the problematic C<SECTIONNAME> when standard output or error
 doesn't match an expected value.
 
 The script's environment is populated with any I<VARIABLE>s set on the
-testie command line with B<I<VARIABLE>=I<VALUE>> syntax. Also, the
+clicktest command line with B<I<VARIABLE>=I<VALUE>> syntax. Also, the
 B<$rundir> environment variable is set to the directory in which
-testie was originally run.
+clicktest was originally run.
 
 =item B<%require [-q]>
 
 An B<sh> shell script defining prerequisites that must be satisfied
 before the test can run. Every command in the script must succeed, with
 exit status 0, for the test to run. Standard output and error are not
-checked, however. The B<-q> flag tells testie not to print an error message
+checked, however. The B<-q> flag tells clicktest not to print an error message
 if a requirement fails.
 
-Testie runs the requirement script before creating any other test files.
+ClickTest runs the requirement script before creating any other test files.
 For example, contents of B<%file> sections are not available.
 
 =item B<%info>
@@ -1811,7 +1814,7 @@ Create an input file for the script. I<FILENAME> can be B<stdin>,
 which sets the script's standard input. If B<+>I<LENGTH> is provided,
 the file data consists of the I<LENGTH> bytes following this line;
 otherwise, it consists of the data up to the next section. The B<-d>
-flag tells testie to delete the first character of each line in the
+flag tells clicktest to delete the first character of each line in the
 section. The B<-e> flag indicates that the section was MIME
 Base64-encoded (see L<base64(1)>); it is decoded before use. To
 include a file with lines that start with B<%> (which would normally
@@ -1828,11 +1831,11 @@ I<FILENAME> can be B<stdout>, for standard output. If B<+>I<LENGTH> is
 provided, the file data consists of the I<LENGTH> bytes following this
 line; otherwise, it consists of the data up to the next section.
 
-After running the script, testie compares the I<FILENAME> generated by
+After running the script, clicktest compares the I<FILENAME> generated by
 the script with the provided data. The files are compared
-line-by-line. Testie ignores blank lines, differences in trailing
+line-by-line. ClickTest ignores blank lines, differences in trailing
 whitespace, and lines in the script output that match B<%ignore>
-patterns (see below). The B<-w> flag causes testie to ignore
+patterns (see below). The B<-w> flag causes clicktest to ignore
 differences in amount of whitespace within each line.
 
 B<%expect> lines can contain Perl regular expressions, enclosed by two
@@ -1848,11 +1851,11 @@ Document an B<%expect> line with C<{{?comment}}> blocks. For example:
 
     foo                {{? the sort was in the right order}}
 
-Testie ignores whitespace before and after the C<{{?comment}}> block, and if
+ClickTest ignores whitespace before and after the C<{{?comment}}> block, and if
 the actual output differs from this expected line, it prints the comment in
 addition to the line differences.
 
-The B<-a> flag marks this expected output as an alternate. Testie will
+The B<-a> flag marks this expected output as an alternate. ClickTest will
 compare the script's output file with each provided alternate; the
 test succeeds if any of the alternates match. The B<-d> flag behaves
 as in B<%file>.
@@ -1900,7 +1903,7 @@ double braces (C<{{ }}>), and B<%ignorev> lines must match exactly.
 
 =item B<%include I<FILENAME>>
 
-Interpolate the contents of another testie file.
+Interpolate the contents of another clicktest file.
 
 =item B<%eot>
 
@@ -1915,7 +1918,7 @@ The rest of the file is ignored.
 
 =head1 EXAMPLE
 
-This simple testie script checks that 'grep -c' works for a simple output
+This simple clicktest script checks that 'grep -c' works for a simple output
 file.
 
   %script
@@ -1928,7 +1931,7 @@ file.
 
 =head1 ENVIRONMENT
 
-By default, testie sets the C<LC_ALL> environment variable to "C"; without
+By default, clicktest sets the C<LC_ALL> environment variable to "C"; without
 this setting commands like B<sort> have unpredictable effects. To set
 C<LC_ALL> to another value, set it in the B<%script> section.
 

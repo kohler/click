@@ -1,6 +1,6 @@
 %script
 
-testie_subtest 1
+clicktest_subtest 1
 
 click-align -e "
 fd::FromDevice(eth3, true) -> cl::Classifier(12/0800, -);
@@ -10,7 +10,7 @@ chip[0]-> ust::Unstrip(14)-> th::ToHost();
 chip[1]-> d2::Discard;
 "
 
-testie_subtest 2
+clicktest_subtest 2
 
 click-align -e "
 fd::FromDevice(eth3, true) -> cl::Classifier(12/0800, -);
@@ -20,7 +20,7 @@ chip[0]-> th::ToHost();
 chip[1]-> d2::Discard;
 "
 
-testie_subtest 3
+clicktest_subtest 3
 
 click-align -e "
 fd::FromDevice(eth3, true) -> cl::Classifier(12/0800, -);
@@ -30,7 +30,7 @@ chip[0]-> th::ToHost();
 chip[1]-> d2::Discard;
 "
 
-testie_subtest 4
+clicktest_subtest 4
 
 click-align -e "
 fd::FromDevice(eth3, true) -> st::Strip(14)->chip::CheckIPHeader();
@@ -42,7 +42,7 @@ ipcl_0[0]->a::Align(4, 0)->th::ToHost();
 ipcl_0[1]->d2::Discard;
 "
 
-testie_subtest 5
+clicktest_subtest 5
 
 click-align -e "
 fd::FromDevice(eth3, true) -> fst::Strip(1) -> a1::Align(4, 2) -> st::Strip(14)->chip::CheckIPHeader();
