@@ -1,0 +1,22 @@
+%info
+Test double-brace regexes.
+
+%script
+clicktest TEST1 || true
+
+%file -d TEST1
+ %info
+ Test that -w only trims whitespace outside double braces.
+ This is actually quirky and unexpected.
+ %file FOO
+ w1 w2
+ w1 w2
+ %expect -w FOO
+ {{w1w2}}
+ {{w1 w2}}
+
+%expect stderr
+TEST1:{{\d+}}: file FOO has unexpected value starting at line {{\d+}}
+TEST1:{{\d+}}: FOO:2: expected {{.*}}
+TEST1:{{\d+}}: FOO:{{\d+}}: but got  'w1 w2'
+clicktest: 0 successes, 1 failure, 0 skipped
