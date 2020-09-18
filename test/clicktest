@@ -223,7 +223,8 @@ sub vary_from_index($$$;$) {
 
     my $digit = substr($num, $start_index, 1);
     die "digit > index_digit_max" if $digit > $index_digit_max;
-    my ($middle_re, $middle_max) = ("[$digit-$index_digit_max]", $index_digit_max);
+    my $middle_re = ($digit == $index_digit_max) ? $digit : "[$digit-$index_digit_max]";
+    my $middle_max = $index_digit_max;
 
     my $suffix_len = length($num) - length($start) - 1;
     my ($end_re, $end_max) = ('\d' x $suffix_len, 9 x $suffix_len);
@@ -690,8 +691,8 @@ sub test_expand_int_ranges() {
 
     my @cases = (
       ['', ''],
-      ['{{~1-2}}', '([1-1]|2)'],
-      ['before{{~1-2}}{{xxx}}{{~3-4}}after', 'before([1-1]|2){{xxx}}([3-3]|4)after'],
+      ['{{~1-2}}', '(1|2)'],
+      ['before{{~1-2}}{{xxx}}{{~3-4}}after', 'before(1|2){{xxx}}(3|4)after'],
     );
 
     for my $c (@cases) {
