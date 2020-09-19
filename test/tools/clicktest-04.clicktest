@@ -29,7 +29,7 @@ clicktest TEST1 TEST2 TEST3 TEST4 TEST5 TEST6 || true
  %file FOO
  9
  10
- 11
+ 011
  12
  %expect FOO
  {{~ 10+-1}}
@@ -53,7 +53,7 @@ clicktest TEST1 TEST2 TEST3 TEST4 TEST5 TEST6 || true
  %file FOO1
  1 is een
  %file FOO2
- en 2 is twee
+ en 00002 is twee
  %expect FOO1
  {{{{~1-2}} is (een|twee)}}
  %expectx FOO2
@@ -64,7 +64,7 @@ clicktest TEST1 TEST2 TEST3 TEST4 TEST5 TEST6 || true
  test %ignore and %ignorex
  %file FOO
  1 is een
- en 2 is twee
+ en 02 is twee
  %expect FOO
  %ignore
  {{{{~1-2}} is (een|twee)}}
