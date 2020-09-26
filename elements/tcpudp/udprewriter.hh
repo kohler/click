@@ -218,13 +218,7 @@ class UDPRewriter : public IPRewriterBase { public:
 };
 
 
-inline void
-UDPRewriter::destroy_flow(IPRewriterFlow *flow)
-{
-    unmap_flow(flow, _map);
-    flow->~IPRewriterFlow();
-    _allocator.deallocate(flow);
-}
+
 
 CLICK_ENDDECLS
 #endif

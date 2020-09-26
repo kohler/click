@@ -1096,4 +1096,13 @@ String::skip_utf8_char(const unsigned char *first, const unsigned char *last)
     return first;
 }
 
+/** @brief Return the string's length. */
+int String::length() const {
+	return _r.length;
+}
+
+int StringRef::length() const {
+	return len_;
+}
+
 CLICK_ENDDECLS

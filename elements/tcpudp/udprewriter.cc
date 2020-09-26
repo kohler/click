@@ -198,6 +198,14 @@ UDPRewriter::add_handlers()
     add_rewriter_handlers(true);
 }
 
+void
+UDPRewriter::destroy_flow(IPRewriterFlow *flow)
+{
+	unmap_flow(flow, _map);
+	flow->~IPRewriterFlow();
+	_allocator.deallocate(flow);
+}
+
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRewriterBase)
 EXPORT_ELEMENT(UDPRewriter)

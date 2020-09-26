@@ -352,8 +352,32 @@ sub one_includeroot ($$) {
 
 	    # de-const typeof in unions
             if ($d eq "compiler.h") {
-                s{(union\s*\{\s*typeof\()x\)}{$1x + 0)}g;
-            }
+		s{(union\s*\{\s*typeof\(x\).*__u);}{$1 = {0};}g;
+	    }
+
+	    # BUILD_BUG_ON_* cannot define a struct inside sizeof().
+	    # Rather than negative-bitfield size, produce a negative array dimension.
+	    if ($d eq "bug.h") {
+		s{(#define BUILD_BUG_ON_ZERO\(e\)) \(sizeof\(struct \{ int:-!!\(e\); \}\)\)}{$1 (sizeof(int[-!!(e)]))}g;
+		s{(#define BUILD_BUG_ON_NULL\(e\) \(\(void \*\))sizeof\(struct { int:-!!\(e\); }\)\)}{$1(sizeof(int[-!!(e)]))}g;
+	    }
+
+	    if ($d eq "cxxprotect.h") {
+		s{(#\s+define\s+typename\s+linux_typename)}{# define typename	typename}g;
+	    }  
+
+	    if ($d eq "syscall.h") {
+		s{(typedef\s+asmlinkage\s+long\s+\(\*sys_call_ptr_t\))}{asmlinkage typedef long (*sys_call_ptr_t)}g;
+	    }
+
+	    if ($d eq "ip.h") {
+		s{(return\s+min\(READ_ONCE\(dst->dev->mtu\),\s+IP_MAX_MTU\))}{const typeof(dst->dev->mtu) a = READ_ONCE(dst->dev->mtu);
+		  return min(a, IP_MAX_MTU)}g;
+
+		s{return\s+min\(READ_ONCE\(skb_dst\(skb\)->dev->mtu\),\s+IP_MAX_MTU\)}{const typeof(skb_dst(skb)->dev->mtu) a = READ_ONCE(skb_dst(skb)->dev->mtu);
+		  return min(a, IP_MAX_MTU)}g;
+	    }
+
 
 	    # fix illegal void* arithmetic
 	    s{(\w+)\s*-\s*\(\s*void\s*\*\s*\)}{(uintptr_t)$1 - (uintptr_t)}g;

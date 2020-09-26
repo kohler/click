@@ -4,7 +4,8 @@
 # define delete		linux_delete
 # define class		linux_class
 # define virtual	linux_virtual
-# define typename	linux_typename
+// error: linux_typename does not name a type
+//# define typename	linux_typename
 # define protected	linux_protected
 # define public		linux_public
 # define namespace	linux_namespace

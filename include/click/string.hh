@@ -75,7 +75,7 @@ class String { public:
     static String make_numeric(uintmax_t x, int base = 10, bool uppercase = true);
 
     inline const char* data() const;
-    inline int length() const;
+    int length() const;
 
     inline const char *c_str() const;
 
@@ -312,7 +312,7 @@ class StringRef {
     inline StringRef(const String &x);
 
     inline const char *data() const;
-    inline int length() const;
+    int length() const;
 
     inline const char *begin() const;
     inline const char *end() const;
@@ -479,10 +479,7 @@ inline const char *String::data() const {
     return _r.data;
 }
 
-/** @brief Return the string's length. */
-inline int String::length() const {
-    return _r.length;
-}
+
 
 /** @brief Null-terminate the string.
 
@@ -869,9 +866,7 @@ inline const char *StringRef::data() const {
     return data_;
 }
 
-inline int StringRef::length() const {
-    return len_;
-}
+
 
 inline const char *StringRef::begin() const {
     return data();
