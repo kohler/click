@@ -41,7 +41,7 @@ Makefile: $(srcdir)/Makefile.in
 install: Makefile install-man
 	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(bindir))
 	$(call verbose_cmd,$(INSTALL) $(srcdir)/click-elem2man,INSTALL,$(DESTDIR)$(bindir)/click-elem2man)
-install-man: testie.1 $(ELEMENTMAP) Makefile
+install-man: clicktest.1 $(ELEMENTMAP) Makefile
 	$(call verbose_cmd,$(mkinstalldirs) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man3 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man7 $(DESTDIR)$(mandir)/man8)
 	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click.1 $(DESTDIR)$(mandir)/man1/click.1,INSTALLMANPAGES $(DESTDIR)$(mandir))
 	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click.5 $(DESTDIR)$(mandir)/man5/click.5)
@@ -59,26 +59,26 @@ install-man: testie.1 $(ELEMENTMAP) Makefile
 	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(DESTDIR)$(mandir)/man1/click-uninstall.1)
 	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/click-xform.1 $(DESTDIR)$(mandir)/man1/click-xform.1)
 	$(call verbose_cmd,$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(DESTDIR)$(mandir)/man7/elementdoc.7)
-	$(call verbose_cmd,$(INSTALL_DATA) testie.1 $(DESTDIR)$(mandir)/man1/testie.1)
+	$(call verbose_cmd,$(INSTALL_DATA) clicktest.1 $(DESTDIR)$(mandir)/man1/clicktest.1)
 	$(call verbose_cmd,$(PERL) $(srcdir)/click-elem2man -l -m $(DESTDIR)$(mandir) -P DEFAULT -p $(top_srcdir) $(ELEMENTMAP),CLICK-ELEM2MAN -m $(DESTDIR)$(mandir))
 
 uninstall: uninstall-man
 	/bin/rm -f $(DESTDIR)$(bindir)/click-elem2man
 uninstall-man: $(ELEMENTMAP)
-	cd $(DESTDIR)$(mandir)/man1; /bin/rm -f click.1 click-align.1 click-combine.1 click-devirtualize.1 click-fastclassifier.1 click-flatten.1 click-install.1 click-mkmindriver.1 click-pretty.1 click-uncombine.1 click-undead.1 click-uninstall.1 click-xform.1 testie.1
+	cd $(DESTDIR)$(mandir)/man1; /bin/rm -f click.1 click-align.1 click-combine.1 click-devirtualize.1 click-fastclassifier.1 click-flatten.1 click-install.1 click-mkmindriver.1 click-pretty.1 click-uncombine.1 click-undead.1 click-uninstall.1 click-xform.1 clicktest.1
 	cd $(DESTDIR)$(mandir)/man5; /bin/rm -f click.5
 	cd $(DESTDIR)$(mandir)/man7; /bin/rm -f elementdoc.7
 	cd $(DESTDIR)$(mandir)/man8; /bin/rm -f click.o.8
 	$(PERL) $(srcdir)/click-elem2man -l -m $(DESTDIR)$(mandir) -P DEFAULT -p $(top_srcdir) -u $(ELEMENTMAP)
 
-testie.1: $(top_srcdir)/test/testie
-	@-if [ ! -f testie.1 -a -f $(srcdir)/testie.1 ]; then \
-	   echo $(CP_PRESERVE) $(srcdir)/testie.1 testie.1; \
-	   $(CP_PRESERVE) $(srcdir)/testie.1 testie.1; \
-	   $(MAKE) testie.1; \
+clicktest.1: $(top_srcdir)/test/clicktest
+	@-if [ ! -f clicktest.1 -a -f $(srcdir)/clicktest.1 ]; then \
+	   echo $(CP_PRESERVE) $(srcdir)/clicktest.1 clicktest.1; \
+	   $(CP_PRESERVE) $(srcdir)/clicktest.1 clicktest.1; \
+	   $(MAKE) clicktest.1; \
 	else \
-	   echo $(POD2MAN) -d '' -c '' $(top_srcdir)/test/testie testie.1; \
-	   $(POD2MAN) -d '' -c '' $(top_srcdir)/test/testie testie.1; \
+	   echo $(POD2MAN) -d '' -c '' $(top_srcdir)/test/clicktest clicktest.1; \
+	   $(POD2MAN) -d '' -c '' $(top_srcdir)/test/clicktest clicktest.1; \
 	fi
 
 doxygen:
