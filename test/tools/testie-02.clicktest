@@ -1,9 +1,9 @@
 %info
-Test testie files that include directories
+Test clicktest files that include directories
 
 %script
 cat X/Y > Y/X
-testie TEST1
+clicktest TEST1
 
 %file X/Y
 Hello
@@ -24,4 +24,4 @@ TEST1:3: bad filename '%file ../'
 TEST1:4: bad filename '%file /A'
 TEST1:5: bad filename '%file A/'
 TEST1:6: bad filename '%file A//B'
-testie: 1 success, 0 failures, 0 skipped
+clicktest: 1 success, 0 failures, 0 skipped
