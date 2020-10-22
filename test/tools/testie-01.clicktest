@@ -2,7 +2,7 @@
 Meta-test.
 
 %script
-testie -V TEST1 TEST2 TEST3 TEST4 || true
+clicktest -V TEST1 TEST2 TEST3 TEST4 || true
 
 %file -d TEST1
  %script
@@ -39,4 +39,4 @@ TEST1:2: failure at 'false'
 TEST2: Success!
 TEST3: Success!
 TEST4: Success!
-testie: 3 successes, 1 failure, 0 skipped
+clicktest: 3 successes, 1 failure, 0 skipped

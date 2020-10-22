@@ -40,19 +40,19 @@ END {
 }' 1>&2
 }
 
-testie_subtest 1
+clicktest_subtest 1
 $SUDO "`which click-install`" CONFIG1
 xtest
 
-testie_subtest 2
+clicktest_subtest 2
 $SUDO "`which click-install`" CONFIG2
 xtest
 
-testie_subtest 3
+clicktest_subtest 3
 $SUDO "`which click-install`" CONFIG3
 xtest
 
-testie_subtest 4
+clicktest_subtest 4
 $SUDO "`which click-install`" CONFIG4
 xtest
 
