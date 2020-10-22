@@ -235,7 +235,7 @@ ARPTable::append_query(IPAddress ip, Packet *p)
 
     // Since we're still trying to send to this address, keep the entry just
     // this side of expiring.  This fixes a bug reported 5 Nov 2009 by Seiichi
-    // Tetsukawa, and verified via testie, where the slim() below could delete
+    // Tetsukawa, and verified via clicktest, where the slim() below could delete
     // the "ae" ARPEntry when "ae" was the oldest entry in the system.
     if (_timeout_j) {
 	click_jiffies_t live_at_j_min = now - _timeout_j;

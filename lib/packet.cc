@@ -235,7 +235,7 @@ Packet::~Packet()
 // pool, with a global pool to even out imbalance.
 
 #  define CLICK_PACKET_POOL_BUFSIZ		2048
-#  define CLICK_PACKET_POOL_SIZE		1000 // see LIMIT in packetpool-01.testie
+#  define CLICK_PACKET_POOL_SIZE		1000 // see LIMIT in packetpool-01.clicktest
 #  define CLICK_GLOBAL_PACKET_POOL_COUNT	16
 
 namespace {
