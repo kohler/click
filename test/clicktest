@@ -196,6 +196,169 @@ sub add ($$) {
     $tctr;
 }
 
+package range_to_regex;
+
+# Create regex based on $num that allows digits starting from $start_index to
+# vary. As follows:
+# - Digits before $start_index must remain as they were.
+# - Digit d at $start_index is allowed to vary from d to $index_digit_max.
+# - Each subsequent position is allowed to assume any digit value.
+#
+# Note: per perl convention, $start_index is positive and zero based when
+# counting from the left (0, 1, 2, ..); negative and -1 based when counting from
+# the right (.., -3, -2, -1).
+#
+# Returns the regex as well as the highest number permitted by the regex.
+#
+# Examples:
+# - vary_from_index(43, -1, 9) -> ('4[3-9]', 49) for 43-99
+# - vary_from_index(1000, -4, 2) -> ('[1-2]\d\d\d', 2999) for 1000-2999
+# - vary_from_index(34567, 1, 7) -> ('3[4-7]\d\d\d', 37999) for 34000-37999 (!)
+
+sub vary_from_index($$$;$) {
+    my ($num, $start_index, $index_digit_max, $debug) = @_;
+
+    my ($start, $middle, $end);
+    $start = $num; substr($start, $start_index) = '';
+
+    my $digit = substr($num, $start_index, 1);
+    die "digit > index_digit_max" if $digit > $index_digit_max;
+    my ($middle_re, $middle_max) = ("[$digit-$index_digit_max]", $index_digit_max);
+
+    my $suffix_len = length($num) - length($start) - 1;
+    my ($end_re, $end_max) = ('\d' x $suffix_len, 9 x $suffix_len);
+
+    print "start=$start middle=$middle_re/$middle_max end=$end_re/$end_max\n" if $debug;
+
+    my ($re, $re_max) = ($start . $middle_re . $end_re, $start . $middle_max . $end_max);
+    return ($re, $re_max);
+}
+
+# Return a regex corresponding to the range of integers starting with $lower
+# and ending with $upper. $lower and $upper must be non-negative integers.
+sub range_to_regex($$;$) {
+    my ($lower, $upper, $debug) = @_;
+    die if $lower > $upper || $lower < 0;
+
+    # collect regex components to be or'd
+    my @re_ors = ();
+
+    # I will be using this range as a running example: 43 - 3504
+
+    # Phase 1:
+    # Generate ranges by varying $lower's rhs digits, each round incrementing
+    # the number of digits to vary and increasing $lower to beyond the range
+    # that was just created
+    # 43-49: rightmost 1 digit varies; $lower becomes 50
+    # 50-99: rightmost 2 digits vary; $lower becomes 100
+    # 100-999: rightmost 3 digits vary; $lower becomes 1000
+    # 1000-2999: rightmost 4 digits vary. note: stop before 3000
+
+    print "-------phase 1\n" if $debug;
+    for (my $rpos = -1; $rpos >= -length($upper); $rpos--) {
+        # $rpos is the index of the varying digit
+        print "lower=$lower upper=$upper rpos=$rpos\n" if $debug;
+
+        # get the digits in the varying position
+        my ($lower_digit, $upper_digit) = (substr($lower, $rpos, 1), substr($upper, $rpos, 1));
+        print "lower_digit=$lower_digit upper_digit=$upper_digit\n" if $debug;
+
+        my ($re, $re_max) = vary_from_index($lower, $rpos, 9, $debug);
+        if ($re_max >= $upper) {
+            if ($lower_digit == $upper_digit) { # e.g. l=10, u=15, r=-2
+                print "lower_digit=$lower_digit == upper_digit=$upper_digit. skipping\n" if $debug;
+                next;
+            }
+
+            # e.g. l=1000, u=3504, r=-3
+            print "re_max=$re_max >= upper=$upper. redoing\n" if $debug;
+            ($re, $re_max) = vary_from_index($lower, $rpos, $upper_digit-1, $debug);
+        }
+        # else: e.g. l=43, u=3504, r=-1
+
+        print "->adding $re\n\n" if $debug;
+        push @re_ors, $re;
+        $lower = $re_max+1;
+    }
+
+    # $lower is now 3000. Still to cover: 3000 - 3504
+
+    # Phase 2:
+    # Generate ranges by removing common digits from left of $lower and varying
+    # the reset
+    # 3000-3499. remove common digit '3', then vary remaining digits
+    # 3500-3504. remove further common digits '50', then vary remaining digits
+
+    die "length($lower) != length($upper)\n" if length($lower) != length($upper);
+    my $common_prefix = '';
+
+    print "-------phase 2\n" if $debug;
+    while (length($lower) && $lower <= $upper) {
+        print "common_prefix=$common_prefix lower=$lower upper=$upper (", $common_prefix.$lower , "-", $common_prefix.$upper, ")\n" if $debug;
+
+        # get digits in first position
+        my ($lower_digit, $upper_digit) = (substr($lower, 0, 1), substr($upper, 0, 1));
+        print "lower_digit=$lower_digit upper_digit=$upper_digit\n" if $debug;
+        if ($lower_digit == $upper_digit) {
+            # remove common digit
+            print "remove common digit $lower_digit\n" if $debug;
+            $common_prefix .= $lower_digit;
+            substr($lower, 0, 1) = substr($upper, 0, 1) = '';
+            next;
+        }
+        die if $lower !~ /^0*$/;
+
+        my $vary_max;
+        if (length($lower) > 1) {
+            # e.g. pref=3, l=000, r=504 => 3000-3499
+            $vary_max = $upper_digit-1; # note: $upper_digit can't be 0 - it would have been removed
+        } else {
+            # final range
+            # e.g. pref=350, l=0, r=4 => 3500-3504
+            $vary_max = $upper_digit;
+        }
+        print "vary_max=$vary_max\n" if $debug;
+
+        my ($re, $re_max) = vary_from_index($lower, 0, $vary_max, $debug);
+        $re = $common_prefix . $re;
+        print "->adding $re\n\n" if $debug;
+        push @re_ors, $re;
+
+        $lower = $re_max+1;
+    }
+    if (!length($lower)) {
+        # e.g.
+        # - start with l=u
+        # - start with l=0, u=10 (any upper bound ending in 0 reaches this case)
+        push @re_ors, $common_prefix;
+    }
+
+    return '(' . join('|', @re_ors) . ')';
+}
+
+sub test_range_to_regex() {
+    my ($ntests, $nfails) = (0, 0);
+    my $range_limit = 50;
+    for (my $lower = 0; $lower < $range_limit; $lower++) {
+        for (my $upper = $lower; $upper < $range_limit; $upper++) {
+            #print "--------------------------------------testing: lower=$lower upper=$upper\n";
+            my $re = range_to_regex($lower, $upper);
+            #print "$re\n";
+            $ntests++;
+            my $ok = 1;
+            for (my $i = 0; $i < 11 * $range_limit; $i++) {
+                my $match = ($i =~ /^$re$/) ? 1 : 0;
+                my $should_match = ($i >= $lower && $i <= $upper) ? 1 : 0;
+                $ok = 0 if $match != $should_match;
+            }
+            if (!$ok) {
+                $nfails++;
+                print "fail: test_range_to_regex: lower=$lower upper=$upper re=$re\n";
+            }
+        }
+    }
+    return ($ntests, $nfails);
+}
 
 ## main clicktest test object
 
@@ -470,8 +633,82 @@ sub test_parse_double_braces() {
     return ($ntests, $nfails);
 }
 
-sub braces_to_regex ($$) {
-    my($x, $mode) = @_;
+# Parses $string as one of the supported int range formats (without enclosing
+# braces).  Returns the parsed int range as a regex or undef if no int range was
+# found. Examples (with braces included):
+# {{~ 5 - 15}} : allow integers from 5 through 15 (inclusive)
+# {{~ 100 +- 5}}  : allow integers from 95 through 105 (inclusive)
+# {{~ 100 +- 5%}} : allow integers approximately 5% from 100
+sub parse_int_range($$) {
+    my ($string, $tt) = @_;
+
+    if ($string =~ /\A~\s*(\d+)\s*-\s*(\d+)\s*$/) {
+        # e.g. {{~ 5 - 15}}
+        my($lower, $upper) = ($1, $2);
+        if ($lower > $upper) {
+            ($lower, $upper) = ($upper, $lower);
+            $tt->eh->message("warning: '{{$string}}': converting inverted range to '$lower-$upper'\n");
+        }
+        return range_to_regex::range_to_regex($lower, $upper);
+    } elsif ($string =~ /\A~\s*(\d+)\s*\+-\s*(\d+)\s*(%?)\s*$/) {
+        # e.g. {{~ 100 +- 5}} or {{~ 100 +- 5%}}
+        my($val, $fuzz, $perc) = ($1, $2, $3);
+        my $delta = $perc ? int($fuzz / 100 * $val) : $fuzz; # round down
+        my($lower, $upper) = ($val - $delta, $val + $delta);
+        if ($lower < 0) {
+            $tt->eh->message("warning: '{{$string}}' generates negative lower bound $lower; setting to 0\n");
+            $lower = 0;
+        }
+        return range_to_regex::range_to_regex($lower, $upper);
+    } else {
+        return undef;
+    }
+}
+
+# Given a regex $re_in, searches it for int ranges and replaces them with
+# equivalent regexes. Returns the resulting regex.
+sub expand_int_ranges($$) {
+    my ($re_in, $tt) = @_;
+
+    my($before, $middle, $after) = ('', '', '');
+    my $re_out = '';
+    while (parse_double_braces($re_in, \$before, \$middle, \$after)) {
+        if (my $range = parse_int_range($middle, $tt)) {
+            $middle = $range;
+        } else {
+            $middle = "{{$middle}}"; # recover the braces that were removed
+        }
+        $re_out .= $before . $middle;
+        $re_in = $after;
+    }
+    $re_out .= $re_in;
+    return $re_out;
+}
+
+sub test_expand_int_ranges() {
+    my ($ntests, $nfails) = (0, 0);
+
+    my @cases = (
+      ['', ''],
+      ['{{~1-2}}', '([1-1]|2)'],
+      ['before{{~1-2}}{{xxx}}{{~3-4}}after', 'before([1-1]|2){{xxx}}([3-3]|4)after'],
+    );
+
+    for my $c (@cases) {
+        $ntests++;
+        print "case: test_expand_int_ranges ", join(' / ', @$c), "\n";
+        my $re = expand_int_ranges($c->[0], undef);
+        if ($re ne $c->[1]) {
+            print "fail: '$re' != '$c->[1]'\n";
+            $nfails++;
+            next;
+        }
+    }
+    return ($ntests, $nfails);
+}
+
+sub braces_to_regex ($$$) {
+    my($x, $mode, $tt) = @_;
     my($re, $message) = ("", undef);
 
     my($before, $middle, $after) = ('', '', '');
@@ -484,10 +721,14 @@ sub braces_to_regex ($$) {
 	    $after =~ s/\A\s+//;
 	    $message = (defined($message) ? $message . " " . $middle : $middle);
 	    $x = $before . $after;
+	} elsif (my $range = parse_int_range($middle, $tt)) {
+	    $before = quotemeta($before) if $mode == 1;
+	    $re .= $before . $range;
+	    $x = $after;
 	} else {
 	    $before = quotemeta($before) if $mode == 1;
             $middle =~ s,(\A|[^\\]|\\\\)/,$1\\/,g; # not 100% right sadly
-            $re .= $before . "(?:" . $middle . ")";
+            $re .= $before . "(?:" . expand_int_ranges($middle, $tt) . ")";
 	    $x = $after;
 	}
     }
@@ -582,11 +823,12 @@ sub _read_file_section ($$$$;$) {
 	$file_data =~ tr/ \f\r\t\013//d;
     }
     if ($secname eq 'ignore') {
-	$file_data =~ s{^(.+)}{braces_to_regex($1, 1)}meg;
+	$file_data =~ s{^(.+)}{braces_to_regex($1, 1, $tt)}meg;
     } elsif ($secname eq 'ignorev') {
 	$file_data =~ s{^(.+)}{quotemeta($1)}meg;
     } elsif ($secname eq 'ignorex') {
 	$file_data =~ s[\s*\{\{\?.*?\}\}\s*][]mg;
+	$file_data = expand_int_ranges($file_data, $tt);
     }
     if ($regex_opts && $secname eq 'expect') {
 	$file_data =~ s{\{\{}{\{\{$regex_opts}g;
@@ -1007,7 +1249,7 @@ sub _check_one_typed_expect ($$$$$) {
 	    }
 	    if ($mode != 0 && $eline =~ /\{\{/) {
 		my($re);
-		($re, $message) = braces_to_regex($eline, $mode);
+		($re, $message) = braces_to_regex($eline, $mode, $tt);
 		last if $tline !~ m/\A$re\z/;
 	    } elsif ($mode == 2) {
 		last if $tline !~ m/\A$eline\z/;
@@ -1696,6 +1938,14 @@ if ($self_test_mode) {
     my ($total_ntests, $total_nfails) = (0, 0);
 
     my ($ntests, $nfails) = ClickTest::test_parse_double_braces();
+    $total_ntests += $ntests;
+    $total_nfails += $nfails;
+
+    ($ntests, $nfails) = range_to_regex::test_range_to_regex();
+    $total_ntests += $ntests;
+    $total_nfails += $nfails;
+
+    ($ntests, $nfails) = ClickTest::test_expand_int_ranges();
     $total_ntests += $ntests;
     $total_nfails += $nfails;
 
