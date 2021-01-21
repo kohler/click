@@ -25,6 +25,15 @@ clicktest TEST1 TEST2 TEST3 TEST4 TEST5 TEST6 || true
  {{~ 10-11}}
  {{~ 10-11}}
 
+ %file FOOFL
+ 10.1
+ 11
+ 11.1
+ %expect FOOFL
+ {{~ 10.0-11}}
+ {{~ 10-11.0}}
+ {{~ 10-11.0}}
+
 %file -d TEST3
  %file FOO
  9
@@ -37,6 +46,17 @@ clicktest TEST1 TEST2 TEST3 TEST4 TEST5 TEST6 || true
  {{~ 10+-1}}
  {{~ 10+-1}}
 
+ %file FOOFL
+ 9.5
+ 10
+ 011.0000
+ 11.1
+ %expect FOOFL
+ {{~ 10.0+-1}}
+ {{~ 10.0+-1}}
+ {{~ 10+-1.0}}
+ {{~ 10+-1.0}}
+
 %file -d TEST4
  %info
  5% of 10 is 0.5, which is rounded down to 0
@@ -46,6 +66,16 @@ clicktest TEST1 TEST2 TEST3 TEST4 TEST5 TEST6 || true
  %expect FOO
  {{~ 10+-5%}}
  {{~ 10+-5%}}
+ %file FOOFL
+ 9.5
+ 10
+ 10.5
+ 10.6
+ %expect FOOFL
+ {{~ 10.0+-5%}}
+ {{~ 10+-5.0%}}
+ {{~ 10+-5.0%}}
+ {{~ 10+-5.0%}}
 
 %file -d TEST5
  %info
@@ -78,10 +108,19 @@ TEST1:{{\d+}}: FOO:{{\d+}}: but got  'w1 w2'
 TEST2:{{\d+}}: file FOO has unexpected value starting at line {{\d+}}
 TEST2:{{\d+}}: FOO:{{\d+}}: expected '{{.*}}'
 TEST2:{{\d+}}: FOO:{{\d+}}: but got  '12'
+TEST2:{{\d+}}: file FOOFL has unexpected value starting at line {{\d+}}
+TEST2:{{\d+}}: FOOFL:{{\d+}}: expected '{{.*}}'
+TEST2:{{\d+}}: FOOFL:{{\d+}}: but got  '11.1'
 TEST3:{{\d+}}: file FOO has unexpected value starting at line {{\d+}}
 TEST3:{{\d+}}: FOO:{{\d+}}: expected '{{.*}}'
 TEST3:{{\d+}}: FOO:{{\d+}}: but got  '12'
+TEST3:{{\d+}}: file FOOFL has unexpected value starting at line {{\d+}}
+TEST3:{{\d+}}: FOOFL:{{\d+}}: expected '{{.*}}'
+TEST3:{{\d+}}: FOOFL:{{\d+}}: but got  '11.1'
 TEST4:{{\d+}}: file FOO has unexpected value starting at line {{\d+}}
 TEST4:{{\d+}}: FOO:{{\d+}}: expected '{{.*}}'
 TEST4:{{\d+}}: FOO:{{\d+}}: but got  '11'
+TEST4:{{\d+}}: file FOOFL has unexpected value starting at line {{\d+}}
+TEST4:{{\d+}}: FOOFL:{{\d+}}: expected '{{.*}}'
+TEST4:{{\d+}}: FOOFL:{{\d+}}: but got  '10.6'
 clicktest: 2 successes, 4 failures, 0 skipped

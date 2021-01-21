@@ -885,47 +885,54 @@ sub test_parse_double_braces() {
     return ($ntests, $nfails);
 }
 
-# Parses $string as one of the supported int range formats (without enclosing
-# braces).  Returns the parsed int range as a regex or undef if no int range was
-# found. Examples (with braces included):
+# Parses $string as one of the supported numeric range formats (without
+# enclosing braces).  Returns the parsed numeric range as a regex or undef if no
+# numeric range was found.  If any of the numbers in the format contains a
+# decimal point, floats and integers are accepted; otherwise only integers are
+# accepted. Examples (with braces included):
 # {{~ 5 - 15}} : allow integers from 5 through 15 (inclusive)
+# {{~ 5.0 - 15}} : allow floats or integers from 5 through 15 (inclusive)
 # {{~ 100 +- 5}}  : allow integers from 95 through 105 (inclusive)
 # {{~ 100 +- 5%}} : allow integers approximately 5% from 100
-sub parse_int_range($$) {
+# {{~ 100 +- 5.0%}} : allow floats or integers approximately 5% from 100
+sub parse_num_range($$) {
     my ($string, $tt) = @_;
 
-    if ($string =~ /\A~\s*(\d+)\s*-\s*(\d+)\s*$/) {
+    if ($string =~ /\A~\s*(\d*\.?\d*)\s*-\s*(\d*\.?\d*)\s*$/ && $1 ne '' && $2 ne '') {
         # e.g. {{~ 5 - 15}}
         my($lower, $upper) = ($1, $2);
+        my $float = ($lower =~ /\./ || $upper =~ /\./);
         if ($lower > $upper) {
             ($lower, $upper) = ($upper, $lower);
             $tt->eh->message("warning: '{{$string}}': converting inverted range to '$lower-$upper'\n");
         }
-        return range_to_regex::range_to_regex($lower, $upper);
-    } elsif ($string =~ /\A~\s*(\d+)\s*\+-\s*(\d+)\s*(%?)\s*$/) {
+        return range_to_regex::range_to_regex($lower, $upper, $float);
+    } elsif ($string =~ /\A~\s*(\d*\.?\d*)\s*\+-\s*(\d*\.?\d*)\s*(%?)\s*$/ && $1 ne '' && $2 ne '') {
         # e.g. {{~ 100 +- 5}} or {{~ 100 +- 5%}}
         my($val, $fuzz, $perc) = ($1, $2, $3);
-        my $delta = $perc ? int($fuzz / 100 * $val) : $fuzz; # round down
+        my $float = ($val =~ /\./ || $fuzz =~ /\./);
+        my $delta = $perc ? $fuzz / 100 * $val : $fuzz;
+        $delta = int($delta) unless $float; # round down
         my($lower, $upper) = ($val - $delta, $val + $delta);
         if ($lower < 0) {
             $tt->eh->message("warning: '{{$string}}' generates negative lower bound $lower; setting to 0\n");
             $lower = 0;
         }
-        return range_to_regex::range_to_regex($lower, $upper);
+        return range_to_regex::range_to_regex($lower, $upper, $float);
     } else {
         return undef;
     }
 }
 
-# Given a regex $re_in, searches it for int ranges and replaces them with
+# Given a regex $re_in, searches it for numeric ranges and replaces them with
 # equivalent regexes. Returns the resulting regex.
-sub expand_int_ranges($$) {
+sub expand_num_ranges($$) {
     my ($re_in, $tt) = @_;
 
     my($before, $middle, $after) = ('', '', '');
     my $re_out = '';
     while (parse_double_braces($re_in, \$before, \$middle, \$after)) {
-        if (my $range = parse_int_range($middle, $tt)) {
+        if (my $range = parse_num_range($middle, $tt)) {
             $middle = $range;
         } else {
             $middle = "{{$middle}}"; # recover the braces that were removed
@@ -937,7 +944,7 @@ sub expand_int_ranges($$) {
     return $re_out;
 }
 
-sub test_expand_int_ranges() {
+sub test_expand_num_ranges() {
     my ($ntests, $nfails) = (0, 0);
 
     my @cases = (
@@ -948,8 +955,8 @@ sub test_expand_int_ranges() {
 
     for my $c (@cases) {
         $ntests++;
-        print "case: test_expand_int_ranges ", join(' / ', @$c), "\n";
-        my $re = expand_int_ranges($c->[0], undef);
+        print "case: test_expand_num_ranges ", join(' / ', @$c), "\n";
+        my $re = expand_num_ranges($c->[0], undef);
         if ($re ne $c->[1]) {
             print "fail: '$re' != '$c->[1]'\n";
             $nfails++;
@@ -973,14 +980,14 @@ sub braces_to_regex ($$$) {
 	    $after =~ s/\A\s+//;
 	    $message = (defined($message) ? $message . " " . $middle : $middle);
 	    $x = $before . $after;
-	} elsif (my $range = parse_int_range($middle, $tt)) {
+	} elsif (my $range = parse_num_range($middle, $tt)) {
 	    $before = quotemeta($before) if $mode == 1;
 	    $re .= $before . $range;
 	    $x = $after;
 	} else {
 	    $before = quotemeta($before) if $mode == 1;
             $middle =~ s,(\A|[^\\]|\\\\)/,$1\\/,g; # not 100% right sadly
-            $re .= $before . "(?:" . expand_int_ranges($middle, $tt) . ")";
+            $re .= $before . "(?:" . expand_num_ranges($middle, $tt) . ")";
 	    $x = $after;
 	}
     }
@@ -1080,7 +1087,7 @@ sub _read_file_section ($$$$;$) {
 	$file_data =~ s{^(.+)}{quotemeta($1)}meg;
     } elsif ($secname eq 'ignorex') {
 	$file_data =~ s[\s*\{\{\?.*?\}\}\s*][]mg;
-	$file_data = expand_int_ranges($file_data, $tt);
+	$file_data = expand_num_ranges($file_data, $tt);
     }
     if ($regex_opts && $secname eq 'expect') {
 	$file_data =~ s{\{\{}{\{\{$regex_opts}g;
@@ -2193,7 +2200,7 @@ if ($self_test_mode) {
     $total_ntests += $ntests;
     $total_nfails += $nfails;
 
-    ($ntests, $nfails) = ClickTest::test_expand_int_ranges();
+    ($ntests, $nfails) = ClickTest::test_expand_num_ranges();
     $total_ntests += $ntests;
     $total_nfails += $nfails;
 
