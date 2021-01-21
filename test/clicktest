@@ -10,7 +10,7 @@ no locale;
 use bytes;
 require 5.006;
 
-($preserve_temporaries, $expand_mode, $verbose) = (0, 0, 0);
+($preserve_temporaries, $expand_mode, $verbose, $self_test_mode) = (0, 0, 0, 0);
 $running_pid = 0;
 %require_error_commands = ();
 $quiet_ebadf = 0;
@@ -383,11 +383,100 @@ sub _read_script_section ($$$) {
     }
 }
 
+# Parses $string by looking for the first {{ and a matching }} and divides it
+# according to the three corresponding substrings. Sets:
+# $$before to the substring preceding {{
+# $$middle to the substring enclosed by {{ and }}
+# $$after to the substring following }}
+# For example, parses 'before{{middle}}after' as 'before'/'middle'/'after'.
+#
+# Supports one nested level of matching {{ and }}. For example:
+# 'before{{m1{{m2}}m3{{m4}}m5}}after' is parsed as:
+# 'before' / 'm1{{m2}}m3{{m4}}m5' / 'after'
+#
+# Returns false (and does not change $$before, $$middle, $$after) if:
+# - No {{ is found
+# - No matching }} for the initial {{ is found
+# - An additional level of nesting is encountered ('{{1{{2{{3}}2}}1}}')
+# Returns true otherwise.
+#
+# Note, these are accepted:
+# - '}}before{{middle}}after' parsed as '}}before' / 'middle' / 'after'
+# - 'before{{middle}}a1}}a2{{a3' parsed as 'before' / 'middle' / 'a1}}a2{{a3'
+sub parse_double_braces($$$$) {
+    my ($string, $before, $middle, $after) = @_;
+
+    return 0 if $string !~ /\{\{/;
+    my $first_open_pos = $-[0]; # $-[0] is the index of the last match
+    my $next_pos = $-[0] + 2;
+    my $level = 1;
+
+    while ($level && substr($string, $next_pos) =~ /(\{\{|\}\})/) {
+        $next_pos += $-[0] + 2;
+        $level = (($1 eq '{{') ? ($level + 1) : ($level - 1));
+        return 0 if $level > 2; # only one level of nesting supported
+    }
+    return 0 if $level; # no match
+    my $last_close_pos = $next_pos - 2;
+    $$before = substr($string, 0, $first_open_pos);
+    $$middle = substr($string, $first_open_pos + 2, $last_close_pos - ($first_open_pos + 2));
+    $$after = substr($string, $last_close_pos + 2);
+
+    return 1;
+}
+
+sub test_parse_double_braces() {
+    my ($ntests, $nfails) = (0, 0);
+
+    my @success_cases = (
+      ['before{{middle}}after', 'before', 'middle', 'after'],
+      ['before{{m1{{m2}}m3{{m4}}m5}}after', 'before', 'm1{{m2}}m3{{m4}}m5', 'after'],
+      ['}}before{{middle}}after', '}}before', 'middle', 'after'],
+      ['before{{middle}}a1}}a2{{a3', 'before', 'middle', 'a1}}a2{{a3'],
+      ['{{}}', '', '', ''],
+      ['{{{{}}}}', '', '{{}}', ''],
+    );
+    my @fail_cases = ('', 'abc', '}}', '{ {}}', '{{', '{{ {{ }}', '{{ {{ {{ }} }} }}');
+
+    for my $c (@success_cases) {
+        $ntests++;
+        print "case: test_parse_double_braces: ", join(' / ', @$c), "\n";
+        my ($before, $middle, $after) = ('', '', '');
+        my $ret = parse_double_braces($c->[0], \$before, \$middle, \$after);
+        if (!$ret) {
+            print "fail: parse_double_braces returned false\n";
+            $nfails++;
+            next;
+        }
+        for my $pair (['before', $before, $c->[1]], ['middle', $middle, $c->[2]], ['after', $after, $c->[3]]) {
+            if ($pair->[1] ne $pair->[2]) {
+                print "fail: $pair->[0]: '$pair->[1]' != '$pair->[2]'\n";
+                $nfails++;
+                next;
+            }
+        }
+    }
+    for my $c (@fail_cases) {
+        $ntests++;
+        print "case: test_parse_double_braces: $c\n";
+        my ($before, $middle, $after) = ('', '', '');
+        my $ret = parse_double_braces($c, \$before, \$middle, \$after);
+        if ($ret) {
+            print "fail: parse_double_braces returned true; should have returned false\n";
+            $nfails++;
+            next;
+        }
+    }
+    return ($ntests, $nfails);
+}
+
 sub braces_to_regex ($$) {
     my($x, $mode) = @_;
     my($re, $message) = ("", undef);
-    while ($x =~ /\A(.*?)\{\{(.*?)\}\}(.*)\z/) {
-	my($before, $middle, $after) = ($1, $2, $3);
+
+    my($before, $middle, $after) = ('', '', '');
+
+    while (parse_double_braces($x, \$before, \$middle, \$after)) {
 	if ($middle =~ /\A\?/) {
 	    $before =~ s/\s+\z//;
 	    $middle =~ s/\A\?\s*//;
@@ -850,11 +939,18 @@ sub _output_expectation_error ($$$$$) {
 }
 
 sub _expect_trim_whitespace ($) {
+    my($string) = @_;
     my($out) = "";
-    foreach my $x (split(/(\{\{.*?\}\})/, $_[0])) {
-	$x =~ tr/ \f\r\t\013//d if $x !~ /\A\{\{/;
-	$out .= $x;
+
+    my($before, $middle, $after) = ('', '', '');
+    while (parse_double_braces($string, \$before, \$middle, \$after)) {
+	# trim anything not inside braces
+	$before =~ tr/ \f\r\t\013//d;
+	$out .= $before . "{{$middle}}";
+	$string = $after;
     }
+    $string =~ tr/ \f\r\t\013//d;
+    $out .= $string;
     return $out;
 }
 
@@ -1589,9 +1685,22 @@ while (@ARGV) {
 	$jobs = $1;
     } elsif (argcmp($_, "--jobs", 1, $arg) && $arg =~ /\A\d+\z/) {
 	$jobs = $arg;
+    } elsif (argcmp($_, '--self-test-mode', 1)) {
+	$self_test_mode = 1;
     } else {
 	usage;
     }
+}
+
+if ($self_test_mode) {
+    my ($total_ntests, $total_nfails) = (0, 0);
+
+    my ($ntests, $nfails) = ClickTest::test_parse_double_braces();
+    $total_ntests += $ntests;
+    $total_nfails += $nfails;
+
+    print "ran $total_ntests tests of which $total_nfails failed\n";
+    exit($total_nfails != 0);
 }
 
 # prepend to path
