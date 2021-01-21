@@ -132,8 +132,8 @@
 .rm #[ #] #H #V #F C
 .\" ========================================================================
 .\"
-.IX Title "CLICKTEST 1"
-.TH CLICKTEST 1 "2020-10-22" "perl v5.22.1" ""
+.IX Title "STDIN 1"
+.TH STDIN 1 "2021-01-21" "perl v5.22.1" ""
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -300,6 +300,18 @@ matches either \f(CW\*(C`foo\*(C'\fR or \f(CW\*(C`foobar\*(C'\fR. The \fB\-i\fR 
 regular expressions case-insensitive. (Text outside of regular
 expressions must match case.)
 .Sp
+ClickTest has a special syntax for numeric ranges. These can be expressed
+using one of three formats:
+    {{~ 5 \- 15}}     : allow integers from 5 to 15 (inclusive)
+    {{~ 100 +\- 5}}   : allow integers from 95 to 105 (inclusive)
+    {{~ 100 +\- 5%}}  : allow integers approximately 5% from 100
+.Sp
+To make these accept floating point numbers, add a '.'. For example:
+    {{~ 5.0 \- 15}}   : also accepts 5., 6.5, 15.000
+    {{~ 100 +\- 5.0%}}: also accepts 100.125
+.Sp
+Numeric ranges may be embedded inside regular expressions or used 'bare'.
+.Sp
 Document an \fB\f(CB%expect\fB\fR line with \f(CW\*(C`{{?comment}}\*(C'\fR blocks. For example:
 .Sp
 .Vb 1
@@ -328,7 +340,7 @@ treat \f(CW\*(C`{{}}\*(C'\fR blocks as regular expressions, and does not parse
 Define a regular-expression expected output file. This behaves like
 \&\fB\f(CB%expect\fB\fR, except that every line is treated as a regular expression.
 \&\f(CW\*(C`{{?comment}}\*(C'\fR blocks are ignored, but other brace pairs are treated
-according to the normal regular expression rules.
+according to the normal regular expression and numeric range rules.
 .ie n .IP "\fB\fB%stdin\fB [\-de] [+\f(BI\s-1LENGTH\s0\fB]\fR" 8
 .el .IP "\fB\f(CB%stdin\fB [\-de] [+\f(BI\s-1LENGTH\s0\fB]\fR" 8
 .IX Item "%stdin [-de] [+LENGTH]"

@@ -2465,6 +2465,18 @@ matches either C<foo> or C<foobar>. The B<-i> flag makes all such
 regular expressions case-insensitive. (Text outside of regular
 expressions must match case.)
 
+ClickTest has a special syntax for numeric ranges. These can be expressed
+using one of three formats:
+    {{~ 5 - 15}}     : allow integers from 5 to 15 (inclusive)
+    {{~ 100 +- 5}}   : allow integers from 95 to 105 (inclusive)
+    {{~ 100 +- 5%}}  : allow integers approximately 5% from 100
+
+To make these accept floating point numbers, add a '.'. For example:
+    {{~ 5.0 - 15}}   : also accepts 5., 6.5, 15.000
+    {{~ 100 +- 5.0%}}: also accepts 100.125
+
+Numeric ranges may be embedded inside regular expressions or used 'bare'.
+
 Document an B<%expect> line with C<{{?comment}}> blocks. For example:
 
     foo                {{? the sort was in the right order}}
@@ -2491,7 +2503,7 @@ B<%ignore> patterns.
 Define a regular-expression expected output file. This behaves like
 B<%expect>, except that every line is treated as a regular expression.
 C<{{?comment}}> blocks are ignored, but other brace pairs are treated
-according to the normal regular expression rules.
+according to the normal regular expression and numeric range rules.
 
 =item B<%stdin [-de] [+I<LENGTH>]>
 
