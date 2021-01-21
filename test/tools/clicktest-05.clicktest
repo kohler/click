@@ -1,0 +1,10 @@
+%script
+clicktest --self-test-mode
+
+%expectx stdout
+ran \d+ tests of which 0 failed
+
+%ignorex stdout
+^case:.*
+
+%expect stderr

@@ -10,7 +10,7 @@ no locale;
 use bytes;
 require 5.006;
 
-($preserve_temporaries, $expand_mode, $verbose) = (0, 0, 0);
+($preserve_temporaries, $expand_mode, $verbose, $self_test_mode) = (0, 0, 0, 0);
 $running_pid = 0;
 %require_error_commands = ();
 $quiet_ebadf = 0;
@@ -196,6 +196,421 @@ sub add ($$) {
     $tctr;
 }
 
+package range_to_regex;
+
+# Create regex based on $num that allows digits starting from $start_index to
+# vary. As follows:
+# - Digits before $start_index must remain as they were.
+# - Digit d at $start_index is allowed to vary from d to $index_digit_max.
+# - Each subsequent position is allowed to assume any digit value.
+#
+# Note: per perl convention, $start_index is positive and zero based when
+# counting from the left (0, 1, 2, ..); negative and -1 based when counting from
+# the right (.., -3, -2, -1).
+#
+# Returns the regex as well as the highest number permitted by the regex.
+#
+# Examples:
+# - vary_from_index(43, -1, 9) -> ('4[3-9]', 49) for 43-99
+# - vary_from_index(1000, -4, 2) -> ('[1-2]\d\d\d', 2999) for 1000-2999
+# - vary_from_index(34567, 1, 7) -> ('3[4-7]\d\d\d', 37999) for 34000-37999 (!)
+
+sub vary_from_index($$$;$) {
+    my ($num, $start_index, $index_digit_max, $debug) = @_;
+
+    my ($start, $middle, $end);
+    $start = $num; substr($start, $start_index) = '';
+
+    my $digit = substr($num, $start_index, 1);
+    die "digit > index_digit_max" if $digit > $index_digit_max;
+    my $middle_re = ($digit == $index_digit_max) ? $digit : "[$digit-$index_digit_max]";
+    my $middle_max = $index_digit_max;
+
+    my $suffix_len = length($num) - length($start) - 1;
+    my ($end_re, $end_max) = ('\d' x $suffix_len, 9 x $suffix_len);
+
+    print "start=$start middle=$middle_re/$middle_max end=$end_re/$end_max\n" if $debug;
+
+    my ($re, $re_max) = ($start . $middle_re . $end_re, $start . $middle_max . $end_max);
+    return ($re, $re_max);
+}
+
+# Return a regex corresponding to the range of integers starting with $lower
+# and ending with $upper. $lower and $upper must be non-negative integers.
+sub range_to_regex_int($$$) {
+    my ($lower, $upper, $debug) = @_;
+
+    # collect regex components to be or'd
+    my @re_ors = ();
+
+    # I will be using this range as a running example: 43 - 3504
+
+    # Phase 1:
+    # Generate ranges by varying $lower's rhs digits, each round incrementing
+    # the number of digits to vary and increasing $lower to beyond the range
+    # that was just created
+    # 43-49: rightmost 1 digit varies; $lower becomes 50
+    # 50-99: rightmost 2 digits vary; $lower becomes 100
+    # 100-999: rightmost 3 digits vary; $lower becomes 1000
+    # 1000-2999: rightmost 4 digits vary. note: stop before 3000
+
+    print "-------phase 1\n" if $debug;
+    for (my $rpos = -1; $rpos >= -length($upper); $rpos--) {
+        # $rpos is the index of the varying digit
+        print "lower=$lower upper=$upper rpos=$rpos\n" if $debug;
+
+        # get the digits in the varying position
+        my ($lower_digit, $upper_digit) = (substr($lower, $rpos, 1), substr($upper, $rpos, 1));
+        print "lower_digit=$lower_digit upper_digit=$upper_digit\n" if $debug;
+
+        my ($re, $re_max) = vary_from_index($lower, $rpos, 9, $debug);
+        if ($re_max >= $upper) {
+            if ($lower_digit == $upper_digit) { # e.g. l=10, u=15, r=-2
+                print "lower_digit=$lower_digit == upper_digit=$upper_digit. skipping\n" if $debug;
+                next;
+            }
+
+            # e.g. l=1000, u=3504, r=-3
+            print "re_max=$re_max >= upper=$upper. redoing\n" if $debug;
+            ($re, $re_max) = vary_from_index($lower, $rpos, $upper_digit-1, $debug);
+        }
+        # else: e.g. l=43, u=3504, r=-1
+
+        print "->adding $re\n\n" if $debug;
+        push @re_ors, $re;
+        $lower = $re_max+1;
+    }
+
+    # $lower is now 3000. Still to cover: 3000 - 3504
+
+    # Phase 2:
+    # Generate ranges by removing common digits from left of $lower and varying
+    # the reset
+    # 3000-3499. remove common digit '3', then vary remaining digits
+    # 3500-3504. remove further common digits '50', then vary remaining digits
+
+    die "length($lower) != length($upper)\n" if length($lower) != length($upper);
+    my $common_prefix = '';
+
+    print "-------phase 2\n" if $debug;
+    while (length($lower) && $lower <= $upper) {
+        print "common_prefix=$common_prefix lower=$lower upper=$upper (", $common_prefix.$lower , "-", $common_prefix.$upper, ")\n" if $debug;
+
+        # get digits in first position
+        my ($lower_digit, $upper_digit) = (substr($lower, 0, 1), substr($upper, 0, 1));
+        print "lower_digit=$lower_digit upper_digit=$upper_digit\n" if $debug;
+        if ($lower_digit == $upper_digit) {
+            # remove common digit
+            print "remove common digit $lower_digit\n" if $debug;
+            $common_prefix .= $lower_digit;
+            substr($lower, 0, 1) = substr($upper, 0, 1) = '';
+            next;
+        }
+        die if $lower !~ /^0*$/;
+
+        my $vary_max;
+        if (length($lower) > 1) {
+            # e.g. pref=3, l=000, r=504 => 3000-3499
+            $vary_max = $upper_digit-1; # note: $upper_digit can't be 0 - it would have been removed
+        } else {
+            # final range
+            # e.g. pref=350, l=0, r=4 => 3500-3504
+            $vary_max = $upper_digit;
+        }
+        print "vary_max=$vary_max\n" if $debug;
+
+        my ($re, $re_max) = vary_from_index($lower, 0, $vary_max, $debug);
+        $re = $common_prefix . $re;
+        print "->adding $re\n\n" if $debug;
+        push @re_ors, $re;
+
+        $lower = $re_max+1;
+    }
+    if (!length($lower)) {
+        # e.g.
+        # - start with l=u
+        # - start with l=0, u=10 (any upper bound ending in 0 reaches this case)
+        push @re_ors, $common_prefix;
+    }
+
+    return @re_ors;
+}
+
+# Return a regex corresponding to the range of numbers starting with $lower
+# and ending with $upper. $lower and $upper must be non-negative. $is_float
+# determines whether the regex accepts integers and floats ($is_float is true)
+# or only integers ($is_float is false). $lower and $upper must be integers if
+# $is_float is false.
+sub range_to_regex($$;$$) {
+    my ($lower, $upper, $is_float, $debug) = @_;
+    die if $lower > $upper || $lower < 0;
+    my $do_asserts = 0 || $debug;
+
+    # in case these are passed in as strings, remove leading 0's and trailing
+    # 0's in the fractional part (if any) by forcing perl to interpret them as
+    # numbers. note that this will also turn e.g '1.0' into '1'. also, for
+    # floats a leading 0 may yet exist in e.g. '0.1' but we'll deal with that
+    # when we get to the $is_float case just below.
+    $lower += 0;
+    $upper += 0;
+
+    if (!$is_float) {
+        my @re_ors = range_to_regex_int($lower, $upper, $debug);
+        return '(0*(' . join('|', @re_ors) . '))';
+    }
+
+    # we're going back to strings, so now remove the leading 0 in e.g. 0.1
+    $lower =~ s/^0(?=\.)//;
+    $upper =~ s/^0(?=\.)//;
+
+    # format check:
+    # - non-natural numbers have no leading or trailing zeros
+    # - natural numbers do not have a dot or leading zeros (except for '0'
+    #   itself)
+    # examples of legal formats: 0, 1, 10, 11, 1.1, .1
+    if ($do_asserts) {
+        die "$lower" unless ($lower =~ /^\d*\.\d*$/ && $lower !~ /(^0)|(0$)/) || ($lower =~ '^\d+$' && $lower !~ /^0/) || $lower eq '0';
+        die "$lower" if $lower =~ /^\d*\.$/;
+    }
+
+    print "formatting done: lower=$lower upper=$upper\n" if $debug;
+
+    # remember where the decimal point is before converting to integers
+    my @a;
+    @a = split(/\./, $lower); my $lower_frac_len = length($a[1]) || 0;
+    @a = split(/\./, $upper); my $upper_frac_len = length($a[1]) || 0;
+    my $frac_len = $lower_frac_len > $upper_frac_len ? $lower_frac_len : $upper_frac_len;
+
+    print "lower_frac_len=$lower_frac_len upper_frac_len=$upper_frac_len frac_len=$frac_len\n" if $debug;
+
+    # remove the decimal point, creating two integers. add trailing zeros to the
+    # shorter one to align them on the location of the former decimal point
+    # example: (12.345, 56.78) will result in (12345, 56780)
+    $lower =~ s/\.//; $lower .= '0' x ($frac_len - $lower_frac_len);
+    $upper =~ s/\.//; $upper .= '0' x ($frac_len - $upper_frac_len);
+
+    # back to numbers again (remove leading 0's)
+    $lower += 0;
+    $upper += 0;
+
+    # note: $frac_len is now a zero-based offset for the missing decimal
+    # point, counting from the end, as follows:
+    # $lower   $frac_len
+    # 1        0
+    # 1.1      1
+    # 1.10     2
+
+    print "calling range_to_regex_int($lower, $upper)\n" if $debug;
+    my @re_ors = range_to_regex_int($lower, $upper, $debug && 0);
+    print "returned ", join('|', @re_ors), "\n" if $debug;
+
+    # format check. each $re in @re_ors consists of up to three components, each
+    # component being optional (though $re cannot be empty):
+    # - a leading sequence of digits (no leading zeros, unless the entire re is
+    #   just '0')
+    # - a single-digit regex range
+    # - a trailing sequence of '\d'
+    #
+    # also: in the last regex, a regex range cannot be followed by '\d'
+    #
+    # example with all three components: 1[4-5]\d\d
+    if ($do_asserts) {
+        foreach my $re_i (0..$#re_ors) {
+            my $re = $re_ors[$re_i];
+            die $re if $re !~ /^\d*(\[\d-\d\])?(\\d)*$/;
+            die $re if $re eq '';
+            die $re if $re ne '0' && $re =~ /^0/;
+            die $re if $re_i == $#re_ors && $re =~ /\[0-9\]\\d/;
+        }
+    }
+
+    # the last re in @re_ors corresponds to the upper end of the range. if it
+    # contains a regex range, break it up so that the last regex does not
+    # contain a regex range. we'll need this property later.
+    if ($re_ors[$#re_ors] =~ /\[(\d)-(\d)\]$/) {
+        my ($middle_start, $middle_end) = ($1, $2);
+        if ($middle_start != $middle_end) {
+            my $re = pop(@re_ors);
+            $re =~ s/\[\d-\d\]$//;
+
+            my $new_end = $middle_end - 1;
+            push @re_ors, $new_end == $middle_start ? "$re$new_end" :
+              $re . "[$middle_start-$new_end]";
+
+            push @re_ors, "$re$middle_end";
+
+            print "post break up ", join('|', @re_ors), "\n" if $debug;
+        }
+    }
+
+    # now convert each of the integer regexes back to a corresponding float
+    # regex. and deal with corner cases..
+
+    my @new_re_ors = ();
+    foreach my $re_i (0..$#re_ors) {
+        my $re = $re_ors[$re_i];
+        $re =~ /^(\d*)(\[\d-\d\])?((\\d)*)$/ or die $re;
+        ($start, $middle, $end) = ($1, $2, $3);
+        $start ||= '';
+        $middle ||= '';
+        $end ||= '';
+
+        print "processing int re='$re': start='$start' middle='$middle' end='$end'\n" if $debug;
+
+        # number of digits represented by the three components
+        my $start_digit_len = length($start);
+        my $middle_digit_len = ($middle eq '') ? 0 : 1;
+        my $end_digit_len = length($end) / length('\d');
+        my $re_digit_len = $start_digit_len + $middle_digit_len + $end_digit_len;
+
+        # add leading zeros if we're short
+        $start = '0' x ($frac_len - $re_digit_len) . $start if $frac_len > $re_digit_len;
+        ($re, $start_digit_len, $re_digit_len) = (); # not correct and not needed anymore
+
+        # insert decimal point in $start or $end
+
+        if ($end_digit_len >= $frac_len) {
+            # $end  $frac_len  $pos result
+            #   \d      0        2    \d.
+            #   \d      1        0    .\d
+            #           0        0    .
+            my $pos = ($end_digit_len - $frac_len) * length('\d');
+            substr($end, $pos, 0) = '\.';
+        } else {
+            # $re        $frac_len  $pos     result
+            # 2           1           0       .2
+            # 2[1-2]      1           1       2.[1-2]
+            # 2[1-2]      2           0       .2[1-2]
+            # 2[1-2]3     2           1       2.[1-2]3
+
+            # note: $frac_len > $end_digit_len and $middle_digit_len <= 1 so
+            # $frac_len >= $end_digit_len + $middle_digit_len
+            my $pos = length($start) - ($frac_len - $end_digit_len - $middle_digit_len);
+            substr($start, $pos, 0) = '\.';
+        }
+
+        # we might now have trailing \d's in the fractional part, which are
+        # meaningless, so remove them
+        $end =~ s/(\\d)*$//;
+        $re = $start . $middle . $end;
+        ($start, $middle, $end) = ();
+
+        # notational corner case. if we have /40\.00[0-7]/ we should also allow
+        # '40', '40.', '40.0', and '40.00', etc. add /40(\.0*)?/.
+        # similarly, for /\.10[0-1]/, add /\.10*/
+
+        my ($int, $frac) = split(/\\\./, $re);
+        $frac = "\\\.$frac";
+        print "  split '$re' into: '$int' and '$frac'\n" if $debug;
+        if ($frac =~ s/(\\\.)?0*(\[0-\d\])?$// && $+[0] - $-[0] > 0) {
+            # matched and removed non-empty ("$+[0] - $-[0] > 0") tail that can
+            # match a sequence of '0' possibly preceded by a decimal point.
+            # $freq is now empty iff the decimal point was removed.
+            my $additional_re = ($frac eq '') ?"$int(\\.0*)?" : "$int${frac}0*";
+            print "  additional re: $additional_re\n" if $debug;
+            push @new_re_ors, $additional_re;
+        }
+
+        # floats can extend indefinitely. if we're doing the last regex, any
+        # number of trailing 0's can be added. for other regexes, any number of
+        # digits can be added while staying within the overall range. this works
+        # because we ensured the last regex does not contain a regex range.
+        if ($re_i == $#re_ors) {
+            $re .= '0*';
+        } else {
+            $re .= '\d*';
+        }
+        print "  result re: $re\n" if $debug;
+        push @new_re_ors, $re;
+    }
+    return '(0*(' . join('|', @new_re_ors) . '))';
+}
+
+sub test_range_to_regex() {
+    my ($ntests, $nfails) = (0, 0);
+
+    # test integer space
+    my $range_limit = 50;
+    print "case: numeric range: int cases\n";
+    for (my $lower = 0; $lower < $range_limit; $lower++) {
+        for (my $upper = $lower; $upper < $range_limit; $upper++) {
+            # even if they're ints, we can ask them to be treated as floats
+            for $float (0, 1) {
+                #print "--------------------------------------testing: lower=$lower upper=$upper float=$float\n";
+                my $re = range_to_regex($lower, $upper, $float);
+                #print "$re\n";
+                $ntests++;
+                my $ok = 1;
+                for (my $i = 0; $i < 11 * $upper; $i++) {
+                    my $match = ($i =~ /^$re$/) ? 1 : 0;
+                    my $should_match = ($i >= $lower && $i <= $upper) ? 1 : 0;
+                    $ok = 0 if $match != $should_match;
+                }
+                if (!$ok) {
+                    $nfails++;
+                    print "fail: test_range_to_regex: lower=$lower upper=$upper float=$float re=$re\n";
+                }
+            }
+        }
+    }
+
+    # test float space. testing this by keeping the number of significant digits
+    # constant and moving the decimal point. to optimize, i'm only using digits
+    # 0, 1, and 9 - assuming that other test cases are redundant. this will
+    # produce numeric duplicates (such as 00.1, 0.10, .100) but these format
+    # variants are also worth testing.
+    print "case: numeric range: float cases\n";
+    my $ndigits = 3;
+    $range_limit = sprintf("1%.${ndigits}d", 0); # e.g. ndigits=3 -> range_limit=1000
+    $range_limit += 0;
+    for my $lower_point_pos (0..3) {
+        for (my $lower_int = 0; $lower_int < $range_limit; $lower_int++) {
+            if ($lower_int =~ s/2/9/) {
+                $lower_int--;
+                next;
+            }
+            my $lower = sprintf("%03d", $lower_int); substr($lower, $lower_point_pos, 0) = '.';
+            #print "lower=$lower\n";
+            for my $upper_point_pos (0..3) {
+                for (my $upper_int = 0; $upper_int < $range_limit; $upper_int++) {
+                    if ($upper_int =~ s/2/9/) {
+                        $upper_int--;
+                        next;
+                    }
+                    my $upper = sprintf("%03d", $upper_int); substr($upper, $upper_point_pos, 0) = '.';
+                    next if $upper < $lower;
+                    #print "--------------------------------------testing: lower=$lower upper=$upper float=1\n";
+                    my $re = range_to_regex($lower, $upper, 1);
+                    #print "$re\n";
+                    $ntests++;
+
+                    my $ok = 1;
+
+                    my $incr = 0.01;
+                    for (my $test = 0; $test <= ($upper == 0 ? 1 : $upper * 11); $test += 0.01) {
+                        # mitigate floating point addition errors
+                        $test = sprintf('%.2f', $test);
+                        $test += 0;
+
+                        if ($test =~ s/2/9/) {
+                            $test -= $incr;
+                            next;
+                        }
+                        #print "lower=$lower upper=$upper test=$test\n";
+                        my $match = ($test =~ /^$re$/) ? 1 : 0;
+                        my $should_match = ($test >= $lower && $test <= $upper) ? 1 : 0;
+                        $ok = 0 if $match != $should_match;
+                    }
+                    if (!$ok) {
+                        $nfails++;
+                        print "fail: test_range_to_regex: lower=$lower upper=$upper float=1 re=$re\n";
+                    }
+                }
+            }
+        }
+    }
+    return ($ntests, $nfails);
+}
 
 ## main clicktest test object
 
@@ -383,11 +798,181 @@ sub _read_script_section ($$$) {
     }
 }
 
-sub braces_to_regex ($$) {
-    my($x, $mode) = @_;
+# Parses $string by looking for the first {{ and a matching }} and divides it
+# according to the three corresponding substrings. Sets:
+# $$before to the substring preceding {{
+# $$middle to the substring enclosed by {{ and }}
+# $$after to the substring following }}
+# For example, parses 'before{{middle}}after' as 'before'/'middle'/'after'.
+#
+# Supports one nested level of matching {{ and }}. For example:
+# 'before{{m1{{m2}}m3{{m4}}m5}}after' is parsed as:
+# 'before' / 'm1{{m2}}m3{{m4}}m5' / 'after'
+#
+# Returns false (and does not change $$before, $$middle, $$after) if:
+# - No {{ is found
+# - No matching }} for the initial {{ is found
+# - An additional level of nesting is encountered ('{{1{{2{{3}}2}}1}}')
+# Returns true otherwise.
+#
+# Note, these are accepted:
+# - '}}before{{middle}}after' parsed as '}}before' / 'middle' / 'after'
+# - 'before{{middle}}a1}}a2{{a3' parsed as 'before' / 'middle' / 'a1}}a2{{a3'
+sub parse_double_braces($$$$) {
+    my ($string, $before, $middle, $after) = @_;
+
+    return 0 if $string !~ /\{\{/;
+    my $first_open_pos = $-[0]; # $-[0] is the index of the last match
+    my $next_pos = $-[0] + 2;
+    my $level = 1;
+
+    while ($level && substr($string, $next_pos) =~ /(\{\{|\}\})/) {
+        $next_pos += $-[0] + 2;
+        $level = (($1 eq '{{') ? ($level + 1) : ($level - 1));
+        return 0 if $level > 2; # only one level of nesting supported
+    }
+    return 0 if $level; # no match
+    my $last_close_pos = $next_pos - 2;
+    $$before = substr($string, 0, $first_open_pos);
+    $$middle = substr($string, $first_open_pos + 2, $last_close_pos - ($first_open_pos + 2));
+    $$after = substr($string, $last_close_pos + 2);
+
+    return 1;
+}
+
+sub test_parse_double_braces() {
+    my ($ntests, $nfails) = (0, 0);
+
+    my @success_cases = (
+      ['before{{middle}}after', 'before', 'middle', 'after'],
+      ['before{{m1{{m2}}m3{{m4}}m5}}after', 'before', 'm1{{m2}}m3{{m4}}m5', 'after'],
+      ['}}before{{middle}}after', '}}before', 'middle', 'after'],
+      ['before{{middle}}a1}}a2{{a3', 'before', 'middle', 'a1}}a2{{a3'],
+      ['{{}}', '', '', ''],
+      ['{{{{}}}}', '', '{{}}', ''],
+    );
+    my @fail_cases = ('', 'abc', '}}', '{ {}}', '{{', '{{ {{ }}', '{{ {{ {{ }} }} }}');
+
+    for my $c (@success_cases) {
+        $ntests++;
+        print "case: test_parse_double_braces: ", join(' / ', @$c), "\n";
+        my ($before, $middle, $after) = ('', '', '');
+        my $ret = parse_double_braces($c->[0], \$before, \$middle, \$after);
+        if (!$ret) {
+            print "fail: parse_double_braces returned false\n";
+            $nfails++;
+            next;
+        }
+        for my $pair (['before', $before, $c->[1]], ['middle', $middle, $c->[2]], ['after', $after, $c->[3]]) {
+            if ($pair->[1] ne $pair->[2]) {
+                print "fail: $pair->[0]: '$pair->[1]' != '$pair->[2]'\n";
+                $nfails++;
+                next;
+            }
+        }
+    }
+    for my $c (@fail_cases) {
+        $ntests++;
+        print "case: test_parse_double_braces: $c\n";
+        my ($before, $middle, $after) = ('', '', '');
+        my $ret = parse_double_braces($c, \$before, \$middle, \$after);
+        if ($ret) {
+            print "fail: parse_double_braces returned true; should have returned false\n";
+            $nfails++;
+            next;
+        }
+    }
+    return ($ntests, $nfails);
+}
+
+# Parses $string as one of the supported numeric range formats (without
+# enclosing braces).  Returns the parsed numeric range as a regex or undef if no
+# numeric range was found.  If any of the numbers in the format contains a
+# decimal point, floats and integers are accepted; otherwise only integers are
+# accepted. Examples (with braces included):
+# {{~ 5 - 15}} : allow integers from 5 through 15 (inclusive)
+# {{~ 5.0 - 15}} : allow floats or integers from 5 through 15 (inclusive)
+# {{~ 100 +- 5}}  : allow integers from 95 through 105 (inclusive)
+# {{~ 100 +- 5%}} : allow integers approximately 5% from 100
+# {{~ 100 +- 5.0%}} : allow floats or integers approximately 5% from 100
+sub parse_num_range($$) {
+    my ($string, $tt) = @_;
+
+    if ($string =~ /\A~\s*(\d*\.?\d*)\s*-\s*(\d*\.?\d*)\s*$/ && $1 ne '' && $2 ne '') {
+        # e.g. {{~ 5 - 15}}
+        my($lower, $upper) = ($1, $2);
+        my $float = ($lower =~ /\./ || $upper =~ /\./);
+        if ($lower > $upper) {
+            ($lower, $upper) = ($upper, $lower);
+            $tt->eh->message("warning: '{{$string}}': converting inverted range to '$lower-$upper'\n");
+        }
+        return range_to_regex::range_to_regex($lower, $upper, $float);
+    } elsif ($string =~ /\A~\s*(\d*\.?\d*)\s*\+-\s*(\d*\.?\d*)\s*(%?)\s*$/ && $1 ne '' && $2 ne '') {
+        # e.g. {{~ 100 +- 5}} or {{~ 100 +- 5%}}
+        my($val, $fuzz, $perc) = ($1, $2, $3);
+        my $float = ($val =~ /\./ || $fuzz =~ /\./);
+        my $delta = $perc ? $fuzz / 100 * $val : $fuzz;
+        $delta = int($delta) unless $float; # round down
+        my($lower, $upper) = ($val - $delta, $val + $delta);
+        if ($lower < 0) {
+            $tt->eh->message("warning: '{{$string}}' generates negative lower bound $lower; setting to 0\n");
+            $lower = 0;
+        }
+        return range_to_regex::range_to_regex($lower, $upper, $float);
+    } else {
+        return undef;
+    }
+}
+
+# Given a regex $re_in, searches it for numeric ranges and replaces them with
+# equivalent regexes. Returns the resulting regex.
+sub expand_num_ranges($$) {
+    my ($re_in, $tt) = @_;
+
+    my($before, $middle, $after) = ('', '', '');
+    my $re_out = '';
+    while (parse_double_braces($re_in, \$before, \$middle, \$after)) {
+        if (my $range = parse_num_range($middle, $tt)) {
+            $middle = $range;
+        } else {
+            $middle = "{{$middle}}"; # recover the braces that were removed
+        }
+        $re_out .= $before . $middle;
+        $re_in = $after;
+    }
+    $re_out .= $re_in;
+    return $re_out;
+}
+
+sub test_expand_num_ranges() {
+    my ($ntests, $nfails) = (0, 0);
+
+    my @cases = (
+      ['', ''],
+      ['{{~1-2}}', '(0*(1|2))'],
+      ['before{{~1-2}}{{xxx}}{{~3-4}}after', 'before(0*(1|2)){{xxx}}(0*(3|4))after'],
+    );
+
+    for my $c (@cases) {
+        $ntests++;
+        print "case: test_expand_num_ranges ", join(' / ', @$c), "\n";
+        my $re = expand_num_ranges($c->[0], undef);
+        if ($re ne $c->[1]) {
+            print "fail: '$re' != '$c->[1]'\n";
+            $nfails++;
+            next;
+        }
+    }
+    return ($ntests, $nfails);
+}
+
+sub braces_to_regex ($$$) {
+    my($x, $mode, $tt) = @_;
     my($re, $message) = ("", undef);
-    while ($x =~ /\A(.*?)\{\{(.*?)\}\}(.*)\z/) {
-	my($before, $middle, $after) = ($1, $2, $3);
+
+    my($before, $middle, $after) = ('', '', '');
+
+    while (parse_double_braces($x, \$before, \$middle, \$after)) {
 	if ($middle =~ /\A\?/) {
 	    $before =~ s/\s+\z//;
 	    $middle =~ s/\A\?\s*//;
@@ -395,10 +980,14 @@ sub braces_to_regex ($$) {
 	    $after =~ s/\A\s+//;
 	    $message = (defined($message) ? $message . " " . $middle : $middle);
 	    $x = $before . $after;
+	} elsif (my $range = parse_num_range($middle, $tt)) {
+	    $before = quotemeta($before) if $mode == 1;
+	    $re .= $before . $range;
+	    $x = $after;
 	} else {
 	    $before = quotemeta($before) if $mode == 1;
             $middle =~ s,(\A|[^\\]|\\\\)/,$1\\/,g; # not 100% right sadly
-            $re .= $before . "(?:" . $middle . ")";
+            $re .= $before . "(?:" . expand_num_ranges($middle, $tt) . ")";
 	    $x = $after;
 	}
     }
@@ -493,11 +1082,12 @@ sub _read_file_section ($$$$;$) {
 	$file_data =~ tr/ \f\r\t\013//d;
     }
     if ($secname eq 'ignore') {
-	$file_data =~ s{^(.+)}{braces_to_regex($1, 1)}meg;
+	$file_data =~ s{^(.+)}{braces_to_regex($1, 1, $tt)}meg;
     } elsif ($secname eq 'ignorev') {
 	$file_data =~ s{^(.+)}{quotemeta($1)}meg;
     } elsif ($secname eq 'ignorex') {
 	$file_data =~ s[\s*\{\{\?.*?\}\}\s*][]mg;
+	$file_data = expand_num_ranges($file_data, $tt);
     }
     if ($regex_opts && $secname eq 'expect') {
 	$file_data =~ s{\{\{}{\{\{$regex_opts}g;
@@ -850,11 +1440,18 @@ sub _output_expectation_error ($$$$$) {
 }
 
 sub _expect_trim_whitespace ($) {
+    my($string) = @_;
     my($out) = "";
-    foreach my $x (split(/(\{\{.*?\}\})/, $_[0])) {
-	$x =~ tr/ \f\r\t\013//d if $x !~ /\A\{\{/;
-	$out .= $x;
+
+    my($before, $middle, $after) = ('', '', '');
+    while (parse_double_braces($string, \$before, \$middle, \$after)) {
+	# trim anything not inside braces
+	$before =~ tr/ \f\r\t\013//d;
+	$out .= $before . "{{$middle}}";
+	$string = $after;
     }
+    $string =~ tr/ \f\r\t\013//d;
+    $out .= $string;
     return $out;
 }
 
@@ -911,7 +1508,7 @@ sub _check_one_typed_expect ($$$$$) {
 	    }
 	    if ($mode != 0 && $eline =~ /\{\{/) {
 		my($re);
-		($re, $message) = braces_to_regex($eline, $mode);
+		($re, $message) = braces_to_regex($eline, $mode, $tt);
 		last if $tline !~ m/\A$re\z/;
 	    } elsif ($mode == 2) {
 		last if $tline !~ m/\A$eline\z/;
@@ -1589,9 +2186,30 @@ while (@ARGV) {
 	$jobs = $1;
     } elsif (argcmp($_, "--jobs", 1, $arg) && $arg =~ /\A\d+\z/) {
 	$jobs = $arg;
+    } elsif (argcmp($_, '--self-test-mode', 1)) {
+	$self_test_mode = 1;
     } else {
 	usage;
     }
+}
+
+if ($self_test_mode) {
+    my ($total_ntests, $total_nfails) = (0, 0);
+
+    my ($ntests, $nfails) = ClickTest::test_parse_double_braces();
+    $total_ntests += $ntests;
+    $total_nfails += $nfails;
+
+    ($ntests, $nfails) = ClickTest::test_expand_num_ranges();
+    $total_ntests += $ntests;
+    $total_nfails += $nfails;
+
+    ($ntests, $nfails) = range_to_regex::test_range_to_regex();
+    $total_ntests += $ntests;
+    $total_nfails += $nfails;
+
+    print "ran $total_ntests tests of which $total_nfails failed\n";
+    exit($total_nfails != 0);
 }
 
 # prepend to path
@@ -1847,6 +2465,18 @@ matches either C<foo> or C<foobar>. The B<-i> flag makes all such
 regular expressions case-insensitive. (Text outside of regular
 expressions must match case.)
 
+ClickTest has a special syntax for numeric ranges. These can be expressed
+using one of three formats:
+    {{~ 5 - 15}}     : allow integers from 5 to 15 (inclusive)
+    {{~ 100 +- 5}}   : allow integers from 95 to 105 (inclusive)
+    {{~ 100 +- 5%}}  : allow integers approximately 5% from 100
+
+To make these accept floating point numbers, add a '.'. For example:
+    {{~ 5.0 - 15}}   : also accepts 5., 6.5, 15.000
+    {{~ 100 +- 5.0%}}: also accepts 100.125
+
+Numeric ranges may be embedded inside regular expressions or used 'bare'.
+
 Document an B<%expect> line with C<{{?comment}}> blocks. For example:
 
     foo                {{? the sort was in the right order}}
@@ -1873,7 +2503,7 @@ B<%ignore> patterns.
 Define a regular-expression expected output file. This behaves like
 B<%expect>, except that every line is treated as a regular expression.
 C<{{?comment}}> blocks are ignored, but other brace pairs are treated
-according to the normal regular expression rules.
+according to the normal regular expression and numeric range rules.
 
 =item B<%stdin [-de] [+I<LENGTH>]>
 
