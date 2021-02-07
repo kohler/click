@@ -332,7 +332,7 @@ IP6AddressArg::basic_parse(const String &str, IP6Address &result, const ArgConte
     int d = 0, p = 0, coloncolon = -1;
 
     const char *begin = str.begin(), *end = str.end(), *s;
-    for (s = begin; s != end; ++s) {
+    for (s = begin; s != end && d < 8; ++s) {
 	int digit;
 	if (*s >= '0' && *s <= '9')
 	    digit = *s - '0';

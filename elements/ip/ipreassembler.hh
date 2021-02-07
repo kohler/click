@@ -84,7 +84,7 @@ class IPReassembler : public Element { public:
     struct ChunkLink {
 	uint16_t off;
 	uint16_t lastoff;
-    };
+    } __attribute__((packed));
 
   private:
 
