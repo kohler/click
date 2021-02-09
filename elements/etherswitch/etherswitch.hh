@@ -3,6 +3,8 @@
 #include <click/element.hh>
 #include <click/etheraddress.hh>
 #include <click/hashtable.hh>
+#include <click/bitvector.hh>
+#include <click/vector.hh>
 CLICK_DECLS
 
 /*
@@ -54,6 +56,23 @@ Returns the current port association table.
 
 Returns or sets the TIMEOUT argument.
 
+=e
+
+  from_port0, from_port1 :: FromDevice...;
+  to_port0, to_port1 :: ToDevice...;
+
+  switch :: EtherSwitch;
+
+  q0 :: Queue -> to_port0;
+  q1 :: Queue -> to_port1;
+
+  from_port0 -> [0] switch [0] -> q0;
+  from_port1 -> [1] switch [1] -> q1;
+
+  ---
+
+  echo "0, 1" > /click/switch/remove_port_forwarding
+
 =a
 
 ListenEtherSwitch, EtherSpanTree
@@ -85,8 +104,26 @@ class EtherSwitch : public Element { public:
     typedef HashTable<EtherAddress, AddrInfo> Table;
     Table _table;
     uint32_t _timeout;
+    struct PortForwardRule {
+        Bitvector bv; /* Each bit is a port used in determining forwarding to of packets */
+        int w; /* Sum of bv */
+        void calculate_weight() {
+            w = bv.weight();
+        }
+        void configure(int i, int n) {
+            bv.resize(n);
+            for (int j = 0; j < n; j++)
+                bv[j] = true;
+            assert((unsigned) i < (unsigned) n);
+            bv[i] = false;
+            calculate_weight();
+        }
+    };
+    Vector<PortForwardRule> _pfrs;
 
     void broadcast(int source, Packet*);
+    int remove_port_forwarding(String portmaps, ErrorHandler *errh);
+    void reset_port_forwarding();
 
     static String reader(Element *, void *);
     static int writer(const String &, Element *, void *, ErrorHandler *);

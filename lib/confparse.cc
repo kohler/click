@@ -792,6 +792,21 @@ cp_shift_spacevec(String &str)
   return answer;
 }
 
+String
+cp_shift_delimiter(String &str, char delim)
+{
+    int offset = str.find_left(delim);
+    if (offset >= 0) {
+	String res = str.substring(0, offset);
+	str = str.substring(offset + 1);
+	return res;
+    } else {
+	String res = str;
+	str = String::make_empty();
+	return res;
+    }
+}
+
 /// @brief  Join the strings of @a conf with commas and return the result.
 ///
 /// This function does not quote or otherwise protect the strings in @a conf.

@@ -23,6 +23,8 @@
 #include <click/args.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/string.hh>
 CLICK_DECLS
 
 EtherSwitch::EtherSwitch()
@@ -38,24 +40,69 @@ EtherSwitch::~EtherSwitch()
 int
 EtherSwitch::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return Args(conf, this, errh)
+    if (Args(conf, this, errh)
 	.read("TIMEOUT", SecondsArg(), _timeout)
-	.complete();
+	.complete() < 0)
+        return -1;
+
+    int n = noutputs();
+    _pfrs.resize(n);
+    for (int i = 0; i < n; i++)
+        _pfrs[i].configure(i, n);
+    return 0;
 }
 
 void
 EtherSwitch::broadcast(int source, Packet *p)
 {
-  int n = noutputs();
-  assert((unsigned) source < (unsigned) n);
-  int sent = 0;
-  for (int i = n - 1; i >=0 ; i--)
-    if (i != source) {
-      Packet *pp = (sent < n - 2 ? p->clone() : p);
+  PortForwardRule &pfr = _pfrs[source];
+  int n = pfr.bv.size();
+  int w = pfr.w;
+  assert((unsigned) w <= (unsigned) n);
+  for (int i = 0; i < n && w > 0; i++) {
+    if (pfr.bv[i]) {
+      Packet *pp = (w > 1 ? p->clone() : p);
       output(i).push(pp);
-      sent++;
+      w--;
     }
-  assert(sent == n - 1);
+  }
+}
+
+int
+EtherSwitch::remove_port_forwarding(String portmaps, ErrorHandler *errh)
+{
+    int nn = noutputs();
+    Vector<PortForwardRule> new_pfrs(_pfrs);
+    Vector<String> maps_vec;
+    cp_argvec(portmaps, maps_vec);
+    Vector<String>::const_iterator i,n;
+    for (i = maps_vec.begin(), n = maps_vec.end(); i != n; ++i) {
+        int source, outport;
+        Args args = Args(this,errh).push_back_words(*i);
+        if (args.read_mp("SOURCE", source).consume() < 0)
+            return -1;
+        if (source < 0 || source > nn)
+            return -1;
+        int new_pfr_n = (new_pfrs[source].bv).size();
+        while (!args.empty()) {
+            if (args.read_p("OUTPORT", outport).consume() < 0)
+                return -1;
+            if (outport < 0 || outport > new_pfr_n)
+                return -1;
+            (new_pfrs[source].bv)[outport] = false;
+        }
+        new_pfrs[source].calculate_weight();
+    }
+    _pfrs = new_pfrs;
+    return 0;
+}
+
+void
+EtherSwitch::reset_port_forwarding()
+{
+    int n = noutputs();
+    for (int i = 0; i < n; i++)
+        _pfrs[i].configure(i, n);
 }
 
 void
@@ -83,10 +130,10 @@ EtherSwitch::push(int source, Packet *p)
 
   if (outport < 0)
     broadcast(source, p);
-  else if (outport == source)	// Don't send back out on same interface
-    p->kill();
-  else				// forward
-    output(outport).push(p);
+  else if ((_pfrs[source].bv)[outport])	// forward w/ filter
+      output(outport).push(p);
+  else
+      p->kill();
 }
 
 String
@@ -102,17 +149,43 @@ EtherSwitch::reader(Element* f, void *thunk)
     }
     case 1:
 	return String(sw->_timeout);
+    case 2: {
+	StringAccum sa;
+	int n = sw->noutputs();
+	for (int i = 0; i < n; i++)
+		sa << "weight: " << (sw->_pfrs[i].w) << "\t"
+		   << i << ": " << (sw->_pfrs[i].bv).unparse() << '\n';
+	return sa.take_string();
+    }
     default:
 	return String();
     }
 }
 
 int
-EtherSwitch::writer(const String &s, Element *e, void *, ErrorHandler *errh)
+EtherSwitch::writer(const String &s, Element *e, void *thunk, ErrorHandler *errh)
 {
     EtherSwitch *sw = (EtherSwitch *) e;
-    if (!SecondsArg().parse_saturating(s, sw->_timeout))
-	return errh->error("expected timeout (integer)");
+    switch((intptr_t) thunk) {
+    case 0: {
+        if (!SecondsArg().parse_saturating(s, sw->_timeout)) {
+            return errh->error("expected timeout (integer)");
+        }
+        break;
+    }
+    case 1: {
+        if (sw->remove_port_forwarding(s, errh) < 0) {
+            return errh->error("invalid port forwarding");
+        }
+        break;
+    }
+    case 2: {
+        sw->reset_port_forwarding();
+        break;
+    }
+    default:
+        return errh->error("bad thunk");
+    }
     return 0;
 }
 
@@ -121,7 +194,10 @@ EtherSwitch::add_handlers()
 {
     add_read_handler("table", reader, 0);
     add_read_handler("timeout", reader, 1);
+    add_read_handler("port_forwarding", reader, 2);
     add_write_handler("timeout", writer, 0);
+    add_write_handler("remove_port_forwarding", writer, 1);
+    add_write_handler("reset_port_forwarding", writer, 2);
 }
 
 EXPORT_ELEMENT(EtherSwitch)

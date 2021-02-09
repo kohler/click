@@ -54,6 +54,46 @@ BitvectorTest::initialize(ErrorHandler *errh)
     bv.resize(0);
     CHECK(bv.words()[0] == 0);
 
+    CHECK(!bv.parse("3", 0, 5, -3));
+    CHECK(!bv.parse("3", 5, 3));
+
+    CHECK(!bv.parse("-", 0, 5));
+    CHECK(!bv.parse("--2", 0, 5));
+    CHECK(!bv.parse("2-", 0, 5));
+    CHECK(!bv.parse("2--3", -5, 5));
+    CHECK(!bv.parse("3", 0, 2));
+    CHECK(!bv.parse("1", 3, 5));
+    CHECK(!bv.parse("1-4", 3, 5));
+    CHECK(!bv.parse("4-6", 3, 5));
+
+    CHECK(bv.parse("1,3,5", 0, 6));
+    CHECK(bv.size() == 7 && !bv[0] && bv[1] && !bv[2] && bv[3] && !bv[4] && bv[5] && !bv[6]);
+
+    CHECK(bv.parse("", 1, 3));
+    CHECK(bv.size() == 3 && !bv[0] && !bv[1] && !bv[2]);
+
+    CHECK(bv.parse("-1,1,3", -1, 3));
+    CHECK(bv.size() == 5 && bv[0] && !bv[1] && bv[2] && !bv[3] && bv[4]);
+
+    CHECK(bv.parse("-1-0,2-3,5-6", -2, 7));
+    CHECK(bv.size() == 10 && !bv[0] && bv[1] && bv[2] && !bv[3] && bv[4] && bv[5] && !bv[6] && bv[7] && bv[8] && !bv[9]);
+
+    CHECK(bv.parse("-7--6,-4--3,-1-0", -7, 0));
+    CHECK(bv.size() == 8 && bv[0] && bv[1] && !bv[2] && bv[3] && bv[4] && !bv[5] && bv[6] && bv[7]);
+
+    bv.assign(6, true);
+    bv[2] = bv[4] = false;
+    CHECK(bv.unparse() == "0-1,3,5");
+    CHECK(bv.unparse(0) == "0-1,3,5");
+    CHECK(bv.unparse(-1) == "1-2,4,6");
+    CHECK(bv.unparse(1) == "0,2,4");
+    CHECK(bv.unparse(8) == "");
+    CHECK(bv.unparse(0, 1) == "1-2,4,6");
+    CHECK(bv.unparse(0, -1) == "-1-0,2,4");
+    CHECK(bv.unparse(1, 1) == "1,3,5");
+    bv[4] = true;
+    CHECK(bv.unparse() == "0-1,3-5");
+
     errh->message("All tests pass!");
     return 0;
 }

@@ -71,6 +71,16 @@ String cp_shift_spacevec(String &str);
 
 String cp_unspacevec(const String *begin, const String *end);
 inline String cp_unspacevec(const Vector<String> &conf);
+
+/// @brief  Remove and return the first delimiter-separated argument from @a str.
+/// @param[in,out]  str  delimiter-separated string
+/// @param[in]  delim  delimiter
+///
+/// All characters up to the first delimiter character are removed and
+/// returned.  @a str is set to the remaining portion of the string,
+/// with up to one delimiter character removed.
+String cp_shift_delimiter(String &str, char delim);
+
 //@}
 
 /// @name Direct Parsing Functions
