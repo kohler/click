@@ -92,9 +92,8 @@ CLICK_DECLS
  *
  */
 
-class FromHost : public Element { public:
-
-
+class FromHost : public Element {
+public:
     enum ConfigurePhase {
 	CONFIGURE_PHASE_FROMHOST = CONFIGURE_PHASE_DEFAULT,
 	CONFIGURE_PHASE_TOHOST =  CONFIGURE_PHASE_FROMHOST + 1
@@ -112,6 +111,8 @@ class FromHost : public Element { public:
     int initialize(ErrorHandler *) CLICK_COLD;
     void cleanup(CleanupStage) CLICK_COLD;
     void add_handlers() CLICK_COLD;
+    FromHost *hotswap_element() const;
+    void take_state(Element *, ErrorHandler *);
 
     int fd() const			{ return _fd; }
     String dev_name() const		{ return _dev_name; }
@@ -149,7 +150,6 @@ class FromHost : public Element { public:
     void dealloc_tun();
 
     static String read_param(Element *, void *) CLICK_COLD;
-
 };
 
 CLICK_ENDDECLS

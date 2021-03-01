@@ -44,8 +44,8 @@ CLICK_DECLS
  *
  */
 
-class ToHost : public Element { public:
-
+class ToHost : public Element {
+public:
     ToHost() CLICK_COLD;
     ~ToHost() CLICK_COLD;
 
@@ -57,14 +57,17 @@ class ToHost : public Element { public:
     int configure(Vector<String> &, ErrorHandler *) CLICK_COLD;
     int initialize(ErrorHandler *) CLICK_COLD;
     void add_handlers() CLICK_COLD;
+    ToHost *hotswap_element() const;
+    void take_state(Element *, ErrorHandler *);
 
     void push(int port, Packet *);
 
   private:
-
     int _fd;
     int _drops;
     String _dev_name;
+
+    int find_fromhost(ErrorHandler *);
 
 };
 
