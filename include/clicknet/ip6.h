@@ -39,6 +39,7 @@ struct click_ip6 {
     } ip6_ctlun;
     struct in6_addr ip6_src;	/* 8-23	 source address */
     struct in6_addr ip6_dst;	/* 24-39 dest address */
+    
 };
 
 #define ip6_v			ip6_ctlun.ip6_un3.ip6_un3_v
@@ -58,6 +59,39 @@ struct click_ip6 {
 #define IP6_V_SHIFT		28
 
 #define IP6_CHECK_V(hdr)	(((hdr).ip6_vfc & htonl(IP6_V_MASK)) == htonl(6 << IP6_V_SHIFT))
+
+/* Hop-by-Hop options header */
+struct click_ip6_hbh {
+    uint8_t  ip6h_nxt;        /* next header */
+    uint8_t  ip6h_len;        /* length in units of 8 octets */
+    /* followed by options */
+};
+
+/* Destination options header */
+struct click_ip6_dest {
+    uint8_t  ip6d_nxt;        /* next header */
+    uint8_t  ip6d_len;        /* length in units of 8 octets */
+    /* followed by options */
+};
+
+/* Routing header */
+struct click_ip6_rthdr {
+    uint8_t  ip6r_nxt;        /* next header */
+    uint8_t  ip6r_len;        /* length in units of 8 octets */
+    uint8_t  ip6r_type;       /* routing type */
+    uint8_t  ip6r_segleft;    /* segments left */
+    /* followed by routing type specific data */
+};
+
+  /* Type 0 Routing header */
+struct click_ip6_rthdr0 {
+    uint8_t  ip6r0_nxt;       /* next header */
+    uint8_t  ip6r0_len;       /* length in units of 8 octets */
+    uint8_t  ip6r0_type;      /* always zero */
+    uint8_t  ip6r0_segleft;   /* segments left */
+    uint32_t ip6r0_reserved;  /* reserved field */
+    /* followed by up to 127 struct in6_addr */
+};
 
 #ifndef IP6PROTO_FRAGMENT
 #define IP6PROTO_FRAGMENT 0x2c
@@ -90,6 +124,15 @@ uint16_t in6_cksum(const struct in6_addr *saddr,
 		   uint16_t ori_csum,
 		   unsigned char *addr,
 		   uint16_t len2);
+		   
+/**
+ * @brief Returns fragmentation header or null if not present
+ * @param ip6 header (+ data) of the packet
+ */
+// click_ip6_fragment* fragmentation_header(click_ip6* ip6_header); /* defined in ip6reassembler.cc */
+// click_ip6_fragment* fragmentation_header(click_ip6_hbh* ip6_header); /* defined in ip6reassembler.cc */
+// click_ip6_fragment* fragmentation_header(click_ip6_dest* ip6_header); /* defined in ip6reassembler.cc */
+// click_ip6_fragment* fragmentation_header(click_ip6_rthdr* ip6_header); /* defined in ip6reassembler.cc */
 
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
