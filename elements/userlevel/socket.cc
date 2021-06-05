@@ -31,6 +31,8 @@
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
 #include <fcntl.h>
+#include <click/timer.hh>
+#include <click/handlercall.hh>
 #include "socket.hh"
 
 #ifdef HAVE_PROPER
@@ -40,17 +42,30 @@
 CLICK_DECLS
 
 Socket::Socket()
-  : _task(this),
+  : _task(this), _timer(this),
     _fd(-1), _active(-1), _rq(0), _wq(0),
     _local_port(0), _local_pathname(""),
     _timestamp(true), _sndbuf(-1), _rcvbuf(-1),
     _snaplen(2048), _headroom(Packet::default_headroom), _nodelay(1),
-    _verbose(false), _client(false), _proper(false), _allow(0), _deny(0)
+    _verbose(false), _client(false), _proper(false), _allow(0), _deny(0), _reconnect_call_h(0)
 {
 }
 
 Socket::~Socket()
 {
+}
+
+void Socket::run_timer(Timer *) {
+
+  ErrorHandler *errh = new ErrorHandler();
+
+  if (_active == -1) {
+    initialize(errh);
+  }
+
+  _timer.reschedule_after_sec(2);
+  return;
+
 }
 
 int
@@ -63,6 +78,7 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
   socktype = socktype.upper();
 
+  String reconnect_call;
   // remove keyword arguments
   Element *allow = 0, *deny = 0;
   if (args.read("VERBOSE", _verbose)
@@ -74,10 +90,14 @@ Socket::configure(Vector<String> &conf, ErrorHandler *errh)
       .read("NODELAY", _nodelay)
       .read("CLIENT", _client)
       .read("PROPER", _proper)
+      .read("RECONNECT_CALL", AnyArg(), reconnect_call)
       .read("ALLOW", allow)
       .read("DENY", deny)
       .consume() < 0)
     return -1;
+
+  if (reconnect_call)
+    _reconnect_call_h = new HandlerCall(reconnect_call);
 
   if (allow && !(_allow = (IPRouteTable *)allow->cast("IPRouteTable")))
     return errh->error("%s is not an IPRouteTable", allow->name().c_str());
@@ -134,12 +154,24 @@ Socket::initialize_socket_error(ErrorHandler *errh, const char *syscall)
     _fd = -1;
   }
 
-  return errh->error("%s: %s", syscall, strerror(e));
+  click_chatter("%s: %s: %s", declaration().c_str(), syscall, strerror(e));
+
+  return 0;
+
 }
 
 int
 Socket::initialize(ErrorHandler *errh)
 {
+
+  // initialize timer
+  _timer.initialize(this);
+  _timer.reschedule_after_sec(2);
+
+  // initialize callback
+  if (_reconnect_call_h && (_reconnect_call_h->initialize_write(this, errh) < 0))
+    return initialize_socket_error(errh, "callback");
+
   // open socket, set options
   _fd = socket(_family, _socktype, _protocol);
   if (_fd < 0)
@@ -249,6 +281,9 @@ Socket::initialize(ErrorHandler *errh)
     _signal = Notifier::upstream_empty_signal(this, 0, &_task);
     add_select(_fd, SELECT_WRITE);
   }
+
+  if (_reconnect_call_h)
+    (void) _reconnect_call_h->call_write();
 
   return 0;
 }
