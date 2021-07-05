@@ -511,6 +511,9 @@ ToDevice::queue_packet(Packet *p, struct netdev_queue *txq)
     // apparently some devices in Linux 2.6 require it
     skb1->dev = dev;
 
+    //reset queue index until proper MQ support
+    skb1->queue_mapping = 0;
+
 #ifdef IFF_XMIT_DST_RELEASE
     /*
      * If device doesnt need skb->dst, release it right now while
