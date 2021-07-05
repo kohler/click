@@ -20,6 +20,9 @@
 /* Define for Click memory allocation debugging. */
 #undef CLICK_DMALLOC
 
+/* Define for forcing expensive packet operations. */
+#undef CLICK_FORCE_EXPENSIVE
+
 /* Define to generate smaller object files. */
 #undef CLICK_OPTIMIZE_SIZE
 

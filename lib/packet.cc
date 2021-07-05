@@ -888,6 +888,9 @@ Packet::expensive_put(uint32_t nbytes)
 Packet *
 Packet::shift_data(int offset, bool free_on_failure)
 {
+#ifdef CLICK_FORCE_EXPENSIVE
+    PacketRef r(this);
+#endif
     if (offset == 0)
 	return this;
 
