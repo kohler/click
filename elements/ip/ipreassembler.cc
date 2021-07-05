@@ -376,9 +376,17 @@ IPReassembler::simple_action(Packet *p)
     if (p_off == 0) {
 	uint16_t old_ip_off = q->ip_header()->ip_off;
 	int header_delta = p->ip_header_offset() - q->ip_header_offset();
-	if (header_delta > 0)
+	if (header_delta > 0) {
+	    int old_transport_length = q->transport_length();
 	    q = q->push(header_delta);
-	else if (header_delta < 0)
+	    if (!q) {
+	        p->kill();
+                *q_pprev = q_bucket_next;
+                _mem_used -= IPH_MEM_USED + old_transport_length;
+	        return 0;
+	    }
+            *q_pprev = q;
+	} else if (header_delta < 0)
 	    q->pull(-header_delta);
 	q->set_ip_header((click_ip *)(q->data() + p->ip_header_offset()), p->ip_header_length());
         if (p->has_mac_header())
