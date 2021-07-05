@@ -13,6 +13,8 @@ CLICK_CXX_PROTECT
 # include <netinet/in.h>
 #endif
 
+#define IP6_ADDR_LEN 16
+
 struct click_ip6 {
     union {
 	struct {

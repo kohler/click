@@ -20,6 +20,8 @@ CLICK_CXX_PROTECT
  *   RFC3168	The Addition of Explicit Congestion Notification (ECN) to IP
  */
 
+#define IP_ADDR_LEN 4
+
 struct click_ip {
 #if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
     unsigned	ip_v : 4;		/* 0     version == 4		     */
@@ -87,7 +89,7 @@ struct click_ip {
 #define IP_PROTO_DCCP		33
 #define IP_PROTO_RSVP		46
 #define IP_PROTO_GRE		47
-#define IP_PROTO_ICMP6          58
+#define IP_PROTO_ICMP6		58
 #define IP_PROTO_CFTP		62
 #define IP_PROTO_SATNET		64
 #define IP_PROTO_MITSUBNET	65
