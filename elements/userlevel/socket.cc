@@ -208,6 +208,8 @@ Socket::initialize(ErrorHandler *errh)
     }
     if (ret < 0)
 #endif
+    if (_local_pathname != "")
+      unlink(_local_pathname.c_str());
     if (bind(_fd, (struct sockaddr *)&_local, _local_len) < 0)
       return initialize_socket_error(errh, "bind");
   }
