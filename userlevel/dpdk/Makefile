@@ -7,11 +7,6 @@ endif
 
 # This file more or less copies rte.app.sdk, but we cannot use directly DPDK's one because its heavy modifications on the compile variables would break Click build process
 
-# Save C flags
-DPDK_OLD_CFLAGS := $(CFLAGS)
-DPDK_OLD_CXXFLAGS := $(CXXFLAGS)
-DPDK_OLD_LDFLAGS := $(LDFLAGS)
-
 include $(RTE_SDK)/mk/rte.vars.mk
 
 # default path for libs
@@ -72,14 +67,26 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_PDUMP)          += -lrte_pdump
 _LDLIBS-$(CONFIG_RTE_LIBRTE_DISTRIBUTOR)    += -lrte_distributor
 _LDLIBS-$(CONFIG_RTE_LIBRTE_IP_FRAG)        += -lrte_ip_frag
 _LDLIBS-$(CONFIG_RTE_LIBRTE_METER)          += -lrte_meter
+ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_YEAR)" -ge 20 ] && [ "$(RTE_VER_MONTH)" -ge 08 ] ) || [ $(RTE_VER_YEAR) -ge 21 ] ) && echo true),true)
+_LDLIBS-$(CONFIG_RTE_LIBRTE_FIB)            += -lrte_fib
+_LDLIBS-$(CONFIG_RTE_LIBRTE_RIB)            += -lrte_rib
+endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_LPM)            += -lrte_lpm
 _LDLIBS-$(CONFIG_RTE_LIBRTE_ACL)            += -lrte_acl
 _LDLIBS-$(CONFIG_RTE_LIBRTE_TELEMETRY)      += -lrte_telemetry -ljansson
 _LDLIBS-$(CONFIG_RTE_LIBRTE_JOBSTATS)       += -lrte_jobstats
 _LDLIBS-$(CONFIG_RTE_LIBRTE_METRICS)        += -lrte_metrics
+ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_YEAR)" -ge 20 ] && [ "$(RTE_VER_MONTH)" -ge 05 ] ) || [ $(RTE_VER_YEAR) -ge 21 ] ) && echo true),true)
+	ifeq ($(CONFIG_RTE_LIBRTE_TELEMETRY),y)
+		_LDLIBS-$(CONFIG_RTE_LIBRTE_METRICS)        += -ljansson
+	endif
+endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_BITRATE)        += -lrte_bitratestats
 _LDLIBS-$(CONFIG_RTE_LIBRTE_LATENCY_STATS)  += -lrte_latencystats
 _LDLIBS-$(CONFIG_RTE_LIBRTE_POWER)          += -lrte_power
+ifneq ($(HAVE_DPDK_XCHG),y)
+_LDLIBS-$(CONFIG_RTE_LIBRTE_XCHG_MBUF)          += -lrte_xchg_mbuf
+endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_EFD)            += -lrte_efd
 _LDLIBS-$(CONFIG_RTE_LIBRTE_BPF)            += -lrte_bpf
 ifeq ($(CONFIG_RTE_LIBRTE_BPF_ELF),y)
@@ -98,6 +105,13 @@ endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_SCHED)          += -lrte_sched
 _LDLIBS-$(CONFIG_RTE_LIBRTE_SCHED)          += -lm
 _LDLIBS-$(CONFIG_RTE_LIBRTE_SCHED)          += -lrt
+ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_YEAR)" -ge 20 ] && [ "$(RTE_VER_MONTH)" -ge 05 ] ) || [ $(RTE_VER_YEAR) -ge 21 ] ) && echo true),true)
+	_LDLIBS-$(CONFIG_RTE_LIBRTE_GRAPH)          += -lrte_graph
+	_LDLIBS-$(CONFIG_RTE_LIBRTE_NODE)           += -lrte_node
+endif
+ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_YEAR)" -ge 19 ] && [ "$(RTE_VER_MONTH)" -ge 05 ] ) || [ $(RTE_VER_YEAR) -ge 20 ] ) && echo true),true)
+	_LDLIBS-$(CONFIG_RTE_LIBRTE_RCU)            += -lrte_rcu
+endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MEMBER)         += -lm
 _LDLIBS-$(CONFIG_RTE_LIBRTE_METER)          += -lm
 
@@ -122,6 +136,9 @@ _LDLIBS-y += -Wl,--start-group
 ifneq ($(CONFIG_RTE_BUILD_COMBINE_LIBS),y)
 
 _LDLIBS-$(CONFIG_RTE_LIBRTE_KVARGS)         += -lrte_kvargs
+ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_YEAR)" -ge 20 ] && [ "$(RTE_VER_MONTH)" -ge 05 ] ) || [ $(RTE_VER_YEAR) -ge 21 ] ) && echo true),true)
+	_LDLIBS-y                                   += -lrte_telemetry
+endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MBUF)           += -lrte_mbuf
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MBUF_OFFLOAD)   += -lrte_mbuf_offload
 
@@ -143,6 +160,9 @@ ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_YEAR)" -ge 19 ] && [ 
 	endif
 endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_COMPRESSDEV)    += -lrte_compressdev
+ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_YEAR)" -ge 20 ] && [ "$(RTE_VER_MONTH)" -ge 08 ] ) || [ $(RTE_VER_YEAR) -ge 21 ] ) && echo true),true)
+	_LDLIBS-$(CONFIG_RTE_LIBRTE_REGEXDEV)       += -lrte_regexdev
+endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_EVENTDEV)       += -lrte_eventdev
 _LDLIBS-$(CONFIG_RTE_LIBRTE_RAWDEV)         += -lrte_rawdev
 ifeq ($(CONFIG_RTE_LIBRTE_RAWDEV),y)
@@ -242,11 +262,17 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_I40E_PMD)       += -lrte_pmd_i40e
 _LDLIBS-$(CONFIG_RTE_LIBRTE_IAVF_PMD)       += -lrte_pmd_iavf
 _LDLIBS-$(CONFIG_RTE_LIBRTE_ICE_PMD)        += -lrte_pmd_ice
 ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && [ "$(RTE_VER_YEAR)" -ge 20 ] && echo true),true)
-IAVF-y := $(CONFIG_RTE_LIBRTE_IAVF_PMD)
-ifeq ($(findstring y,$(IAVF-y)),y)
-	_LDLIBS-y += -lrte_common_iavf
+	IAVF-y := $(CONFIG_RTE_LIBRTE_IAVF_PMD)
+	ifeq ($(shell ( [ "$(RTE_VER_MONTH)" -ge 05 ] || [ $(RTE_VER_YEAR) -ge 21 ] ) && echo true),true)
+		IAVF-y += $(CONFIG_RTE_LIBRTE_ICE_PMD)
+	endif
+	ifeq ($(findstring y,$(IAVF-y)),y)
+		_LDLIBS-y += -lrte_common_iavf
+	endif
+	_LDLIBS-$(CONFIG_RTE_LIBRTE_IONIC_PMD)      += -lrte_pmd_ionic
 endif
-_LDLIBS-$(CONFIG_RTE_LIBRTE_IONIC_PMD)      += -lrte_pmd_ionic
+ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_YEAR)" -ge 20 ] && [ "$(RTE_VER_MONTH)" -ge 05 ] ) || [ $(RTE_VER_YEAR) -ge 21 ] ) && echo true),true)
+	_LDLIBS-$(CONFIG_RTE_LIBRTE_IGC_PMD)        += -lrte_pmd_igc
 endif
 _LDLIBS-$(CONFIG_RTE_LIBRTE_IONIC_PMD)      += -lrte_pmd_ionic
 _LDLIBS-$(CONFIG_RTE_LIBRTE_IXGBE_PMD)      += -lrte_pmd_ixgbe
@@ -267,6 +293,9 @@ _LDLIBS-$(CONFIG_RTE_LIBRTE_MLX5_PMD)       += -lrte_pmd_mlx5
 ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && [ "$(RTE_VER_YEAR)" -ge 20 ] && echo true),true)
 _LDLIBS-$(CONFIG_RTE_LIBRTE_MLX5_VDPA_PMD)  += -lrte_pmd_mlx5_vdpa
 endif
+ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_YEAR)" -ge 20 ] && [ "$(RTE_VER_MONTH)" -ge 08 ] ) || [ $(RTE_VER_YEAR) -ge 21 ] ) && echo true),true)
+_LDLIBS-$(CONFIG_RTE_LIBRTE_MLX5_REGEX_PMD)  += -lrte_pmd_mlx5_regex
+endif
 ifeq ($(CONFIG_RTE_IBVERBS_LINK_DLOPEN),y)
 	ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && [ "$(RTE_VER_YEAR)" -ge 20 ] && echo true),true)
 		_LDLIBS-y                                   += -ldl
@@ -277,7 +306,13 @@ ifeq ($(CONFIG_RTE_IBVERBS_LINK_DLOPEN),y)
 else ifeq ($(CONFIG_RTE_IBVERBS_LINK_STATIC),y)
 	LIBS_IBVERBS_STATIC = $(shell $(RTE_SDK)/buildtools/options-ibverbs-static.sh)
 	ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && [ "$(RTE_VER_YEAR)" -ge 20 ] && echo true),true)
+		ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_MONTH)" -ge 05 ] ) || [ $(RTE_VER_YEAR) -ge 21 ] ) && echo true),true)
+			_LDLIBS-y                                   += --no-whole-archive
+		endif
 		_LDLIBS-y                                   += $(LIBS_IBVERBS_STATIC)
+		ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_MONTH)" -ge 05 ] ) || [ $(RTE_VER_YEAR) -ge 21 ] ) && echo true),true)
+			_LDLIBS-y                                   += --whole-archive
+		endif
 	else
 		_LDLIBS-$(CONFIG_RTE_LIBRTE_MLX4_PMD)       += $(LIBS_IBVERBS_STATIC)
 		_LDLIBS-$(CONFIG_RTE_LIBRTE_MLX5_PMD)       += $(LIBS_IBVERBS_STATIC)
@@ -458,3 +493,7 @@ ifeq ($(shell [ -n "$(RTE_VER_YEAR)" ] && ( ( [ "$(RTE_VER_YEAR)" -ge 16 ] && [ 
 else
 	override LDFLAGS := $(DPDK_OLD_LDFLAGS)
 endif
+
+all:
+	@echo 'DPDK_LIBS="$(DPDK_LIBS)"'
+	@echo 'DPDK_CFLAGS="$(CFLAGS)"'

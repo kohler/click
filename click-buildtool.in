@@ -1663,9 +1663,9 @@ EOF
   compile-shortensyms)
      shift 1; compile_shortensyms "$@"; exit 0;;
   --cf|--cfl|--cfla|--cflag|--cflags|--d|--de|--def|--defs)
-     echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ @NETMAP_INCLUDES@ -I@includedir@; exit 0;;
+     echo @PROPER_INCLUDES@ @PCAP_INCLUDES@ @DPDK_INCLUDES@ @DPDK_CFLAGS@ @NETMAP_INCLUDES@ -I@includedir@; exit 0;;
   --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
-     echo @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @PTHREAD_LIBS@ @POSIX_CLOCK_LIBS@;
+     echo @PROPER_LIBS@ @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@ @DPDK_LIBS@ @PTHREAD_LIBS@ @POSIX_CLOCK_LIBS@;
      exit 0;;
   --toolc|--toolcf|--toolcfl|--toolcfla|--toolcflag|--toolcflags)
      echo -DCLICK_TOOL -I@includedir@; exit 0;;
