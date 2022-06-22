@@ -1,0 +1,80 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ '*' ]
+  pull_request:
+    branches: [ master ]
+env:
+    CXXFLAGS: -std=gnu++11
+    FLAGS: --enable-all-elements --enable-simtime
+
+    #Until we find a solution for the world-writable /home/runner in GitHub Actions...
+    NODPDKTEST: 1
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+        matrix:
+            COMPILER: [gcc, clang]
+            FRAMEWORK: [vanilla, dpdk, netmap, vanilla-nopool]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install pip
+      run: |
+          python -m pip install --upgrade pip
+    - name: framework
+      run: |
+          if [ "${{matrix.FRAMEWORK}}" = "dpdk" ] ; then
+            echo "Compiling DPDK..." ;
+            export STABLE=
+            export VERSION=20.11
+            export FRAMEWORK_FLAGS="--enable-dpdk -enable-user-multithread";
+            export PKG_CONFIG_PATH=$(pwd)/dpdk-$STABLE$VERSION/install/lib/x86_64-linux-gnu/pkgconfig/ ;
+            export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$(pwd)/dpdk-$STABLE$VERSION/install/lib/x86_64-linux-gnu/ ;
+            if [ ! -e "dpdk-$STABLE$VERSION" ] || ! pkg-config --exists libdpdk ; then
+                wget http://fast.dpdk.org/rel/dpdk-$VERSION.tar.gz &&
+                tar -zxf dpdk-$VERSION.tar.gz &&
+                cd dpdk-$STABLE$VERSION &&
+                pip3 install meson ninja &&
+                meson -Dprefix=$(pwd)/install/ build &&
+                cd build &&
+                ninja &&
+                ninja install &&
+                cd .. &&
+                cd .. ;
+            fi
+
+            if [ "${{matrix.FRAMEWORK}}" = "netmap" ] ; then
+                if [ ! -e "netmap-13.0" ] ; then
+                   wget https://github.com/luigirizzo/netmap/archive/refs/tags/v13.0.tar.gz
+                   tar -zxf v13.0.tar.gz
+                fi
+                FRAMEWORK_FLAGS="--with-netmap=$(pwd)/netmap-13.0/sys/"
+            fi
+            echo "FRAMEWORK_FLAGS=$FRAMEWORK_FLAGS" >> $GITHUB_ENV
+            echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+            echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
+          elif [ "${{matrix.FRAMEWORK}}" = "vanilla-nopool" ] ; then
+              FRAMEWORK_FLAGS="$FRAMEWORK_FLAGS --disable-click-pool"
+              echo "FRAMEWORK_FLAGS=$FRAMEWORK_FLAGS" >> $GITHUB_ENV
+          fi
+    - name: configure
+      run: |
+          if [ "${{matrix.COMPILER}}" = "clang" ] ; then export CC=clang; export CXX=clang++; fi
+          ./configure $FLAGS $FRAMEWORK_FLAGS
+    - name: make
+      run: make
+    #Simple launch avoids going further if something very bad happens
+    - name: simple_launch
+      run: chmod 700 /home/runner ; ./userlevel/click -j 2 -e 'DriverManager(stop);'
+    - name: make check
+      run: make check
