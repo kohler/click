@@ -704,14 +704,17 @@ xen_dir
 INCLUDE_KSYMS
 LINUXMODULE_FIXINCLUDES
 USE_DPDK
+DPDK_CFLAGS
+DPDK_LIBS
 DPDK_INCLUDES
-RTE_VER_MONTH
-RTE_VER_YEAR
 RTE_VER_MINOR
 RTE_VER_MAJOR
+RTE_VER_MONTH
+RTE_VER_YEAR
 RTE_SDK_BIN
 RTE_TARGET
 RTE_SDK
+RTE_USE_PKGCONFIG
 PTHREAD_LIBS
 AR_CREATEFLAGS
 STRIP
@@ -774,6 +777,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -910,6 +914,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1162,6 +1167,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1299,7 +1313,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1452,6 +1466,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1533,7 +1548,8 @@ Optional Features:
                           disable comma-separated elements
   --enable-smaller-code   generate smaller code (sometimes slower)
   --disable-int64         disable 64-bit integer support
-  --enable-nanotimestamp  enable nanosecond timestamps
+  --enable-nanotimestamp  enable nanosecond timestamps (default if
+                          clock_gettime is available)
   --enable-bound-port-transfer
                           enable port transfer function ptr optimization
   --enable-tools=WHERE    enable tools (host/build/mixed/no) [[mixed]]
@@ -6552,11 +6568,14 @@ else
   enable_dpdk=no
 fi
 
-
-if test "x$enable_dpdk" = "xyes"; then
+if test "x$enable_dpdk" != "xno"; then
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DPDK library" >&5
 $as_echo_n "checking for DPDK library... " >&6; }
+
+    if test "x$enable_dpdk" != "xyes"; then
+        RTE_SDK=$enable_dpdk
+    fi
 
     if test -z "$RTE_SDK_BIN"; then
         RTE_SDK_BIN=$RTE_SDK/$RTE_TARGET
@@ -6582,55 +6601,97 @@ $as_echo_n "checking for DPDK library... " >&6; }
 
 =========================================" "$LINENO" 5
     fi
-    if test ! -f "$RTE_SDK_BIN/include/rte_eal.h"; then
+
+
+    if test "x$enable_dpdk" = "xyes" && pkg-config --exists libdpdk; then
+      RTE_USE_PKGCONFIG=1
+
+      RTE_LIB=$(pkg-config --variable=libdir libdpdk)
+      RTE_INCLUDE=$(pkg-config --variable=includedir libdpdk)
+      rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_INCLUDE/rte_build_config.h" | head -n 1 | awk '{print $3}'`
+      rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_INCLUDE/rte_build_config.h" | head -n 1 | awk '{print $3}'`
+      rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_INCLUDE/rte_build_config.h" | head -n 1 | awk '{print $3}'`
+      rte_ver_major=$rte_ver_year
+
+      if test "x$enable_dynamic_linking" = xyes; then
+        DPDK_LIBS=$(pkg-config --libs libdpdk)
+      else
+        DPDK_LIBS=$(pkg-config --libs --static libdpdk)
+      fi
+	  DPDK_CFLAGS=$(pkg-config --cflags libdpdk)
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    else
+      RTE_USE_PKGCONFIG=0
+
+      RTE_INCLUDE=${RTE_SDK_BIN}/include/
+      RTE_LIB="$RTE_SDK_BIN/lib"
+      if test ! -f "$RTE_SDK_BIN/include/rte_eal.h"; then
         as_fn_error $? "
 =========================================
 
 Cannot find \$RTE_SDK_BIN/include/rte_eal.h for DPDK.
-Define \$RTE_SDK and \$RTE_TARGET as per DPDK documentation.
+Define \$RTE_SDK and \$RTE_TARGET as per DPDK documentation,
+or install DPDK using meson, or the system package manager.
+Note with the system package manager, you need the devel package
+version (dpdk-dev or dpdk-devel).
 
 =========================================" "$LINENO" 5
-    fi
+      fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, found at $RTE_SDK_BIN" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, found at $RTE_SDK_BIN" >&5
 $as_echo "yes, found at $RTE_SDK_BIN" >&6; }
 
-    if test -e "$RTE_SRCDIR/VERSION"; then
-     rte_ver_year=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($1)}'`
-     rte_ver_month=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($2)}'`
-     rte_ver_minor=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($3)}'`
-    else
-     if grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/rte_config.h" &> /dev/null ; then
-         verfile=rte_config
-     else
-         verfile=rte_version
-     fi
-     rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
-     rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
-     rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
-     rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+      if test -z "$RTE_TARGET" ; then
+            as_fn_error $? "
+You must define \$RTE_TARGET when building DPDK with make.
+                          " "$LINENO" 5
+      fi
+
+      if test -e "$RTE_SRCDIR/VERSION"; then
+        rte_ver_year=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($1)}'`
+        rte_ver_month=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($2)}'`
+        rte_ver_minor=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($3)}'`
+        rte_ver_major=$rte_ver_year
+      else
+        if grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/rte_config.h" &> /dev/null; then
+            verfile=rte_config
+        else
+            verfile=rte_version
+        fi
+        rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+        rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+        rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+        rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+      fi
+      dpdk_vars=`cd userlevel/dpdk/ && make -s RTE_SDK=$RTE_SDK RTE_TARGET=$RTE_TARGET RTE_VER_YEAR=$rte_ver_year RTE_VER_MONTH=$rte_ver_month RTE_VER_MAJOR=$rte_ver_major RTE_VER_MINOR=$rte_ver_minor`
+      eval $dpdk_vars
     fi
 
 
 
-    RTE_VER_MAJOR=$rte_ver_major
-
-    RTE_VER_MINOR=$rte_ver_minor
 
     RTE_VER_YEAR=$rte_ver_year
 
     RTE_VER_MONTH=$rte_ver_month
 
-    DPDK_INCLUDES=-I${RTE_SDK_BIN}/include/
+    RTE_VER_MAJOR=$rte_ver_major
 
+    RTE_VER_MINOR=$rte_ver_minor
+
+    DPDK_INCLUDES=-I${RTE_INCLUDE}
+
+    DPDK_LIBS=${DPDK_LIBS}
+
+    DPDK_CFLAGS=${DPDK_CFLAGS}
 
 
     $as_echo "#define HAVE_DPDK 1" >>confdefs.h
 
     USE_DPDK=yes
 
-fi
 
+fi
 
 
 # Check whether --enable-linuxmodule was given.
