@@ -136,13 +136,19 @@ if echo "$enable_select" | grep kqueue >/dev/null 2>&1 && test "$enable_kqueue" 
     AC_DEFINE([HAVE_ALLOW_KQUEUE], [1], [Define if kqueue() may be used to wait for file descriptor events.])
 fi
 
+dnl
+dnl DPDK driver
+dnl
 AC_ARG_ENABLE([dpdk],
-    [AS_HELP_STRING([  --enable-dpdk], [use DPDK])],
-    [:], [enable_dpdk=no])
-
-if test "x$enable_dpdk" = "xyes"; then
+              [AS_HELP_STRING([  --enable-dpdk], [use DPDK])],
+              [:], [enable_dpdk=no])
+if test "x$enable_dpdk" != "xno"; then
 
     AC_MSG_CHECKING([for DPDK library])
+
+    if test "x$enable_dpdk" != "xyes"; then
+        RTE_SDK=$enable_dpdk
+    fi
 
     if test -z "$RTE_SDK_BIN"; then
         RTE_SDK_BIN=$RTE_SDK/$RTE_TARGET
@@ -168,47 +174,84 @@ if test "x$enable_dpdk" = "xyes"; then
 
 =========================================])
     fi
-    if test ! -f "$RTE_SDK_BIN/include/rte_eal.h"; then
+
+
+    if test "x$enable_dpdk" = "xyes" && pkg-config --exists libdpdk; then
+      AC_SUBST(RTE_USE_PKGCONFIG, 1)
+      RTE_LIB=$(pkg-config --variable=libdir libdpdk)
+      RTE_INCLUDE=$(pkg-config --variable=includedir libdpdk)
+      rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_INCLUDE/rte_build_config.h" | head -n 1 | awk '{print $3}'`
+      rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_INCLUDE/rte_build_config.h" | head -n 1 | awk '{print $3}'`
+      rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_INCLUDE/rte_build_config.h" | head -n 1 | awk '{print $3}'`
+      rte_ver_major=$rte_ver_year
+
+      if test "x$enable_dynamic_linking" = xyes; then
+        DPDK_LIBS=$(pkg-config --libs libdpdk)
+      else
+        DPDK_LIBS=$(pkg-config --libs --static libdpdk)
+      fi
+	  DPDK_CFLAGS=$(pkg-config --cflags libdpdk)
+      AC_MSG_RESULT([yes])
+    else
+      AC_SUBST(RTE_USE_PKGCONFIG, 0)
+      RTE_INCLUDE=${RTE_SDK_BIN}/include/
+      RTE_LIB="$RTE_SDK_BIN/lib"
+      if test ! -f "$RTE_SDK_BIN/include/rte_eal.h"; then
         AC_MSG_ERROR([
 =========================================
 
 Cannot find \$RTE_SDK_BIN/include/rte_eal.h for DPDK.
-Define \$RTE_SDK and \$RTE_TARGET as per DPDK documentation.
+Define \$RTE_SDK and \$RTE_TARGET as per DPDK documentation,
+or install DPDK using meson, or the system package manager.
+Note with the system package manager, you need the devel package
+version (dpdk-dev or dpdk-devel).
 
 =========================================])
+      fi
+
+      AC_MSG_RESULT([yes, found at $RTE_SDK_BIN])
+
+      if test -z "$RTE_TARGET" ; then
+            AC_MSG_ERROR([
+You must define \$RTE_TARGET when building DPDK with make.
+                          ])
+      fi
+
+      if test -e "$RTE_SRCDIR/VERSION"; then
+        rte_ver_year=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($1)}'`
+        rte_ver_month=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($2)}'`
+        rte_ver_minor=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($3)}'`
+        rte_ver_major=$rte_ver_year
+      else
+        if grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/rte_config.h" &> /dev/null; then
+            verfile=rte_config
+        else
+            verfile=rte_version
+        fi
+        rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+        rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+        rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+        rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
+      fi
+      dpdk_vars=`cd userlevel/dpdk/ && make -s RTE_SDK=$RTE_SDK RTE_TARGET=$RTE_TARGET RTE_VER_YEAR=$rte_ver_year RTE_VER_MONTH=$rte_ver_month RTE_VER_MAJOR=$rte_ver_major RTE_VER_MINOR=$rte_ver_minor`
+      eval $dpdk_vars
     fi
 
-    AC_MSG_RESULT([yes, found at $RTE_SDK_BIN])
-
-    if test -e "$RTE_SRCDIR/VERSION"; then
-     rte_ver_year=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($1)}'`
-     rte_ver_month=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($2)}'`
-     rte_ver_minor=`cat $RTE_SRCDIR/VERSION | sed -e 's/-rc/.-rc./' -e 's/$/..99/' | awk -F '.' '{print int($3)}'`
-    else
-     if grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/rte_config.h" &> /dev/null ; then
-         verfile=rte_config
-     else
-         verfile=rte_version
-     fi
-     rte_ver_major=`grep "#define RTE_VER_MAJOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
-     rte_ver_minor=`grep "#define RTE_VER_MINOR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
-     rte_ver_year=`grep "#define RTE_VER_YEAR" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
-     rte_ver_month=`grep "#define RTE_VER_MONTH" "$RTE_SDK_BIN/include/$verfile.h" | head -n 1 | awk '{print $3}'`
-    fi
     AC_SUBST(RTE_SDK)
     AC_SUBST(RTE_TARGET)
     AC_SUBST(RTE_SDK_BIN)
+    AC_SUBST(RTE_VER_YEAR,  $rte_ver_year)
+    AC_SUBST(RTE_VER_MONTH, $rte_ver_month)
     AC_SUBST(RTE_VER_MAJOR, $rte_ver_major)
     AC_SUBST(RTE_VER_MINOR, $rte_ver_minor)
-    AC_SUBST(RTE_VER_YEAR, $rte_ver_year)
-    AC_SUBST(RTE_VER_MONTH, $rte_ver_month)
-    AC_SUBST(DPDK_INCLUDES, -I${RTE_SDK_BIN}/include/)
-
+    AC_SUBST(DPDK_INCLUDES, -I${RTE_INCLUDE})
+    AC_SUBST(DPDK_LIBS, ${DPDK_LIBS})
+    AC_SUBST(DPDK_CFLAGS, ${DPDK_CFLAGS})
 
     AC_DEFINE([HAVE_DPDK])
     AC_SUBST(USE_DPDK, yes)
-fi
 
+fi
 
 dnl linuxmodule driver and features
 
@@ -494,7 +537,7 @@ dnl
 
 AC_ARG_ENABLE([all-elements], [AS_HELP_STRING([--enable-all-elements], [include all provided element groups])])
 
-dnl ELEMENTS_ARG_ENABLE(COLLECTION, HELP-STRING, DEFAULT-VALUE)
+dnl ELEMENTS_ARG_ENABLE(COLLECTION, HELP-STRING, DEFAULT-VALUE, IF_YES)
 element_groups=""
 AC_SUBST(element_groups)
 AC_DEFUN([ELEMENTS_ARG_ENABLE],
@@ -671,7 +714,7 @@ fi
 CLICK_CHECK_POSIX_CLOCKS
 
 AC_ARG_ENABLE([nanotimestamp],
-    [AS_HELP_STRING([--enable-nanotimestamp], [enable nanosecond timestamps])])
+    [AS_HELP_STRING([--enable-nanotimestamp], [enable nanosecond timestamps (default if clock_gettime is available)])])
 # Default to nanosecond-precision timestamps if clock_gettime is available.
 if test "x$enable_nanotimestamp" = x -a "x$have_clock_gettime" = xyes; then
     enable_nanotimestamp=yes
