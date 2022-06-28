@@ -9,7 +9,9 @@
 # define public		linux_public
 # define namespace	linux_namespace
 # define false		linux_false
+# ifdef linux_true
 # define true		linux_true
+# endif
 #endif
 
 #ifndef CLICK_CXX_PROTECT
