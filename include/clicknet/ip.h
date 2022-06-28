@@ -9,9 +9,7 @@ CLICK_CXX_PROTECT
 # include <linux/in.h>
 #else
 # include <sys/types.h>
-#undef true
 # include <netinet/in.h>
-#define true linux_true
 #endif
 
 /*
