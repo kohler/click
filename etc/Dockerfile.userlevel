@@ -1,0 +1,21 @@
+FROM ubuntu:jammy
+
+MAINTAINER tom.barbette@uclouvain.be
+
+RUN apt-get update  \
+        && DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential meson \
+        pkg-config libnuma-dev python3-pyelftools libpcap-dev libclang-dev python3-pip git vim dpdk \
+        && apt-get clean
+
+WORKDIR /
+
+RUN git clone http://github.com/kohler/click.git
+
+WORKDIR /click
+
+RUN ./configure --enable-all-elements \
+        && make  \
+        && ln -s /bin/zcat /bin/gzcat \
+        && make install
+
+ENTRYPOINT ["/click/userlevel/click"]
