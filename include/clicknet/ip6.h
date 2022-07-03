@@ -10,7 +10,9 @@ CLICK_CXX_PROTECT
 # include <linux/in6.h>
 #else
 # include <sys/types.h>
+# undef true
 # include <netinet/in.h>
+# define true linux_true
 #endif
 
 struct click_ip6 {
