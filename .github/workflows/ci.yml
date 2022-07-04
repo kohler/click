@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 env:
     CXXFLAGS: -std=gnu++11
-    FLAGS: --enable-all-elements --enable-simtime
+    FLAGS: --enable-all-elements
 
     #Until we find a solution for the world-writable /home/runner in GitHub Actions...
     NODPDKTEST: 1
@@ -20,7 +20,7 @@ jobs:
     strategy:
         matrix:
             COMPILER: [gcc, clang]
-            FRAMEWORK: [vanilla, dpdk, netmap, vanilla-nopool]
+            FRAMEWORK: [vanilla, dpdk, netmap]
 
     steps:
     - uses: actions/checkout@v2
@@ -63,9 +63,6 @@ jobs:
             echo "FRAMEWORK_FLAGS=$FRAMEWORK_FLAGS" >> $GITHUB_ENV
             echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
             echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $GITHUB_ENV
-          elif [ "${{matrix.FRAMEWORK}}" = "vanilla-nopool" ] ; then
-              FRAMEWORK_FLAGS="$FRAMEWORK_FLAGS --disable-click-pool"
-              echo "FRAMEWORK_FLAGS=$FRAMEWORK_FLAGS" >> $GITHUB_ENV
           fi
     - name: configure
       run: |
