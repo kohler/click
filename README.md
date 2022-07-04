@@ -134,8 +134,8 @@ Eg., to bind eth0 to DPDK:
     modprobe uio_pci_generic
     dpdk/tools/dpdk_nic_bind.py --bind=uio_pci_generic eth0
 
-Refer to the DPDK documentation for more details about huge pages and binding
-devices, or use the DPDK helper located in `dpdk/usertools/setup.sh`.
+Refer to the [DPDK documentation](https://doc.dpdk.org/guides/linux_gsg/sys_reqs.html?highlight=hugepages) for more details about huge pages and binding
+devices.
 
 Unlike most other DPDK applications, you have to pass DPDK EAL arguments
 between `--dpdk` and `--`, then pass Click arguments. As the DPDK EAL will
@@ -147,7 +147,7 @@ versions of DPDK, even if running on a single core:
 * `-c COREMASK`: hexadecimal bitmask of cores to run on
 * `-n NUM`: number of memory channels
 
-If not provided, DPDK will use all available cores.
+If `-c` or `-l` is not provided, DPDK will use all available cores.
 
 A sample command to run a click configuration on 4 cores on a computer with 4
 memory channels and listen for control connections on TCP port 8080 would be:
