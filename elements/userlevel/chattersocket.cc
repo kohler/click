@@ -217,6 +217,7 @@ ChatterSocket::initialize_socket(ErrorHandler *errh)
     struct sockaddr_un sa;
     sa.sun_family = AF_UNIX;
     memcpy(sa.sun_path, _unix_pathname.c_str(), _unix_pathname.length() + 1);
+    unlink(_unix_pathname.c_str());
     if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
       return initialize_socket_error(errh, "bind");
   }
