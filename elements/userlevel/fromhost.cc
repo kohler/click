@@ -86,10 +86,11 @@ FromHost::try_linux_universal(ErrorHandler *errh)
 {
     int fd;
 #ifdef HAVE_PROPER
+    int e;
     fd = prop_open("/dev/net/tun", O_RDWR);
     if (fd >= 0) {
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-	    int e = errno;
+            e = errno;
 	    errh->error("fcntl /dev/net/tun: %s", strerror(e));
 	    close(fd);
 	    return -e;
@@ -141,7 +142,6 @@ FromHost::setup_tun(ErrorHandler *errh)
 	sa << "/sbin/ifconfig " << _dev_name << " hw ether " << _macaddr.unparse_colon();
 	if (system(sa.c_str()) != 0)
 	    errh->error("%s: %s", sa.c_str(), strerror(errno));
-
 	sa.clear();
 	sa << "/sbin/ifconfig " << _dev_name << " arp";
 	if (system(sa.c_str()) != 0)
@@ -193,19 +193,68 @@ FromHost::dealloc_tun()
   }
 }
 
+FromHost *
+FromHost::hotswap_element() const
+{
+    if (Element *e = Element::hotswap_element())
+        if (FromHost *fh = static_cast<FromHost *>(e->cast("FromHost")))
+            if (fh->_dev_name == _dev_name)
+                return fh;
+    return 0;
+}
+
+void
+FromHost::take_state(Element *e, ErrorHandler *errh)
+{
+    (void)errh;
+    FromHost *o = static_cast<FromHost *>(e); // checked by hotswap_element()
+
+    _fd = o->fd();
+    _dev_name = o->dev_name();
+
+    _mtu_in = o->_mtu_in;
+    _mtu_out = o->_mtu_out;
+
+    _macaddr = o->_macaddr;
+
+    _near = o->_near;
+    _mask = o->_mask;
+    _gw = o->_gw;
+
+#if HAVE_IP6
+    _near6 = o->_near6;
+    _prefix6 = o->_prefix6;
+#endif
+
+    _headroom = o->_headroom;
+
+    o->remove_select(_fd, SELECT_READ);
+    o->_fd = -1;
+}
+
 int
 FromHost::initialize(ErrorHandler *errh)
 {
-    if (try_linux_universal(errh) < 0)
-	return -1;
-    if (setup_tun(errh) < 0)
-	return -1;
+    int ret = -1;
 
     ScheduleInfo::join_scheduler(this, &_task, errh);
     _nonfull_signal = Notifier::downstream_full_signal(this, 0, &_task);
 
+    if (hotswap_element()) {
+        goto out;
+    }
+
+    if (try_linux_universal(errh) < 0)
+        goto err;
+    if (setup_tun(errh) < 0)
+        goto err;
+
     add_select(_fd, SELECT_READ);
-    return 0;
+
+out:
+    ret = 0;
+err:
+    return ret;
 }
 
 void
@@ -242,6 +291,7 @@ FromHost::selected(int fd, int)
 	output(0).push(p);
     } else {
 	p->kill();
+        printf("FromHost read(print)\n");
 	perror("FromHost read");
     }
 
@@ -249,8 +299,6 @@ FromHost::selected(int fd, int)
 	remove_select(_fd, SELECT_READ);
 	return;
     }
-
-
 }
 
 bool
@@ -261,7 +309,6 @@ FromHost::run_task(Task *)
 
     add_select(_fd, SELECT_READ);
     return true;
-
 }
 
 String
