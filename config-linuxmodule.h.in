@@ -178,6 +178,9 @@
 /* Define to 1 if Linux defines the type 'uintptr_t'. */
 #undef HAVE_UINTPTR_T_LINUXMODULE
 
+/* Define to 1 to enable poisoning of freed HashAllocator blocks. */
+#undef HAVE_HASH_ALLOCATOR_POISONING
+
 /* The size of a `click_jiffies_t', as computed by sizeof. */
 #define SIZEOF_CLICK_JIFFIES_T SIZEOF_LONG
 

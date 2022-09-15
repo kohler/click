@@ -23,6 +23,11 @@ class HashAllocator { public:
 
   private:
 
+#if HAVE_HASH_ALLOCATOR_POISONING
+    // Freed blocks are poisoned with this byte value.
+    static const uint8_t poison_byte = 0x0d;
+#endif
+
     struct link {
 	link *next;
     };
@@ -91,6 +96,9 @@ inline void *HashAllocator::allocate()
 inline void HashAllocator::deallocate(void *p)
 {
     if (p) {
+#if HAVE_HASH_ALLOCATOR_POISONING
+	memset(p, poison_byte, _size);
+#endif
 	reinterpret_cast<link *>(p)->next = _free;
 	_free = reinterpret_cast<link *>(p);
 #ifdef VALGRIND_MEMPOOL_FREE
