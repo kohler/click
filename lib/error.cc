@@ -728,7 +728,11 @@ ErrorHandler::vxformat(int default_flags, const char *s, va_list val)
 	    s = s2 + 1;
 	    for (Conversion *item = error_items; item; item = item->next)
 		if (item->name.equals(s1, s2 - s1)) {
+#ifdef HAVE_VA_LIST_AS_ARRAY
+		    strstore = item->hook(flags, (va_list*) VA_LIST_REF(val));
+#else
 		    strstore = item->hook(flags, VA_LIST_REF(val));
+#endif
 		    s1 = strstore.begin();
 		    s2 = strstore.end();
 		    goto got_result;
