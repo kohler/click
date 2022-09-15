@@ -205,6 +205,9 @@ Master::kill_router(Router *router)
         return;
     }
 
+    /* Stop threads setting _stop_flag */
+    request_stop();
+
 #if CLICK_LINUXMODULE
     preempt_disable();
 #endif
