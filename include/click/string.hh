@@ -100,6 +100,7 @@ class String { public:
     String substring(int pos, int len) const;
     inline String substring(int pos) const;
     String trim_space() const;
+    String trim_space_left() const;
 
     inline bool equals(const String &x) const;
     inline bool equals(const char *s, int len) const;
