@@ -318,7 +318,7 @@ IPReassembler::simple_action(Packet *p)
 	q->set_anno_u16(_mtu_anno, p->network_length());
 
     // extend the packet if necessary
-    if (p_lastoff > q->transport_length()) {
+    if (p_lastoff + 8 > q->transport_length()) {
 	// error if packet already completed
 	if (!(q->ip_header()->ip_off & htons(IP_MF))) {
 	    p->kill();
@@ -375,7 +375,7 @@ IPReassembler::simple_action(Packet *p)
     // copy p's annotations and IP header if it is the first packet
     if (p_off == 0) {
 	uint16_t old_ip_off = q->ip_header()->ip_off;
-	int header_delta = p->ip_header_offset() - q->ip_header_offset();
+	int header_delta = p->ip_header_offset() - q->ip_header_offset() + p->ip_header_length() - q->ip_header_length();
 	if (header_delta > 0)
 	    q = q->push(header_delta);
 	else if (header_delta < 0)
