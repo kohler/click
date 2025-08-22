@@ -73,7 +73,7 @@ VLANEncap::simple_action(Packet *p)
 	click_ether_vlan *vlan = reinterpret_cast<click_ether_vlan *>(q->data());
 	vlan->ether_vlan_proto = _ethertype;
 	vlan->ether_vlan_tci = tci;
-	q->set_mac_header(q->data(), sizeof(vlan));
+	q->set_mac_header(q->data(), sizeof(click_ether_vlan));
 	return q;
     } else
 	return 0;
