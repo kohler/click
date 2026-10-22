@@ -835,6 +835,7 @@ enable_ip
 enable_ip6
 enable_ipsec
 enable_json
+enable_lisp
 enable_local
 enable_radio
 enable_simple
@@ -1535,6 +1536,7 @@ Optional Features:
   --enable-ip6            include IPv6 elements
   --enable-ipsec          include IP security elements
   --enable-json           include JSON helpers
+  --enable-lisp           include LISP (Locator/ID Separation Protocol) elements
   --enable-local          include local elements
   --enable-radio          include radio elements
   --disable-simple        do not include simple versions of other elements
@@ -7177,6 +7179,17 @@ else
 fi
 test "x$enable_all_elements" = xyes -a \( "x$enable_json" = xNO -o "x$enable_json" = x \) && enable_json=yes
 if test "x$enable_json" = xyes; then
+    :
+
+fi
+# Check whether --enable-lisp was given.
+if test "${enable_lisp+set}" = set; then :
+  enableval=$enable_lisp;
+else
+  enable_lisp=NO
+fi
+test "x$enable_all_elements" = xyes -a \( "x$enable_lisp" = xNO -o "x$enable_lisp" = x \) && enable_lisp=yes
+if test "x$enable_lisp" = xyes; then
     :
 
 fi

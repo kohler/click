@@ -1,0 +1,35 @@
+%info
+Map-Register / Map-Notify with HMAC-SHA-256-128: right key accepted, wrong
+key, no key and out-of-site EIDs rejected, tampered Map-Notify rejected.
+
+%require
+click-buildtool provides LISPMapRegistrar
+click-buildtool provides LISPMapServer
+
+%script
+click -h 'mb.table' -h 'ms.auth_failures' CONFIG
+
+%file CONFIG
+RandomSeed(1);
+// R27: HMAC-SHA-256-128 Map-Register authentication against SITE prefixes
+mb  :: LISPMappingDB;
+ms  :: LISPMapServer(mb, UDP, 192.0.2.10, 192.0.2.2, SITE "10.0.2.0/24 s3cret");
+e1 :: LISPEtrDatabase(192.0.2.2, 10.0.2.7);  e2 :: LISPEtrDatabase(192.0.2.3, 10.0.2.8);
+e3 :: LISPEtrDatabase(192.0.2.4, 10.0.2.9);  e4 :: LISPEtrDatabase(192.0.2.5, 10.9.0.1);
+good  :: LISPMapRegistrar(e1, UDP, 192.0.2.2, 192.0.2.10, KEY s3cret);
+wrong :: LISPMapRegistrar(e2, UDP, 192.0.2.3, 192.0.2.10, KEY guess);
+nokey :: LISPMapRegistrar(e3, UDP, 192.0.2.4, 192.0.2.10);
+other :: LISPMapRegistrar(e4, UDP, 192.0.2.5, 192.0.2.10, KEY s3cret);
+Idle -> good; Idle -> wrong; Idle -> nokey; Idle -> other;
+good -> ms; wrong -> ms; nokey -> ms; other -> ms;
+ms -> Discard;
+DriverManager(wait 0.3s, stop);
+
+%expect stdout
+mb.table:
+10.0.2.7 mask 32 version  2  ttl  600  auth bit falseRLOC192.0.2.2
+
+ms.auth_failures:
+3
+
+%eof

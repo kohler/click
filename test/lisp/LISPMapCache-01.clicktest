@@ -1,0 +1,60 @@
+%info
+Longest-prefix match, locator choice by priority, map-cache capacity and
+request expiry.
+
+%require
+click-buildtool provides LISPMapCache
+click-buildtool provides LISPMapResolver
+
+%script
+click -h 'itr.stats' -h 'ic.cache' -h 'mb.table' -h 'mr.last_etr' CONFIG
+
+%file CONFIG
+RandomSeed(1);
+// (a) prefix EIDs: one Map-Request covers the whole /24
+ic  :: LISPMapCache;
+itr :: LISPMapRequester(ic, UDP, 192.0.2.1, 192.0.2.2);
+eb  :: LISPEtrDatabase(192.0.2.2, EID 10.0.2.0/24);
+rr  :: LISPMapReplier(eb, UDP, 192.0.2.2, 192.0.2.1);
+lc  :: LISPClassifierxTR;
+RatedSource(LENGTH 8, RATE 10, LIMIT 1) -> UDPIPEncap(10.0.1.5, 1234, 10.0.2.8, 80) -> [0]itr;
+s2 :: InfiniteSource(LIMIT 1, LENGTH 8, ACTIVE false) -> UDPIPEncap(10.0.1.5, 1234, 10.0.2.9, 80) -> [0]itr;
+Script(wait 0.3s, write s2.active true);
+Idle -> [2]itr;
+itr[1] -> Print(lpm-mreq, 0) -> rr -> lc;
+lc[2] -> [1]itr;
+lc[0] -> Discard; lc[1] -> Discard; lc[3] -> Discard; lc[4] -> Discard; lc[5] -> Discard; lc[6] -> Discard; lc[7] -> Discard;
+itr[0] -> IPPrint(lpm-data, TIMESTAMP false) -> Discard;
+// (b) locator set: Map-Register with 2 locators for 10.5.0.0/24 (priority 1: .5, priority 0: .6)
+mb  :: LISPMappingDB;
+ic2 :: LISPMapCache; itr2 :: LISPMapRequester(ic2, UDP, 192.0.2.1, 192.0.2.10);
+ms  :: LISPMapServer(mb, UDP, 192.0.2.10, 192.0.2.5);
+mr  :: LISPMapResolver(mb, UDP, 192.0.2.10, 192.0.2.99);
+InfiniteSource(LIMIT 1, STOP false, DATA \<30000101 11111111 22222222 0001 0008 33333333 44444444
+   000005a0 02 18 0000 0001 0001 0a050000
+   01 64 00 00 0000 0001 c0000205
+   00 64 00 00 0000 0001 c0000206>)
+ -> UDPIPEncap(192.0.2.5, 4342, 192.0.2.10, 4342) -> ms -> Discard;
+q :: InfiniteSource(LIMIT 1, LENGTH 8, ACTIVE false) -> UDPIPEncap(10.0.1.5, 1234, 10.5.0.9, 80) -> [0]itr2;
+Idle -> [1]itr2; Idle -> [2]itr2; itr2[0] -> Discard; itr2[1] -> mr -> Discard;
+Script(wait 0.2s, write q.active true);
+DriverManager(wait 0.6s, stop);
+
+%expect stdout
+itr.stats:
+1 lookup hits
+1 lookup misses
+1 Map-Requests sent
+1 Map-Replies received
+1 Map-Replies valid
+
+ic.cache:
+10.0.2.0/24 -> 192.0.2.2  ttl 600 min  version 2
+
+mb.table:
+10.5.0.0 mask 24 version  1  ttl  1440  auth bit falseRLOC192.0.2.5
+
+mr.last_etr:
+192.0.2.6
+
+%eof

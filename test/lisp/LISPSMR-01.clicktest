@@ -1,0 +1,47 @@
+%info
+Solicit-Map-Request: accepted only from a locator of the mapping; the mapping
+stays in use while it is refreshed.
+
+%require
+click-buildtool provides LISPMapRequester
+click-buildtool provides LISPMapReplier
+
+%script
+click -h 'itr.stats' -h 'itr.smrs' -h 'itr.smrs_ignored' CONFIG
+
+%file CONFIG
+RandomSeed(1);
+// R22: a valid SMR (from the ETR's RLOC) and a forged one (from another host)
+ic  :: LISPMapCache;
+itr :: LISPMapRequester(ic, UDP, 192.0.2.1, 192.0.2.2);
+eb  :: LISPEtrDatabase(192.0.2.2, 10.0.2.7, 10.0.2.8, 10.0.2.9, 10.0.2.10);
+rr  :: LISPMapReplier(eb, UDP, 192.0.2.2, 192.0.2.1);
+lc  :: LISPClassifierxTR;
+RatedSource(LENGTH 8, RATE 10, LIMIT 8) -> UDPIPEncap(10.0.1.5, 1234, 10.0.2.7, 80) -> [0]itr;
+smr :: InfiniteSource(LIMIT 1, ACTIVE false, DATA \<11000001 aaaaaaaa bbbbbbbb 0001 0a00 0207 0001 c0000202 0020 0001 0a000207>)
+   -> UDPIPEncap(192.0.2.2, 4342, 192.0.2.1, 4342) -> lc;
+bad :: InfiniteSource(LIMIT 1, ACTIVE false, DATA \<11000001 cccccccc dddddddd 0001 0a00 0207 0001 c0000242 0020 0001 0a000207>)
+   -> UDPIPEncap(192.0.2.66, 4342, 192.0.2.1, 4342) -> lc;
+Script(wait 0.25s, write bad.active true, wait 0.15s, write smr.active true);
+itr[1] -> Print(smr-mreq, MAXLENGTH 32) -> rr -> lc;
+itr[0] -> Discard;
+lc[2] -> [1]itr;
+lc[7] -> Print(lc-smr, 0) -> [2]itr;
+lc[0] -> Discard; lc[1] -> Discard; lc[3] -> Discard; lc[4] -> Discard; lc[5] -> Discard; lc[6] -> Discard;
+DriverManager(wait 1s, stop);
+
+%expect stdout
+itr.stats:
+7 lookup hits
+1 lookup misses
+2 Map-Requests sent
+2 Map-Replies received
+2 Map-Replies valid
+
+itr.smrs:
+2
+
+itr.smrs_ignored:
+1
+
+%eof

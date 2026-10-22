@@ -1,0 +1,87 @@
+%info
+LISPClassifierxTR and LISPClassifierMS: one message of each kind goes to
+the documented output; packets are not modified.
+
+%require
+click-buildtool provides LISPClassifierxTR
+click-buildtool provides LISPClassifierMS
+
+%script
+click CONFIG
+
+%file CONFIG
+// one message of each kind, in order, through the xTR and Map-Server classifiers
+x :: LISPClassifierxTR;  m :: LISPClassifierMS;
+in :: Tee -> x;  in[1] -> m;
+x[0] -> Print(" xTR -> 0 plain", 0) -> Discard;
+x[1] -> Print(" xTR -> 1 map-request", 0) -> Discard;
+x[2] -> Print(" xTR -> 2 map-reply", 0) -> Discard;
+x[3] -> Print(" xTR -> 3 map-notify", 0) -> Discard;
+x[4] -> Print(" xTR -> 4 map-migrate", 0) -> Discard;
+x[5] -> Print(" xTR -> 5 data", 0) -> Discard;
+x[6] -> Print(" xTR -> 6 error", 0) -> Discard;
+x[7] -> Print(" xTR -> 7 smr", 0) -> Discard;
+m[0] -> Print(" MS  -> 0 other", 0) -> Discard;
+m[1] -> Print(" MS  -> 1 map-request", 0) -> Discard;
+m[2] -> Print(" MS  -> 2 map-register", 0) -> Discard;
+m[3] -> Print(" MS  -> 3 map-migrate", 0) -> Discard;
+s0 :: InfiniteSource(DATA \<10000001 11111111 22222222>, LIMIT 1, ACTIVE false) -> Print("map-request:", 0) -> UDPIPEncap(192.0.2.1, 50000, 192.0.2.2, 4342) -> in;
+s1 :: InfiniteSource(DATA \<11000001 11111111 22222222>, LIMIT 1, ACTIVE false) -> Print("smr:", 0) -> UDPIPEncap(192.0.2.1, 4342, 192.0.2.2, 4342) -> in;
+s2 :: InfiniteSource(DATA \<20000001 11111111 22222222>, LIMIT 1, ACTIVE false) -> Print("map-reply:", 0) -> UDPIPEncap(192.0.2.1, 4342, 192.0.2.2, 50000) -> in;
+s3 :: InfiniteSource(DATA \<30000104 11111111 22222222>, LIMIT 1, ACTIVE false) -> Print("map-register:", 0) -> UDPIPEncap(192.0.2.1, 50000, 192.0.2.2, 4342) -> in;
+s4 :: InfiniteSource(DATA \<40000001 11111111 22222222>, LIMIT 1, ACTIVE false) -> Print("map-notify:", 0) -> UDPIPEncap(192.0.2.1, 4342, 192.0.2.2, 50000) -> in;
+s5 :: InfiniteSource(DATA \<50000001 11111111 22222222>, LIMIT 1, ACTIVE false) -> Print("map-notify-ack-type5:", 0) -> UDPIPEncap(192.0.2.1, 4342, 192.0.2.2, 4342) -> in;
+s6 :: InfiniteSource(DATA \<80000000 45000020>, LIMIT 1, ACTIVE false) -> Print("ecm:", 0) -> UDPIPEncap(192.0.2.1, 50000, 192.0.2.2, 4342) -> in;
+s7 :: InfiniteSource(DATA \<ffc00001 11111111 22222222>, LIMIT 1, ACTIVE false) -> Print("map-migrate:", 0) -> UDPIPEncap(192.0.2.1, 50000, 192.0.2.2, 4342) -> in;
+s8 :: InfiniteSource(DATA \<100f8001 11111111 22222222>, LIMIT 1, ACTIVE false) -> Print("reserved-bits-set:", 0) -> UDPIPEncap(192.0.2.1, 50000, 192.0.2.2, 4342) -> in;
+s9 :: InfiniteSource(DATA \<80123456 00000000 45000014>, LIMIT 1, ACTIVE false) -> Print("lisp-data:", 0) -> UDPIPEncap(192.0.2.1, 50000, 192.0.2.2, 4341) -> in;
+s10 :: InfiniteSource(DATA \<61626364>, LIMIT 1, ACTIVE false) -> Print("plain-udp:", 0) -> UDPIPEncap(192.0.2.1, 1234, 192.0.2.2, 80) -> in;
+s11 :: InfiniteSource(DATA \<61626364>, LIMIT 1, ACTIVE false) -> Print("tcp-on-4342:", 0) -> UDPIPEncap(192.0.2.1, 4342, 192.0.2.2, 4342) -> StoreData(9, \<06>) -> in;
+s12 :: InfiniteSource(DATA \<20>, LIMIT 1, ACTIVE false) -> Print("truncated-control:", 0) -> UDPIPEncap(192.0.2.1, 4342, 192.0.2.2, 4342) -> in;
+Script(write s0.active true, wait 0.02s, write s1.active true, wait 0.02s, write s2.active true, wait 0.02s, write s3.active true, wait 0.02s, write s4.active true, wait 0.02s, write s5.active true, wait 0.02s, write s6.active true, wait 0.02s, write s7.active true, wait 0.02s, write s8.active true, wait 0.02s, write s9.active true, wait 0.02s, write s10.active true, wait 0.02s, write s11.active true, wait 0.02s, write s12.active true, wait 0.02s, stop);
+
+%expect stderr
+map-request::   12
+ xTR -> 1 map-request:   40
+ MS  -> 1 map-request:   40
+smr::   12
+ xTR -> 7 smr:   40
+ MS  -> 1 map-request:   40
+map-reply::   12
+ xTR -> 2 map-reply:   40
+ MS  -> 0 other:   40
+map-register::   12
+ xTR -> 6 error:   40
+ MS  -> 2 map-register:   40
+map-notify::   12
+ xTR -> 3 map-notify:   40
+ MS  -> 0 other:   40
+map-notify-ack-type5::   12
+ xTR -> 6 error:   40
+ MS  -> 0 other:   40
+ecm::    8
+ xTR -> 6 error:   36
+ MS  -> 1 map-request:   36
+map-migrate::   12
+ xTR -> 4 map-migrate:   40
+ MS  -> 3 map-migrate:   40
+reserved-bits-set::   12
+ xTR -> 6 error:   40
+ MS  -> 0 other:   40
+lisp-data::   12
+ xTR -> 5 data:   40
+ MS  -> 0 other:   40
+plain-udp::    4
+ xTR -> 0 plain:   32
+ MS  -> 0 other:   32
+tcp-on-4342::    4
+ xTR -> 0 plain:   32
+ MS  -> 0 other:   32
+truncated-control::    1
+ xTR -> 6 error:   29
+ MS  -> 0 other:   29
+
+%ignorex stderr
+expensive Packet::push.*
+
+%eof

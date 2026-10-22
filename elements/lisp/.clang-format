@@ -1,0 +1,51 @@
+# .clang-format -- Click coding style for the LISP element group.
+# Format a file with:  clang-format -i elements/lisp/FILE
+# Click coding style (Eddie Kohler's), as used in the rest of the Click tree:
+# 4-space indentation with 8-column tabs, return type on its own line in
+# function definitions, function braces on their own line, K&R braces for
+# control statements, pointer next to the name.
+Language:        Cpp
+BasedOnStyle:    LLVM
+IndentWidth:     4
+TabWidth:        8
+UseTab:          ForContinuationAndIndentation
+ColumnLimit:     80
+BreakBeforeBinaryOperators: All
+AlignOperands:   DontAlign
+AlignAfterOpenBracket: DontAlign
+PenaltyBreakBeforeFirstCallParameter: 100
+PenaltyExcessCharacter: 100
+BreakStringLiterals: false
+AlwaysBreakAfterDefinitionReturnType: TopLevel
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction:   true
+  AfterClass:      false
+  AfterStruct:     false
+  AfterControlStatement: Never
+  AfterEnum:       false
+  BeforeElse:      false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: false
+PointerAlignment: Right
+SpaceBeforeParens: ControlStatements
+AccessModifierOffset: -2
+BreakConstructorInitializers: BeforeColon
+ConstructorInitializerIndentWidth: 2
+ContinuationIndentWidth: 4
+AllowShortFunctionsOnASingleLine: InlineOnly
+PackConstructorInitializers: NextLineOnly
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+IndentCaseLabels: false
+NamespaceIndentation: None
+ReflowComments:  false
+SortIncludes:    Never
+AlignTrailingComments: true
+AlignConsecutiveMacros: Consecutive
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: false
+SpacesBeforeTrailingComments: 1
+IndentPPDirectives: AfterHash
+PPIndentWidth: 1

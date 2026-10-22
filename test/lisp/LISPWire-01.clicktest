@@ -1,0 +1,58 @@
+%info
+Every message the LISP elements send, decoded by Wireshark (an independent
+LISP implementation): no malformed packet, and each message is recognized.
+
+%require
+click-buildtool provides LISPMapRequester
+click-buildtool provides LISPMapServer
+which tshark >/dev/null 2>&1
+
+%script
+click CONFIG >/dev/null 2>&1
+tshark -r WIRE -d udp.port==4342,lisp -d udp.port==4341,lisp-data -T fields -e lisp.type -e _ws.expert.message 2>/dev/null | sort | uniq -c | sed 's/^ *//'
+tshark -r WIRE -d udp.port==4342,lisp -V 2>/dev/null | grep -c 'Local RLOC: 192.0.2.2, Reachable'
+
+%file CONFIG
+// every LISP message the elements send, captured to a pcap file for Wireshark
+RandomSeed(1);
+dump :: ToDump(WIRE, ENCAP IP);
+mb  :: LISPMappingDB;
+ms  :: LISPMapServer(mb, UDP, 192.0.2.10, 192.0.2.2, SITE "10.0.2.0/24 s3cret");
+mr  :: LISPMapResolver(mb, UDP, 192.0.2.10, 192.0.2.99);
+lcm :: LISPClassifierMS;
+eb  :: LISPEtrDatabase(192.0.2.2, EID 10.0.2.0/24);
+reg :: LISPMapRegistrar(eb, UDP, 192.0.2.2, 192.0.2.10, KEY s3cret);
+rr  :: LISPMapReplier(eb, UDP, 192.0.2.2, 192.0.2.1);
+ic  :: LISPMapCache;
+itr :: LISPMapRequester(ic, UDP, 192.0.2.1, 192.0.2.10, ECM true);
+enc :: LISPEncap(UDP, 192.0.2.1, DST_ANNO);
+lcx :: LISPClassifierxTR;
+fb  :: FMCCDatabase;
+mig :: FMCCMigrator(fb, UDP, 192.0.2.20, 192.0.2.2, KEY k);
+man :: FMCCManager(192.0.2.2, 192.0.2.3, 10.0.2.7, fb, mig, AUTO false);
+Idle -> man; Idle -> mig;
+reg -> t1 :: Tee -> lcm;  t1[1] -> dump;                 // Map-Register
+lcm[2] -> ms -> t2 :: Tee -> lcx; t2[1] -> dump;         // Map-Notify
+lcm[1] -> mr -> t3 :: Tee -> rr; t3[1] -> dump;          // forwarded Map-Request
+rr -> t4 :: Tee -> lcx; t4[1] -> dump;                   // Map-Reply
+lcx[3] -> reg;  lcx[2] -> [1]itr;
+lcm[0] -> Discard; lcm[3] -> Discard;
+lcx[0] -> Discard; lcx[1] -> Discard; lcx[4] -> Discard; lcx[5] -> Discard; lcx[6] -> Discard; lcx[7] -> Discard;
+Idle -> [2]itr;
+itr[1] -> t5 :: Tee -> lcm; t5[1] -> dump;               // ECM(Map-Request)
+itr[0] -> enc -> dump;                                    // LISP data
+mig -> dump;                                              // Map-Migrate (local extension)
+a :: InfiniteSource(LIMIT 2, ACTIVE false, LENGTH 8) -> UDPIPEncap(10.0.1.5, 1234, 10.0.2.8, 80) -> [0]itr;
+Script(wait 0.1s, write a.active true, wait 0.1s, write man.migrate VM 10.0.2.7 FROM 192.0.2.2 TO 192.0.2.3, wait 0.1s, stop);
+
+%expect stdout
+2{{\s*}}
+1 1{{\s*}}
+1 15{{\s*}}
+1 2{{\s*}}
+1 3{{\s*}}
+1 4{{\s*}}
+1 8,1{{\s*}}
+3
+
+%eof

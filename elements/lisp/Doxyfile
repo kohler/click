@@ -1,0 +1,42 @@
+# Doxyfile -- API documentation of the LISP element group, generated from the
+# comments in the source ("documentation as code").
+# Franck Messaoudi.  Copyright (c) 2014-2026 Franck Messaoudi; see the Click
+# LICENSE file.
+#
+# Run from the top of the Click tree:   doxygen elements/lisp/Doxyfile
+# Output: doc/lisp-api/html/index.html
+# Element documentation (arguments, ports, handlers) is in the =c comments
+# of each .hh and is turned into man pages by doc/click-elem2man.
+
+PROJECT_NAME           = "Click LISP elements"
+PROJECT_BRIEF          = "LISP (RFC 9300/9301) and Follow Me Cloud elements for Click"
+OUTPUT_DIRECTORY       = doc/lisp-api
+INPUT                  = elements/lisp/README.md \
+                         elements/lisp/LISP_GUIDE.md \
+                         include/clicknet/lisp.h \
+                         elements/lisp
+FILE_PATTERNS          = *.hh *.cc *.h *.md
+USE_MDFILE_AS_MAINPAGE = elements/lisp/README.md
+INPUT_ENCODING         = UTF-8
+RECURSIVE              = NO
+EXTRACT_ALL            = NO
+EXTRACT_STATIC         = YES
+HIDE_UNDOC_MEMBERS     = NO
+SORT_MEMBER_DOCS       = NO
+JAVADOC_AUTOBRIEF      = NO
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = NO
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+INCLUDE_PATH           = include
+PREDEFINED             = CLICK_DECLS= CLICK_ENDDECLS= CLICK_USERLEVEL=1 \
+                         CLICK_COLD= CLICK_ALWAYS_INLINE=
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_TREEVIEW      = YES
+SOURCE_BROWSER         = YES
+STRIP_FROM_PATH        = .

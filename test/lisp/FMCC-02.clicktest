@@ -1,0 +1,30 @@
+%info
+A migrated EID triggers exactly one SMR per ITR that asked for it.
+
+%require
+click-buildtool provides LISPMigrationUpdater
+click-buildtool provides LISPMapReplier
+
+%script
+click -h 'upd.smrs' CONFIG
+
+%file CONFIG
+RandomSeed(1);
+// R26: the same ITR asks twice, then the EID migrates away: one SMR expected
+eb  :: LISPEtrDatabase(192.0.2.2, 10.0.2.7, 10.0.2.8, 10.0.2.9, 10.0.2.10);
+rr  :: LISPMapReplier(eb, UDP, 192.0.2.2, 192.0.2.1);
+reg :: LISPMapRegistrar(eb, UDP, 192.0.2.2, 192.0.2.10);
+tr  :: LISPVMCounter(10.0.2.7, 10.0.2.8, 10.0.2.9, 10.0.2.10);
+upd :: LISPMigrationUpdater(192.0.2.2, eb, tr, reg);
+Idle -> reg; reg -> Discard; Idle -> tr;
+mreq :: InfiniteSource(LIMIT 2, BURST 1, DATA \<10000001 11111111 22222222 0001 0a00 0105 0001 c0000201 0020 0001 0a000207>)
+   -> UDPIPEncap(192.0.2.1, 50000, 192.0.2.2, 4342) -> rr -> Discard;
+mig :: InfiniteSource(LIMIT 1, ACTIVE false, DATA \<ffc00001 11111111 22222222 0000 0008 00000000 00000000 0020 0001 0a000207 0000 0001 c0000203>)
+   -> UDPIPEncap(192.0.2.20, 4342, 192.0.2.2, 4342) -> upd -> CheckIPHeader -> CheckUDPHeader -> Print(smr, 0) -> Discard;
+Script(wait 0.2s, write mig.active true);
+DriverManager(wait 0.5s, stop);
+
+%expect stdout
+1
+
+%eof

@@ -1,0 +1,36 @@
+%info
+Multi-record Map-Register updates each EID with its own record; a record
+count larger than the packet is not read past the end; registrations expire.
+
+%require
+click-buildtool provides LISPMapServer
+click-buildtool provides LISPMappingDB
+
+%script
+click -h 'mb.table' CONFIG
+
+%file CONFIG
+// R32: multi-record update uses each record; record count larger than the packet
+mb :: LISPMappingDB;
+ms :: LISPMapServer(mb, UDP, 192.0.2.10, 192.0.2.5);
+first :: InfiniteSource(LIMIT 1, STOP false, DATA \<30000002 11111111 22222222 0000 0000
+   00000064 01 20 0000 0001 0001 0a060001  00 64 00 00 0000 0001 c0000205
+   00000064 01 20 0000 0001 0001 0a060002  00 64 00 00 0000 0001 c0000205>)
+ -> UDPIPEncap(192.0.2.5, 4342, 192.0.2.10, 4342) -> ms;
+second :: InfiniteSource(LIMIT 1, ACTIVE false, DATA \<30000002 33333333 44444444 0000 0000
+   0000012c 01 20 0000 0002 0001 0a060001  00 64 00 00 0000 0001 c0000205
+   000001f4 01 20 0000 0002 0001 0a060002  00 64 00 00 0000 0001 c0000206>)
+ -> UDPIPEncap(192.0.2.5, 4342, 192.0.2.10, 4342) -> ms;
+short :: InfiniteSource(LIMIT 1, ACTIVE false, DATA \<30000005 55555555 66666666 0000 0000
+   00000064 01 20 0000 0001 0001 0a070001  00 64 00 00 0000 0001 c0000207>)
+ -> UDPIPEncap(192.0.2.7, 4342, 192.0.2.10, 4342) -> ms;
+ms -> Discard;
+Script(wait 0.1s, write second.active true, wait 0.1s, write short.active true);
+DriverManager(wait 0.4s, stop);
+
+%expect stdout
+10.6.0.1 mask 32 version  2  ttl  300  auth bit falseRLOC192.0.2.5
+10.6.0.2 mask 32 version  2  ttl  500  auth bit falseRLOC192.0.2.6
+10.7.0.1 mask 32 version  1  ttl  100  auth bit falseRLOC192.0.2.7
+
+%eof

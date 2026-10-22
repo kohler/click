@@ -1,0 +1,36 @@
+%info
+Map-Notify: each ETR accepts only the Map-Notify that answers its own
+Map-Register.
+
+%require
+click-buildtool provides LISPMapRegistrar
+click-buildtool provides LISPMapServer
+
+%script
+click -h 'r1.notifies_valid' -h 'r2.notifies_valid' CONFIG
+
+%file CONFIG
+RandomSeed(1);
+// R33 + R27: signed Map-Notify accepted; Map-Notify signed with another key rejected
+mb  :: LISPMappingDB;
+ms  :: LISPMapServer(mb, UDP, 192.0.2.10, 192.0.2.2, SITE "10.0.2.0/24 s3cret", SITE "10.3.0.0/24 other");
+e1 :: LISPEtrDatabase(192.0.2.2, 10.0.2.7);
+r1 :: LISPMapRegistrar(e1, UDP, 192.0.2.2, 192.0.2.10, KEY s3cret);
+e2 :: LISPEtrDatabase(192.0.2.3, 10.3.0.7);
+r2 :: LISPMapRegistrar(e2, UDP, 192.0.2.3, 192.0.2.10, KEY other);
+r1 -> ms; r2 -> ms;
+// the Map-Notify for r2 is delivered to r1 as well: r1 must reject it
+ms -> t :: Tee -> lc1 :: LISPClassifierxTR; t[1] -> lc2 :: LISPClassifierxTR;
+lc1[3] -> r1; lc2[3] -> r2;
+lc1[0] -> Discard; lc1[1] -> Discard; lc1[2] -> Discard; lc1[4] -> Discard; lc1[5] -> Discard; lc1[6] -> Discard; lc1[7] -> Discard;
+lc2[0] -> Discard; lc2[1] -> Discard; lc2[2] -> Discard; lc2[4] -> Discard; lc2[5] -> Discard; lc2[6] -> Discard; lc2[7] -> Discard;
+DriverManager(wait 0.3s, stop);
+
+%expect stdout
+r1.notifies_valid:
+1
+
+r2.notifies_valid:
+1
+
+%eof

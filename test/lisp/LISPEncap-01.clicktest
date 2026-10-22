@@ -1,0 +1,31 @@
+%info
+LISPEncap and LISPDecap: byte-exact encapsulation (RFC 9300 header,
+port 4341, valid IP and UDP checksums) and decapsulation.
+
+%require
+click-buildtool provides LISPEncap
+click-buildtool provides LISPDecap
+
+%script
+click CONFIG
+
+%file CONFIG
+// one inner UDP packet, encapsulated with a fixed outer destination, then decapsulated
+InfiniteSource(DATA \<45000020 00000000 401163c2 0a000105 0a000207 04d20050 000c0000 61626364>, LIMIT 1, STOP true)
+  -> MarkIPHeader
+  -> LISPEncap(UDP, 192.0.2.1, 192.0.2.2, NONCE false, UDP_CHECKSUM true)
+  -> Print(encap, CONTENTS true, MAXLENGTH 200)
+  -> CheckIPHeader(VERBOSE true) -> CheckUDPHeader(VERBOSE true)
+  -> d :: LISPDecap
+  -> Print(decap, CONTENTS true, MAXLENGTH 200)
+  -> CheckIPHeader(VERBOSE true) -> Discard;
+d[1] -> Print(rejected) -> Discard;
+
+%expect stderr
+encap:   68 | 45000044 00000000 fa113ca5 c0000201 c0000202 c39610f5 0030cd09 10000000 00000000 45000020 00000000 401163c2 0a000105 0a000207 04d20050 000c0000 61626364
+decap:   32 | 45000020 00000000 401163c2 0a000105 0a000207 04d20050 000c0000 61626364
+
+%ignorex stderr
+expensive Packet::push.*
+
+%eof

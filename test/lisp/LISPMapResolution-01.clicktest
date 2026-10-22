@@ -1,0 +1,64 @@
+%info
+ITR -> Map-Resolver -> ETR -> ITR with an Encapsulated Control Message,
+longest-prefix match, and a Negative Map-Reply for an unknown EID.
+
+%require
+click-buildtool provides LISPMapRequester
+click-buildtool provides LISPMapResolver
+click-buildtool provides LISPMapReplier
+
+%script
+click -h 'itr.stats' -h 'itr.native forwarded' -h 'ic.cache' -h 'mr.negative' -h 'mr.ecm' CONFIG
+
+%file CONFIG
+RandomSeed(1);
+// R34: ITR -> Map-Resolver -> ETR -> ITR, and a Negative Map-Reply for an unknown EID
+mb  :: LISPMappingDB;
+ms  :: LISPMapServer(mb, UDP, 192.0.2.10, 192.0.2.2);
+mr  :: LISPMapResolver(mb, UDP, 192.0.2.10, 192.0.2.99);
+lcm :: LISPClassifierMS;
+eb  :: LISPEtrDatabase(192.0.2.2, EID 10.0.2.0/24);
+reg :: LISPMapRegistrar(eb, UDP, 192.0.2.2, 192.0.2.10);
+rr  :: LISPMapReplier(eb, UDP, 192.0.2.2, 192.0.2.1);
+ic  :: LISPMapCache;
+itr :: LISPMapRequester(ic, UDP, 192.0.2.1, 192.0.2.10, ECM true);
+lcx :: LISPClassifierxTR;
+Idle -> reg; reg -> lcm;
+lcm[2] -> ms -> Discard;
+lcm[1] -> mr -> IPPrint(mr-out, TIMESTAMP false) -> t :: Tee -> rr -> IPPrint(etr-reply, TIMESTAMP false) -> lcx;
+t[1] -> lcx2 :: LISPClassifierxTR;  lcx2[2] -> Print(negative-reply, 0) -> lcx;      // negative replies come back from the MR
+lcx2[0] -> Discard; lcx2[1] -> Discard; lcx2[3] -> Discard; lcx2[4] -> Discard; lcx2[5] -> Discard; lcx2[6] -> Discard; lcx2[7] -> Discard;
+lcm[0] -> Discard; lcm[3] -> Discard;
+lcx[2] -> [1]itr;
+lcx[0] -> Discard; lcx[1] -> Discard; lcx[3] -> Discard; lcx[4] -> Discard; lcx[5] -> Discard; lcx[6] -> Discard; lcx[7] -> Discard;
+Idle -> [2]itr;
+a :: InfiniteSource(LIMIT 2, ACTIVE false, LENGTH 8) -> UDPIPEncap(10.0.1.5, 1234, 10.0.2.8, 80) -> [0]itr;
+b :: InfiniteSource(LIMIT 2, ACTIVE false, LENGTH 8) -> UDPIPEncap(10.0.1.5, 1234, 172.16.0.9, 80) -> [0]itr;
+itr[1] -> IPPrint(itr-ecm-out, TIMESTAMP false) -> CheckIPHeader(VERBOSE true) -> CheckUDPHeader(VERBOSE true) -> lcm;
+itr[0] -> IPPrint(encap-to, TIMESTAMP false) -> Discard;
+itr[2] -> IPPrint(native, TIMESTAMP false) -> Discard;
+Script(wait 0.1s, write a.active true, wait 0.1s, write b.active true);
+DriverManager(wait 0.5s, stop);
+
+%expect stdout
+itr.stats:
+1 lookup hits
+2 lookup misses
+2 Map-Requests sent
+2 Map-Replies received
+2 Map-Replies valid
+
+itr.native forwarded:
+2
+
+ic.cache:
+10.0.2.0/24 -> 192.0.2.2  ttl 600 min  version 2
+172.16.0.0/24 -> 0.0.0.0  ttl 15 min  version 0
+
+mr.negative:
+1
+
+mr.ecm:
+2
+
+%eof

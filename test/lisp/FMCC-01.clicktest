@@ -1,0 +1,45 @@
+%info
+FMCC: a signed Map-Migrate moves the VM, an unsigned one is rejected, and
+the migrate handler orders a migration.
+
+%require
+click-buildtool provides FMCCManager
+click-buildtool provides FMCCMigrator
+click-buildtool provides LISPMigrationUpdater
+
+%script
+click -h 'e1.base' -h 'upd.auth_failures' CONFIG
+
+%file CONFIG
+RandomSeed(1);
+// R29: LISPMigrationUpdater with KEY obeys only Map-Migrate signed by the FMCC
+fb  :: FMCCDatabase; fb2 :: FMCCDatabase;
+good :: FMCCMigrator(fb, UDP, 192.0.2.20, 192.0.2.2, KEY fmcc-secret);
+bad  :: FMCCMigrator(fb2, UDP, 192.0.2.66, 192.0.2.2);
+e1 :: LISPEtrDatabase(192.0.2.2, 10.0.2.7, 10.0.2.8, 10.0.2.9, 10.0.2.10);
+r1 :: LISPMapRegistrar(e1, UDP, 192.0.2.2, 192.0.2.10); Idle -> r1 -> Discard;
+r2 :: LISPMapRegistrar(e1, UDP, 192.0.2.2, 192.0.2.10); Idle -> r2;
+tr :: LISPVMCounter(10.0.2.7, 10.0.2.8, 10.0.2.9, 10.0.2.10); Idle -> tr;
+upd :: LISPMigrationUpdater(192.0.2.2, e1, tr, r1, KEY fmcc-secret);
+m1 :: FMCCManager(192.0.2.2, 192.0.2.3, 10.0.2.7, fb, good);
+m2 :: FMCCManager(192.0.2.2, 192.0.2.4, 10.0.2.8, fb2, bad);
+r2 -> t :: Tee -> m1; t[1] -> m2;
+Idle -> good; Idle -> bad;
+good -> upd; bad -> upd;
+upd -> Discard;
+DriverManager(wait 0.3s, stop);
+
+%expect stdout
+e1.base:
+
+1 . EID-Prefix :10.0.2.8, Mask :  255.255.255.255, TTL : 600
+, ETR cache : 
+2 . EID-Prefix :10.0.2.9, Mask :  255.255.255.255, TTL : 600
+, ETR cache : 
+3 . EID-Prefix :10.0.2.10, Mask :  255.255.255.255, TTL : 600
+, ETR cache : 
+
+upd.auth_failures:
+1
+
+%eof
