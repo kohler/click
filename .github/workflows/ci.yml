@@ -23,11 +23,11 @@ jobs:
             FRAMEWORK: [vanilla, dpdk, netmap]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.7
+        python-version: '3.x'
     - name: Install pip
       run: |
           python -m pip install --upgrade pip
